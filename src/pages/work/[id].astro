@@ -53,18 +53,18 @@ const faceClass = (name: string) => `face-${name.toLowerCase().replace(/\s+/g, '
       <dl class="cs-facts">
         <div><dt class="t-label">Role</dt><dd>{p.role}</dd></div>
         <div><dt class="t-label">Year</dt><dd class="t-num">{p.year}</dd></div>
-        <div><dt class="t-label">Interface</dt><dd>{p.language}{p.onlyDark ? ', dark only' : ', light and dark'}</dd></div>
+        <div><dt class="t-label">Interface</dt><dd>{p.language}, light and dark</dd></div>
       </dl>
     </header>
 
     <div class="wrap cs-stage">
-      <Plate shot={p.main} crop eager vt={`shot-${p.id}`} sizes="(min-width: 1440px) 1360px, 94vw" widths={[640, 960, 1360, 1800, 2400]}>
+      <Plate shot={p.main} crop eager motion="lead" vt={`shot-${p.id}`} sizes="(min-width: 1440px) 1360px, 94vw" widths={[640, 960, 1360, 1800, 2400]}>
         {
           p.callouts.map((c, i) => (
             <button
               type="button"
               class="pin pin--live"
-              style={`left:${c.x}%;top:${c.y}%`}
+              style={`left:${c.x}%;top:${c.y}%;--i:${i}`}
               data-pin={i + 1}
               data-x={c.x < 28 ? 'start' : c.x > 72 ? 'end' : 'mid'}
               data-y={c.y < 22 ? 'below' : 'above'}
@@ -113,7 +113,7 @@ const faceClass = (name: string) => `face-${name.toLowerCase().replace(/\s+/g, '
       {
         p.gallery.map((s) => (
           <figure class:list={['cs-shot', s.phone && 'cs-shot--phone']}>
-            <Plate shot={s} sizes={s.phone ? '240px' : '(min-width: 1100px) 44vw, 92vw'} widths={[480, 800, 1200]} />
+            <Plate shot={s} motion="hover" sizes={s.phone ? '240px' : '(min-width: 1100px) 44vw, 92vw'} widths={[480, 800, 1200]} />
             {s.caption && <figcaption class="t-label">{s.caption}</figcaption>}
           </figure>
         ))

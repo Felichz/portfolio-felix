@@ -60,7 +60,8 @@
   color-scheme: dark;
 }
 
-/* Screenshots exist per theme; only the matching one renders (and downloads, since both are lazy). */
+/* Screenshots exist per theme and the site shows the opposite edition (see Plate.astro). Only one
+   renders, and since both are lazy, only that one downloads. */
 :root[data-theme='dark'] .only-light,
 :root:not([data-theme='dark']) .only-dark {
   display: none !important;
@@ -272,6 +273,70 @@ a:hover { text-decoration-thickness: 2px; }
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 1px var(--ring), var(--shadow);
 }
 .plate--phone img { border-radius: 21px; }
+.plate-frame { position: relative; display: block; border-radius: inherit; }
+
+/* Screen recordings: stacked on the still, faded in on their first painted frame. */
+.plate-motion {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.plate-motion video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out);
+}
+.plate[data-state='playing'] .plate-motion video { opacity: 1; }
+
+/* A lead recording hides the callouts while it plays; they come back one by one on the final frame. */
+.plate[data-motion='lead'] .pin--live {
+  transition: opacity 0.35s var(--ease-out) calc(var(--i, 0) * 90ms + 0.15s), transform 0.25s var(--ease-out);
+}
+.plate[data-motion='lead']:is([data-state='loading'], [data-state='playing']) .pin--live {
+  opacity: 0;
+  pointer-events: none;
+  transition-delay: 0s;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-theme] .plate[data-motion='lead']:not([data-state]) .pin--live { opacity: 0; transition: none; }
+}
+
+/* Replay sits under the frame, outside the product's own interface. */
+.motion-btn {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 18px);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font: 600 0.75rem/1 var(--font);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s var(--ease-out), color 0.2s, background-color 0.2s, visibility 0.3s;
+}
+.motion-btn .icon { width: 14px; height: 14px; }
+.motion-btn:hover { color: var(--ink); background: var(--plate); }
+.motion-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.plate:is([data-state='done'], [data-state='idle']) .motion-btn { opacity: 1; visibility: visible; }
+.plate[data-state='done'] .motion-btn-play,
+.plate:not([data-state='done']) .motion-btn-replay { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .plate-motion video, .motion-btn { transition: none; }
+}
 .crop {
   position: absolute;
   inset: -14px;

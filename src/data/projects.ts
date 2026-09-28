@@ -1,6 +1,7 @@
 import type { ImageMetadata } from 'astro';
 
 const files = import.meta.glob<{ default: ImageMetadata }>('../assets/shots/*.webp', { eager: true });
+const clips = import.meta.glob<string>('../assets/motion/*.mp4', { eager: true, query: '?url', import: 'default' });
 
 function img(name: string): ImageMetadata {
   const hit = files[`../assets/shots/${name}.webp`];
@@ -8,22 +9,33 @@ function img(name: string): ImageMetadata {
   return hit.default;
 }
 
-/** A screenshot in both themes. Products without a light theme reuse the dark capture. */
+function clip(name: string): string {
+  const hit = clips[`../assets/motion/${name}.mp4`];
+  if (!hit) throw new Error(`Missing clip: ${name}.mp4`);
+  return hit;
+}
+
+/**
+ * A screenshot in both themes, and optionally a short screen recording of the same view.
+ * The site shows the opposite edition: light captures on the dark site, dark ones on the light site.
+ */
 export interface Shot {
   light: ImageMetadata;
   dark: ImageMetadata;
   alt: string;
   caption?: string;
   phone?: boolean;
+  /** MP4 recordings, same framing as the screenshot. For a lead shot, the last frame matches the still. */
+  motion?: { light: string; dark: string };
 }
 
 function themed(name: string, alt: string, extra: Partial<Shot> = {}): Shot {
   return { light: img(`${name}-light`), dark: img(`${name}-dark`), alt, ...extra };
 }
 
-function darkOnly(name: string, alt: string, extra: Partial<Shot> = {}): Shot {
-  const src = img(name);
-  return { light: src, dark: src, alt, ...extra };
+/** Pairs a shot with its recordings, `name-light.mp4` and `name-dark.mp4`. */
+function moving(shot: Shot, name: string): Shot {
+  return { ...shot, motion: { light: clip(`${name}-light`), dark: clip(`${name}-dark`) } };
 }
 
 export interface Callout {
@@ -55,7 +67,6 @@ export interface Project {
   palette: string[];
   /** Interface languages; English is the default everywhere. */
   language: 'English and Spanish';
-  onlyDark?: boolean;
   accent: { light: string; dark: string; onLight: string; onDark: string };
   main: Shot;
   callouts: Callout[];
@@ -98,18 +109,24 @@ export const projects: Project[] = [
     palette: ['#0B0E13', '#FF7A45', '#6EA2FF', '#3FD694', '#B69BFF'],
     language: 'English and Spanish',
     accent: { light: '#C2410C', dark: '#FF7A45', onLight: '#FFFFFF', onDark: '#1A0D06' },
-    main: themed(
+    main: moving(
+      themed(
+        'katarch-main',
+        'KatArch, chapter 5, step 5: the Menu Catalog service diagram. Kitchen, loyalty and point-of-sale systems enter through an anti-corruption layer that translates their formats; the domain emits a stock-updated event to cart, recommendations, reviews and filtering.',
+      ),
       'katarch-main',
-      'KatArch, chapter 5, step 5: the Menu Catalog service diagram. Kitchen, loyalty and point-of-sale systems enter through an anti-corruption layer that translates their formats; the domain emits a stock-updated event to cart, recommendations, reviews and filtering.',
     ),
     callouts: [
       { x: 51.6, y: 36.4, text: 'The anti-corruption layer: third-party formats are translated at the border, so the domain only sees its own model.' },
       { x: 66.4, y: 48.6, text: 'One legend across every diagram: commands in blue, events in green, the domain in orange.' },
-      { x: 86.2, y: 10.2, text: 'Every diagram has a text version, for screen readers and for quick reading.' },
+      { x: 88.4, y: 10.4, text: 'Every diagram has a text version, for screen readers and for quick reading.' },
     ],
     gallery: [
       themed('katarch-composition', 'KatArch system composition diagram: subsystems grouped by quality budget, with ordering and the menu catalog as centers of gravity.', { caption: 'System composition' }),
-      themed('katarch-undo', 'KatArch simulator of a 30-second undo window: an order held in memory at 10 of 30 seconds before reaching the payment gateway.', { caption: 'A working simulation' }),
+      moving(
+        themed('katarch-undo', 'KatArch simulator of a 30-second undo window: an order held in memory at 10 of 30 seconds before reaching the payment gateway.', { caption: 'A working simulation' }),
+        'katarch-undo',
+      ),
       themed('katarch-valuemap', 'KatArch value map from ADR 002: four architecture styles scored against ten quality attributes.', { caption: 'ADR value map' }),
       themed('katarch-mobile', 'KatArch on a phone: the same diagram stacked above the explanation.', { phone: true, caption: 'On a phone' }),
     ],
@@ -148,11 +165,13 @@ export const projects: Project[] = [
     typefaces: ['Geist', 'Newsreader'],
     palette: ['#100E0C', '#EEECE7', '#909CF5', '#74C692', '#E8BE62'],
     language: 'English and Spanish',
-    onlyDark: true,
     accent: { light: '#5B67D8', dark: '#909CF5', onLight: '#FFFFFF', onDark: '#100E0C' },
-    main: darkOnly(
+    main: moving(
+      themed(
+        'knowgraph-main',
+        'KnowGraph map view: a sidebar of focus areas with progress counts, the suggested next concept, and concept cards, some scored 105 and 115 out of 120.',
+      ),
       'knowgraph-main',
-      'KnowGraph map view: a sidebar of focus areas with progress counts, the suggested next concept, and concept cards, some scored 105 and 115 out of 120.',
     ),
     callouts: [
       { x: 18.4, y: 22.4, text: 'The suggested route: the next concept you’re ready for, and what it unlocks.' },
@@ -160,9 +179,12 @@ export const projects: Project[] = [
       { x: 17.2, y: 29, text: 'Focus areas with mastered counts, one color per category.' },
     ],
     gallery: [
-      darkOnly('knowgraph-card', 'KnowGraph study card in its reading stage, set in a serif reading face with a code sample.', { caption: 'Study card, reading stage' }),
-      darkOnly('knowgraph-graph', 'KnowGraph graph view with a hovered concept highlighting its prerequisite and dependent edges.', { caption: 'Dependency graph' }),
-      darkOnly('knowgraph-progress', 'KnowGraph progress view with seniority levels and milestones.', { caption: 'Progress by seniority' }),
+      themed('knowgraph-card', 'KnowGraph study card in its reading stage, set in a serif reading face with a code sample.', { caption: 'Study card, reading stage' }),
+      moving(
+        themed('knowgraph-graph', 'KnowGraph graph view: hovering Error boundaries and recovery lights its prerequisite, Components, props and composition, and dims the rest of the stage columns.', { caption: 'Dependency graph' }),
+        'knowgraph-graph',
+      ),
+      themed('knowgraph-progress', 'KnowGraph progress view with seniority levels and milestones.', { caption: 'Progress by seniority' }),
     ],
   },
   {
@@ -199,11 +221,13 @@ export const projects: Project[] = [
     typefaces: ['Bricolage Grotesque', 'Figtree'],
     palette: ['#0F0B10', '#FFB08A', '#FF8497', '#7FDCAE', '#F7EEE9'],
     language: 'English and Spanish',
-    onlyDark: true,
     accent: { light: '#C2562A', dark: '#FFB08A', onLight: '#FFFFFF', onDark: '#2B130C' },
-    main: darkOnly(
+    main: moving(
+      themed(
+        'playsync-main',
+        'PlaySync room on desktop: Big Buck Bunny playing with custom controls, the room code, a Watching together status, a chat between Felix and Sofi, and Sofi’s popcorn reaction floating over the video.',
+      ),
       'playsync-main',
-      'PlaySync room on desktop: Big Buck Bunny playing, the room code, a Watching together status, and a chat between Felix and Sofi.',
     ),
     callouts: [
       { x: 74.8, y: 3.2, text: 'Live presence: who is here, and whether the room is watching together.' },
@@ -211,9 +235,9 @@ export const projects: Project[] = [
       { x: 71.6, y: 11, text: 'Chat, queue and people share one panel; on phones they become a bottom tab bar.' },
     ],
     gallery: [
-      darkOnly('playsync-mobile', 'The same PlaySync room on a phone, as a guest: the video, a view-only notice with a button to ask for control, and the chat.', { phone: true, caption: 'The guest, on a phone' }),
-      darkOnly('playsync-search', 'PlaySync YouTube search inside a room, with Blender open movie results.', { caption: 'Search without an API key' }),
-      darkOnly('playsync-landing', 'PlaySync landing page with the headline Same video, same second, and the room creation form.', { caption: 'Landing' }),
+      themed('playsync-mobile', 'A PlaySync room on a phone, as a guest: the video, a view-only notice with a button to ask for control, and the chat.', { phone: true, caption: 'The guest, on a phone' }),
+      themed('playsync-search', 'PlaySync YouTube search inside a room, with Blender open movie results.', { caption: 'Search without an API key' }),
+      themed('playsync-landing', 'PlaySync landing page with the headline Same video, same second, and the room creation form.', { caption: 'Landing' }),
     ],
   },
   {
@@ -250,12 +274,15 @@ export const projects: Project[] = [
     palette: ['#FCFCFD', '#16161A', '#5854D6', '#F59E0B', '#148054'],
     language: 'English and Spanish',
     accent: { light: '#5854D6', dark: '#7C79F0', onLight: '#FFFFFF', onDark: '#0E0F12' },
-    main: themed(
+    main: moving(
+      themed(
+        'lifeui-main',
+        'LifeUI Today screen: Read has just started from a quick-start chip, 157 tempos today at 157% of the daily reference, the day plan by time blocks, and a log where Write report was just closed at 9 out of 10 for 78 tempos.',
+      ),
       'lifeui-main',
-      'LifeUI Today screen: a running activity called Write report with a 23:07 timer, quick-start chips, the day plan by time blocks, and a log of closed activities with tempos earned.',
     ),
     callouts: [
-      { x: 19, y: 12, text: 'Only one activity runs at a time, with its progress against the estimate.' },
+      { x: 19, y: 12, text: 'Only one activity runs at a time, with its progress against its estimate or timebox.' },
       { x: 73.6, y: 12.4, text: 'Tempos today, shown as a share of your reference: an anchor, never a debt.' },
       { x: 26.2, y: 44, text: 'Quick start for pinned activities. Everything has a shortcut and a command palette.' },
     ],
@@ -302,9 +329,12 @@ export const projects: Project[] = [
     palette: ['#E7E5E1', '#F2F1ED', '#0D0D0F', '#D62828', '#9A9A9A'],
     language: 'English and Spanish',
     accent: { light: '#C81E1E', dark: '#E5484D', onLight: '#FFFFFF', onDark: '#1A0606' },
-    main: themed(
+    main: moving(
+      themed(
+        'lol-main',
+        'LoLImpact match view: recent games on the left, a readout for minute 12 showing 64% win probability with a 55% to 72% likely range, and a column chart of win probability by minute with uncertainty bands.',
+      ),
       'lol-main',
-      'LoLImpact match view: recent games on the left, a readout for minute 12 showing 64% win probability with a 55% to 72% likely range, and a column chart of win probability by minute with uncertainty bands.',
     ),
     callouts: [
       { x: 30.2, y: 46.5, text: 'Every probability is shown with its likely range, never alone.' },

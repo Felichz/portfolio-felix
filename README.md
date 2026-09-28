@@ -13,7 +13,8 @@ Personal site of Felix Andersson, Senior Frontend Engineer in Montevideo. Five y
 
 - **A short home.** Name and proof in the first screen, then a horizontal shelf of five products, the Cisco chapter, and about plus contact. About four screens on desktop.
 - **One case study per product** (`/work/katarch`, `/work/knowgraph`, ...): the lead screenshot with numbered callouts that show a tooltip on hover or focus, the story, three engineering highlights, a gallery, the stack, and previous/next navigation. Left and right arrow keys move between case studies.
-- **Two editions.** Light and dark, chosen before first paint from the saved choice or the system setting, toggled from the nav. Every screenshot follows the theme; KnowGraph and PlaySync only have a dark UI, so they stay dark.
+- **Two editions.** Light and dark, chosen before first paint from the saved choice or the system setting, toggled from the nav. Screenshots print in the opposite edition, so each product stands out from the page: dark products on the light site, light products on the dark one. All five products have both themes.
+- **Screen recordings.** Every product's lead screenshot has a short recording of the same view, captured from the running app. On the shelf it plays while the pointer is over it (while it's on screen, on touch devices). On a case study it plays once when it scrolls into view, hides the callouts while it runs, and settles on its last frame, which is the still the callouts point at. Replay sits under the frame; reduced motion never autoplays.
 
 <table>
   <tr>
@@ -53,7 +54,7 @@ Personal site of Felix Andersson, Senior Frontend Engineer in Montevideo. Five y
 ## Details that took some care
 
 - The shelf screenshot and product name morph into the case study header (cross-document view transitions, off under reduced motion).
-- Screenshots render a light and a dark variant; only the one that matches the theme is displayed, so the other is never downloaded.
+- Screenshots render a light and a dark variant; only the one for the current edition is displayed, so the other is never downloaded. Recordings use `preload="none"` and load on first play.
 - Product names and type samples are set in each product's real typeface; the house face is Archivo, used across its width axis.
 - Montevideo local time in the header, so a remote team can see the overlap.
 - Static output, responsive AVIF/WebP images, self-hosted font subsets, no client framework on the home page.
@@ -78,13 +79,14 @@ npm run preview  # serve dist/
 | `src/data/projects.ts` | Every product: order, copy, stack, scale, accent colors, screenshots, callouts, gallery. |
 | `src/pages/index.astro` | Home: `Hero`, `Work` (the shelf), `Experience` (timeline, `MainThread`, `Pipeline`), `Closing`. |
 | `src/pages/work/[id].astro` | Case study template, generated from `projects.ts`. |
-| `src/components/Plate.astro` | Framed, theme-aware screenshot. |
+| `src/components/Plate.astro` | Framed, theme-aware screenshot, with the recording player. |
 | `src/styles/global.css` | Tokens for both themes, plates, pins and tooltips. |
 | `src/layouts/Base.astro` | Head, pre-paint theme script, nav and image viewer. |
-| `src/assets/shots/` | Product screenshots (WebP, 2x). Themed ones as `name-light` / `name-dark`. |
+| `src/assets/shots/` | Product screenshots (WebP, 2x), as `name-light` / `name-dark`. |
+| `src/assets/motion/` | Screen recordings (H.264 MP4, 1920 wide), as `name-light` / `name-dark`. |
 | `docs/screenshots/` | The images in this README. |
 
-To update a product screenshot, capture 16:10 at 2x in both themes when the product has them, keep the file names, and adjust the callout coordinates (`x`, `y` in percent) in `projects.ts` if the layout changed.
+To update a product screenshot, capture 16:10 at 2x in both themes, keep the file names, and adjust the callout coordinates (`x`, `y` in percent) in `projects.ts` if the layout changed. A lead shot with a recording should use the recording's last frame as its still, so the hand-off from video to callouts is seamless.
 
 ## Deploy
 

@@ -60,7 +60,8 @@ import Icon from './Icon.astro';
     place-items: center;
     padding: 0 var(--gutter) var(--gutter);
   }
-  .viewer-body :global(img) {
+  .viewer-body :global(img),
+  .viewer-body :global(video) {
     max-width: 100%;
     max-height: calc(100dvh - 90px);
     width: auto;
@@ -85,11 +86,21 @@ import Icon from './Icon.astro';
     document.addEventListener('click', (e) => {
       const trigger = (e.target as HTMLElement).closest<HTMLElement>('[data-zoom-light], [data-zoom]');
       if (!trigger) return;
+      // The site shows the opposite edition, so the dark site opens the light capture.
       const dark = document.documentElement.dataset.theme === 'dark';
-      img.src = (dark ? trigger.dataset.zoomDark : trigger.dataset.zoomLight) ?? trigger.dataset.zoom ?? '';
-      img.alt = trigger.dataset.alt ?? '';
+      const still = (dark ? trigger.dataset.zoomLight : trigger.dataset.zoomDark) ?? trigger.dataset.zoom ?? '';
+      const clip = dark ? trigger.dataset.motionLight : trigger.dataset.motionDark;
       alt.textContent = trigger.dataset.alt ?? '';
-      body.replaceChildren(img);
+      if (clip && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const video = document.createElement('video');
+        Object.assign(video, { src: clip, poster: still, muted: true, loop: true, autoplay: true, playsInline: true });
+        video.setAttribute('aria-label', trigger.dataset.alt ?? '');
+        body.replaceChildren(video);
+      } else {
+        img.src = still;
+        img.alt = trigger.dataset.alt ?? '';
+        body.replaceChildren(img);
+      }
       dialog.showModal();
     });
     // Click on the dark area closes; the image itself does not.

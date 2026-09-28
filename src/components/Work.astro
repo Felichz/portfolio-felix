@@ -50,7 +50,7 @@ const total = String(projects.length).padStart(2, '0');
         projects.map((p, i) => (
           <li class="slide" data-slide data-accent style={accent(p)} aria-label={`${i + 1} of ${projects.length}: ${p.name}`}>
             <a class="slide-shot" href={`/work/${p.id}/`} tabindex="-1" aria-hidden="true">
-              <Plate shot={p.main} zoom={false} vt={`shot-${p.id}`} sizes="(min-width: 1200px) 740px, (min-width: 800px) 60vw, 88vw" widths={[480, 740, 1000, 1480]} />
+              <Plate shot={p.main} zoom={false} motion="hover" vt={`shot-${p.id}`} sizes="(min-width: 1200px) 740px, (min-width: 800px) 60vw, 88vw" widths={[480, 740, 1000, 1480]} />
             </a>
             <div class="slide-copy">
               <h3 class={`slide-name ${p.face}`} style={`view-transition-name:name-${p.id}`}>

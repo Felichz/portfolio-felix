@@ -1,5 +1,6 @@
 ---
 import { Picture, getImage } from 'astro:assets';
+import Icon from './Icon.astro';
 import type { Shot } from '../data/projects';
 
 interface Props {
@@ -12,13 +13,20 @@ interface Props {
   eager?: boolean;
   /** view-transition-name, so the frame can morph between pages. */
   vt?: string;
+  /**
+   * How the recording plays, when the shot has one.
+   * hover: loops while the pointer is over it (in view, on touch screens).
+   * lead: plays once when it scrolls into view, then settles on the still, which matches its last frame.
+   */
+  motion?: 'hover' | 'lead';
   class?: string;
 }
 
-const { shot, sizes, widths = [480, 800, 1200, 1600, 2000], crop = false, zoom = true, eager = false, vt, class: className } = Astro.props;
+const { shot, sizes, widths = [480, 800, 1200, 1600, 2000], crop = false, zoom = true, eager = false, vt, motion, class: className } = Astro.props;
 const single = shot.light === shot.dark;
 const phone = !!shot.phone;
 const w = phone ? [280, 420, 640] : widths;
+const clip = motion && shot.motion ? shot.motion : undefined;
 
 const full = async (src: ImageMetadata) => (await getImage({ src, format: 'webp', width: Math.min(src.width, 2880), quality: 84 })).src;
 const zoomLight = zoom ? await full(shot.light) : undefined;
@@ -37,12 +45,18 @@ const common = {
 const Tag = zoom ? 'button' : 'div';
 ---
 
-<div class:list={['plate', phone && 'plate--phone', className]} style={vt ? `view-transition-name:${vt}` : undefined}>
+<div
+  class:list={['plate', phone && 'plate--phone', className]}
+  style={vt ? `view-transition-name:${vt}` : undefined}
+  data-motion={clip ? motion : undefined}
+>
   <Tag
-    class:list={[zoom && 'zoom']}
+    class:list={['plate-frame', zoom && 'zoom']}
     type={zoom ? 'button' : undefined}
     data-zoom-light={zoomLight}
     data-zoom-dark={zoomDark}
+    data-motion-light={zoom ? clip?.light : undefined}
+    data-motion-dark={zoom ? clip?.dark : undefined}
     data-alt={zoom ? shot.alt : undefined}
     aria-label={zoom ? `Enlarge screenshot: ${shot.caption ?? shot.alt}` : undefined}
   >
@@ -51,12 +65,123 @@ const Tag = zoom ? 'button' : 'div';
         <Picture src={shot.dark} {...common} />
       ) : (
         <>
-          <Picture src={shot.light} {...common} class="only-light" />
-          <Picture src={shot.dark} {...common} class="only-dark" />
+          {/* Inverted on purpose: the light site shows the product's dark edition, and the other way round. */}
+          <Picture src={shot.dark} {...common} class="only-light" />
+          <Picture src={shot.light} {...common} class="only-dark" />
         </>
+      )
+    }
+    {
+      clip && (
+        <span class="plate-motion" aria-hidden="true">
+          <video class="only-light" src={clip.dark} muted playsinline preload="none" disablepictureinpicture tabindex="-1" />
+          <video class="only-dark" src={clip.light} muted playsinline preload="none" disablepictureinpicture tabindex="-1" />
+        </span>
       )
     }
   </Tag>
   <slot />
+  {
+    clip && motion === 'lead' && (
+      <button class="motion-btn" type="button" data-motion-play>
+        <Icon name="play" class="motion-btn-play" />
+        <Icon name="replay" class="motion-btn-replay" />
+        <span class="motion-btn-play">Play</span>
+        <span class="motion-btn-replay">Replay</span>
+      </button>
+    )
+  }
   {crop && <span class="crop" aria-hidden="true" />}
 </div>
+
+<script>
+  // Recordings never load until they play (preload="none"), and only the visible edition plays.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const hover = matchMedia('(hover: hover) and (pointer: fine)');
+
+  const clipOf = (plate: HTMLElement) =>
+    [...plate.querySelectorAll<HTMLVideoElement>('.plate-motion video')].find((v) => getComputedStyle(v).display !== 'none');
+
+  function play(plate: HTMLElement, loop: boolean) {
+    const v = clipOf(plate);
+    if (!v) return;
+    clearTimeout(Number(plate.dataset.stopTimer));
+    v.loop = loop;
+    if (v.ended || plate.dataset.state !== 'playing') v.currentTime = 0;
+    plate.dataset.state = 'loading';
+    // Reveal on the first painted frame, so there's never a blank flash while it loads.
+    v.addEventListener(
+      'playing',
+      () => {
+        if (plate.dataset.state === 'loading') plate.dataset.state = 'playing';
+        else if (plate.dataset.state !== 'playing') v.pause();
+      },
+      { once: true },
+    );
+    v.play().catch(() => stop(plate));
+  }
+
+  function stop(plate: HTMLElement, state = 'idle') {
+    plate.dataset.state = state;
+    // Let the fade finish before rewinding, so the last frame doesn't jump.
+    plate.dataset.stopTimer = String(
+      setTimeout(() => {
+        plate.querySelectorAll('video').forEach((v) => {
+          v.pause();
+          if (state === 'idle') v.currentTime = 0;
+        });
+      }, 400),
+    );
+  }
+
+  const seen = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        const plate = e.target as HTMLElement;
+        const mode = plate.dataset.motion;
+        if (mode === 'lead') {
+          // A tall lead frame rarely fits the viewport, so a third of it is enough to start.
+          if (e.intersectionRatio >= 0.3 && !plate.dataset.state && !reduce.matches) {
+            seen.unobserve(plate);
+            play(plate, false);
+          }
+        } else if (!hover.matches && !reduce.matches) {
+          // Touch screens have no hover: loop while the shot is mostly on screen.
+          if (e.intersectionRatio >= 0.6) play(plate, true);
+          else if (plate.dataset.state === 'playing' || plate.dataset.state === 'loading') stop(plate);
+        }
+      }
+    },
+    { threshold: [0, 0.3, 0.6] },
+  );
+
+  document.querySelectorAll<HTMLElement>('.plate[data-motion]').forEach((plate) => {
+    const mode = plate.dataset.motion;
+    seen.observe(plate);
+    plate.querySelectorAll('video').forEach((v) =>
+      v.addEventListener('ended', () => {
+        if (mode === 'lead') stop(plate, 'done');
+      }),
+    );
+
+    if (mode === 'lead') {
+      if (reduce.matches) plate.dataset.state = 'idle';
+      plate.querySelector('[data-motion-play]')?.addEventListener('click', () => play(plate, false));
+      return;
+    }
+    plate.addEventListener('pointerenter', (e) => {
+      if (e.pointerType === 'mouse' && hover.matches && !reduce.matches) play(plate, true);
+    });
+    plate.addEventListener('pointerleave', (e) => {
+      if (e.pointerType === 'mouse' && hover.matches) stop(plate);
+    });
+  });
+
+  // A theme switch swaps editions: settle every recording on its still.
+  new MutationObserver(() => {
+    document.querySelectorAll<HTMLElement>('.plate[data-motion]').forEach((plate) => {
+      const s = plate.dataset.state;
+      if (s === 'playing' || s === 'loading') stop(plate, plate.dataset.motion === 'lead' ? 'done' : 'idle');
+    });
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script>
