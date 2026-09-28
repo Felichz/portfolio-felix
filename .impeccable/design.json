@@ -1,0 +1,701 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-27T23:34:15.483Z",
+  "title": "Design System: Felix Andersson",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Specimen Stock",
+        "canonical": "oklch(100.0% 0.0000 0)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "plate": {
+        "role": "neutral",
+        "displayName": "Plate Stock",
+        "canonical": "oklch(96.4% 0.0027 106.4)",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#242423",
+          "#40403e",
+          "#5e5e5c",
+          "#80807e",
+          "#a5a5a3",
+          "#cacac9",
+          "#eeeeec"
+        ]
+      },
+      "ink": {
+        "role": "primary",
+        "displayName": "Specimen Ink",
+        "canonical": "oklch(16.0% 0.0042 285.9)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242426",
+          "#3f3f42",
+          "#5d5d60",
+          "#808083",
+          "#a4a4a7",
+          "#cacacd",
+          "#eeeef1"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Pencil Gray",
+        "canonical": "oklch(45.2% 0.0113 285.9)",
+        "tonalRamp": [
+          "#0b0a10",
+          "#232329",
+          "#3f3f46",
+          "#5d5d64",
+          "#7f7f87",
+          "#a4a4ac",
+          "#cacad2",
+          "#ededf6"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(91.5% 0.0040 106.5)",
+        "tonalRamp": [
+          "#0b0b09",
+          "#242422",
+          "#40403d",
+          "#5e5e5b",
+          "#80807e",
+          "#a5a5a2",
+          "#cbcbc8",
+          "#efefec"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Night",
+        "canonical": "oklch(16.0% 0.0042 285.9)",
+        "tonalRamp": [
+          "#0b0b0d",
+          "#242426",
+          "#3f3f42",
+          "#5d5d60",
+          "#808083",
+          "#a4a4a7",
+          "#cacacd",
+          "#eeeef1"
+        ]
+      },
+      "night-2": {
+        "role": "neutral",
+        "displayName": "Night Raised",
+        "canonical": "oklch(19.7% 0.0060 285.8)",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#242427",
+          "#3f3f43",
+          "#5d5d61",
+          "#808084",
+          "#a4a4a8",
+          "#cacace",
+          "#eeeef2"
+        ]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "oklch(96.0% 0.0053 106.5)",
+        "tonalRamp": [
+          "#0b0b09",
+          "#242421",
+          "#40403d",
+          "#5e5e5a",
+          "#80807d",
+          "#a5a5a1",
+          "#cbcbc7",
+          "#efefeb"
+        ]
+      },
+      "night-muted": {
+        "role": "neutral",
+        "displayName": "Night Muted",
+        "canonical": "oklch(71.8% 0.0100 286.1)",
+        "tonalRamp": [
+          "#0b0b0f",
+          "#232329",
+          "#3f3f45",
+          "#5d5d63",
+          "#7f7f86",
+          "#a4a4ab",
+          "#cacad1",
+          "#eeeef5"
+        ]
+      },
+      "night-rule": {
+        "role": "neutral",
+        "displayName": "Night Rule",
+        "canonical": "oklch(28.7% 0.0109 285.7)",
+        "tonalRamp": [
+          "#0b0b10",
+          "#232329",
+          "#3f3f45",
+          "#5d5d64",
+          "#7f7f87",
+          "#a4a4ab",
+          "#cacad1",
+          "#edeef6"
+        ]
+      },
+      "plate-night": {
+        "role": "neutral",
+        "displayName": "Exhibit Black",
+        "canonical": "oklch(19.3% 0.0060 285.8)",
+        "tonalRamp": [
+          "#0b0b0e",
+          "#242427",
+          "#3f3f43",
+          "#5d5d61",
+          "#808084",
+          "#a4a4a8",
+          "#cacace",
+          "#eeeef2"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The name, once, at the top of the first viewport. Archivo expanded (wdth 112) and heavy."
+      },
+      "address": {
+        "displayName": "Address",
+        "purpose": "The email on the Contact back cover. The second expanded-heavy moment (wdth 104)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section heads (Experience, Products, About) at wdth 94; the Contact question uses the same voice slightly smaller."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Sub-blocks inside a section: the rows demo, the review pipeline."
+      },
+      "title-small": {
+        "displayName": "Title small",
+        "purpose": "Role titles and spread highlight heads (1.1875–1.25rem, 700–720)."
+      },
+      "specimen-name": {
+        "displayName": "Specimen name",
+        "purpose": "Head of each product spread, set in that product’s own typeface (family and weight come from the product face class). Martian Mono runs smaller: clamp(2.5rem, 0.8rem + 6vw, 5.25rem)."
+      },
+      "lede": {
+        "displayName": "Lede",
+        "purpose": "Opening paragraphs, max 40–52ch."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running prose, max 64ch; secondary paragraphs in muted."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Condensed (wdth 82) semibold muted labels that name data: spec sheet cells, dates, location, notes, the folio. Never a kicker over a headline."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Buttons and arrow links at wdth 92. Nav links run 560 / wdth 90 / 0.9375rem."
+      }
+    },
+    "productFaces": [
+      {
+        "name": "Martian Mono",
+        "weights": [
+          400,
+          700
+        ],
+        "files": [
+          "/fonts/martian-mono-400.woff2",
+          "/fonts/martian-mono-700.woff2"
+        ],
+        "products": [
+          "LoLImpact"
+        ]
+      },
+      {
+        "name": "Geist",
+        "weights": [
+          400
+        ],
+        "files": [
+          "/fonts/geist-400.woff2"
+        ],
+        "products": [
+          "LoLImpact",
+          "KnowGraph"
+        ]
+      },
+      {
+        "name": "Newsreader",
+        "weights": [
+          500
+        ],
+        "files": [
+          "/fonts/newsreader-500.woff2"
+        ],
+        "products": [
+          "KnowGraph"
+        ]
+      },
+      {
+        "name": "Inter",
+        "weights": [
+          400,
+          600
+        ],
+        "files": [
+          "/fonts/inter-400.woff2",
+          "/fonts/inter-600.woff2"
+        ],
+        "products": [
+          "LifeUI",
+          "KatArch"
+        ]
+      },
+      {
+        "name": "Bricolage Grotesque",
+        "weights": [
+          700
+        ],
+        "files": [
+          "/fonts/bricolage-700.woff2"
+        ],
+        "products": [
+          "PlaySync"
+        ]
+      },
+      {
+        "name": "Figtree",
+        "weights": [
+          400
+        ],
+        "files": [
+          "/fonts/figtree-400.woff2"
+        ],
+        "products": [
+          "PlaySync"
+        ]
+      },
+      {
+        "name": "JetBrains Mono",
+        "weights": [
+          500
+        ],
+        "files": [
+          "/fonts/jetbrains-mono-500.woff2"
+        ],
+        "products": [
+          "KatArch"
+        ]
+      }
+    ],
+    "surfaces": {
+      "contract": [
+        "--s-ground",
+        "--s-surface",
+        "--s-ink",
+        "--s-muted",
+        "--s-rule",
+        "--s-accent",
+        "--s-accent-text",
+        "--s-on-accent"
+      ],
+      "note": "Every painted section sets these slots and carries data-paint; the sticky nav copies --s-ground, --s-ink and --s-rule of the section under it, and the theme-color meta follows --s-ground. Product values live in src/data/projects.ts (theme) and are recorded here for reference, not as house colors.",
+      "values": [
+        {
+          "name": "house",
+          "scheme": "light",
+          "ground": "#ffffff",
+          "surface": "#f3f3f1",
+          "ink": "#0d0d0f",
+          "muted": "#55555c",
+          "rule": "#e3e3e0",
+          "accent": "#0d0d0f",
+          "accentText": "#0d0d0f",
+          "onAccent": "#ffffff"
+        },
+        {
+          "name": "night (Contact back cover)",
+          "scheme": "dark",
+          "ground": "#0d0d0f",
+          "surface": "#151518",
+          "ink": "#f2f2ee",
+          "muted": "#a3a3aa",
+          "rule": "#2a2a30",
+          "accent": "#f2f2ee",
+          "accentText": "#f2f2ee",
+          "onAccent": "#0d0d0f"
+        },
+        {
+          "name": "plate-night (dark exhibit on a light page)",
+          "scheme": "dark",
+          "ground": "#141417",
+          "surface": "#141417",
+          "ink": "#f2f2ee",
+          "muted": "#a3a3aa",
+          "rule": "#2a2a30",
+          "accent": null,
+          "accentText": null,
+          "onAccent": null,
+          "cropInk": "#0d0d0f"
+        },
+        {
+          "name": "LoLImpact",
+          "scheme": "light",
+          "ground": "#E7E5E1",
+          "surface": "#F2F1ED",
+          "ink": "#0D0D0F",
+          "muted": "#4F4E4B",
+          "rule": "#CFCCC6",
+          "accent": "#D62828",
+          "accentText": "#B21E1E",
+          "onAccent": "#FFFFFF",
+          "face": "Martian Mono"
+        },
+        {
+          "name": "KnowGraph",
+          "scheme": "dark",
+          "ground": "#100E0C",
+          "surface": "#161512",
+          "ink": "#EEECE7",
+          "muted": "#B7B3AB",
+          "rule": "#2B2825",
+          "accent": "#909CF5",
+          "accentText": "#A5B1FD",
+          "onAccent": "#100E0C",
+          "face": "Newsreader"
+        },
+        {
+          "name": "LifeUI",
+          "scheme": "light",
+          "ground": "#F4F4F7",
+          "surface": "#FFFFFF",
+          "ink": "#16161A",
+          "muted": "#5A5C68",
+          "rule": "#E0E0E7",
+          "accent": "#5854D6",
+          "accentText": "#4844BE",
+          "onAccent": "#FFFFFF",
+          "face": "Inter"
+        },
+        {
+          "name": "PlaySync",
+          "scheme": "dark",
+          "ground": "#0F0B10",
+          "surface": "#161118",
+          "ink": "#F7EEE9",
+          "muted": "#B9A9AB",
+          "rule": "#2A2130",
+          "accent": "#FFB08A",
+          "accentText": "#FFC6A8",
+          "onAccent": "#2B130C",
+          "face": "Bricolage Grotesque"
+        },
+        {
+          "name": "KatArch",
+          "scheme": "dark",
+          "ground": "#0B0E13",
+          "surface": "#11161D",
+          "ink": "#E8ECF2",
+          "muted": "#AAB3C2",
+          "rule": "#242D3A",
+          "accent": "#FF7A45",
+          "accentText": "#FF9366",
+          "onAccent": "#1A0D06",
+          "face": "Inter"
+        }
+      ]
+    },
+    "shadows": [
+      {
+        "name": "plate",
+        "value": "0 0 0 1px color-mix(in srgb, var(--s-ink) 12%, transparent), 0 18px 40px -18px rgb(0 0 0 / 0.35), 0 4px 10px -4px rgb(0 0 0 / 0.12)",
+        "purpose": "Every framed screenshot; the ring follows the surface ink."
+      },
+      {
+        "name": "plate-night",
+        "value": "0 0 0 1px #000, 0 24px 50px -24px rgb(0 0 0 / 0.55), 0 4px 10px -4px rgb(0 0 0 / 0.2)",
+        "purpose": "Dark exhibits framed on a light page."
+      },
+      {
+        "name": "device",
+        "value": "0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 1px color-mix(in srgb, var(--s-ink) 14%, transparent), 0 30px 50px -20px rgb(0 0 0 / 0.55)",
+        "purpose": "Phone frame (6px near-black bezel, 28px outer and 22px screen radius) around a mobile screenshot."
+      },
+      {
+        "name": "pin",
+        "value": "0 0 0 3px color-mix(in srgb, var(--s-accent) 30%, transparent), 0 4px 10px -2px rgb(0 0 0 / 0.35)",
+        "purpose": "Callout pin sitting on a plate. Legend pins are flat."
+      },
+      {
+        "name": "swatch-ring",
+        "value": "inset 0 0 0 1px color-mix(in srgb, var(--s-ink) 16%, transparent)",
+        "purpose": "Palette chips (hero swatches use 22%), so a chip matching its ground still reads."
+      },
+      {
+        "name": "viewer-image",
+        "value": "0 30px 80px -30px rgb(0 0 0 / 0.9)",
+        "purpose": "Full-size screenshot in the night image viewer."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The only easing in the system (--ease-out). Exponential ease-out for every transition."
+      },
+      {
+        "name": "hero-wipe",
+        "value": "clip-path: inset(0 100% 0 0) to inset(0 0 0 0), 0.9s, ease-out",
+        "purpose": "The authored moment: the incoming hero screenshot wipes in left to right. Removed under reduced motion."
+      },
+      {
+        "name": "hero-repaint",
+        "value": "background-color 0.7s ease-out",
+        "purpose": "The hero panel ground changes to the active product’s ground. Removed under reduced motion."
+      },
+      {
+        "name": "hero-timer",
+        "value": "transform: scaleX(0) to scaleX(1), 6s linear",
+        "purpose": "Accent timer bar under the active tab; its animationend advances the carousel. Paused on hover, focus, offscreen and hidden tab; never runs under reduced motion."
+      },
+      {
+        "name": "nav-repaint",
+        "value": "background-color, color, border-color 0.5s ease-out",
+        "purpose": "The sticky nav taking the surface of the section under it."
+      },
+      {
+        "name": "state",
+        "value": "0.2s ease-out",
+        "purpose": "Hover washes, border and color changes on controls; 1px press nudge."
+      },
+      {
+        "name": "nudge",
+        "value": "transform 0.25s ease-out",
+        "purpose": "Arrow-link arrow (2px up and right) and callout pin light-up (scale 1.25)."
+      },
+      {
+        "name": "lift",
+        "value": "transform: translateY(-3px), 0.35s ease-out",
+        "purpose": "Strip plates on hover."
+      },
+      {
+        "name": "underline-draw",
+        "value": "background-size 0% to 100% x 2px, 0.45s ease-out",
+        "purpose": "The Contact email underline on hover."
+      },
+      {
+        "name": "viewer-in",
+        "value": "opacity 0 to 1, 0.35s ease-out",
+        "purpose": "Image viewer opening. Removed under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "spread",
+        "value": "1100px",
+        "purpose": "Spread head, story and experience blocks collapse to one column; spec sheet goes to two cells per row; palette to three."
+      },
+      {
+        "name": "hero",
+        "value": "1000px",
+        "purpose": "Hero stacks; the work panel goes full-bleed."
+      },
+      {
+        "name": "about",
+        "value": "900px",
+        "purpose": "About and products intro stack."
+      },
+      {
+        "name": "single",
+        "value": "760px",
+        "purpose": "Single column; second plate drops below with overlap; highlights stack; strip to two; pins 22px; nav keeps only Contact."
+      },
+      {
+        "name": "narrow",
+        "value": "420px",
+        "purpose": "The PDF note on the résumé button hides."
+      },
+      {
+        "name": "tiny",
+        "value": "380px",
+        "purpose": "Nav keeps only the name and the résumé pill."
+      }
+    ],
+    "focus": {
+      "value": "outline: 2px solid currentColor; outline-offset: 3px; border-radius: 4px",
+      "purpose": "Every focusable element. Zoomable plates use a 4px offset in --s-ink."
+    },
+    "cropMarks": {
+      "value": "eight 9x1px ticks, 14px outside each corner, color-mix(in srgb, var(--crop-ink, var(--s-ink)) 45%, transparent)",
+      "purpose": "Printer’s crop marks on the hero plate, every spread’s main plate, and night plates."
+    }
+  },
+  "components": [
+    {
+      "name": "Solid Button",
+      "kind": "button",
+      "refersTo": "button-solid",
+      "description": "The one primary action in a context (Email me). Ink pill on the surface ground.",
+      "html": "<a class=\"ds-btn-solid\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z\"/><path d=\"m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\"/></svg>Email me</a>",
+      "css": ".ds-btn-solid{display:inline-flex;align-items:center;gap:0.5em;min-height:44px;padding:0 18px;border-radius:999px;font-family:var(--font, 'Archivo', ui-sans-serif, system-ui, sans-serif);font-weight:600;font-stretch:92%;font-size:0.975rem;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background-color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),transform 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));border:1px solid var(--s-ink,#0d0d0f);background:var(--s-ink,#0d0d0f);color:var(--s-ground,#ffffff);}.ds-btn-solid:hover{background:color-mix(in srgb,var(--s-ink,#0d0d0f) 86%,var(--s-ground,#ffffff));}.ds-btn-solid:active{transform:translateY(1px);}.ds-btn-solid:focus-visible{outline:2px solid currentColor;outline-offset:3px;}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary actions (Résumé, Source, Copy). Transparent pill with a 1px ink line; a 7% ink wash on hover.",
+      "html": "<a class=\"ds-btn-outline\" href=\"#\">Résumé<span class=\"ds-btn-note\">PDF</span></a>",
+      "css": ".ds-btn-outline{display:inline-flex;align-items:center;gap:0.5em;min-height:44px;padding:0 18px;border-radius:999px;font-family:var(--font, 'Archivo', ui-sans-serif, system-ui, sans-serif);font-weight:600;font-stretch:92%;font-size:0.975rem;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background-color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),transform 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));border:1px solid var(--s-ink,#0d0d0f);background:transparent;color:var(--s-ink,#0d0d0f);}.ds-btn-outline:hover{background:color-mix(in srgb,var(--s-ink,#0d0d0f) 7%,transparent);}.ds-btn-outline:active{transform:translateY(1px);}.ds-btn-outline:focus-visible{outline:2px solid currentColor;outline-offset:3px;}.ds-btn-note{font-size:0.75rem;font-weight:600;letter-spacing:0.02em;color:var(--s-muted,#55555c);}"
+    },
+    {
+      "name": "Accent Button (inside a product spread)",
+      "kind": "button",
+      "description": "Open the live app. Exists only on a product spread: the product accent as ground, its on-accent as text. Shown here painted as LifeUI.",
+      "html": "<div class=\"ds-spread-lifeui\" style=\"--s-ground:#F4F4F7;--s-surface:#FFFFFF;--s-ink:#16161A;--s-muted:#5A5C68;--s-rule:#E0E0E7;--s-accent:#5854D6;--s-accent-text:#4844BE;--s-on-accent:#FFFFFF\"><a class=\"ds-btn-accent\" href=\"#\">Open the live app<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M7 17 17 7\"/><path d=\"M7 7h10v10\"/></svg></a></div>",
+      "css": ".ds-spread-lifeui{background:var(--s-ground);padding:24px;border-radius:10px;}.ds-btn-accent{display:inline-flex;align-items:center;gap:0.5em;min-height:44px;padding:0 18px;border-radius:999px;font-family:var(--font, 'Archivo', ui-sans-serif, system-ui, sans-serif);font-weight:600;font-stretch:92%;font-size:0.975rem;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background-color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),transform 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));border:1px solid var(--s-accent);background:var(--s-accent);color:var(--s-on-accent);}.ds-btn-accent:hover{background:color-mix(in srgb,var(--s-accent) 88%,var(--s-ink));}.ds-btn-accent:active{transform:translateY(1px);}.ds-btn-accent:focus-visible{outline:2px solid currentColor;outline-offset:3px;}"
+    },
+    {
+      "name": "Icon Link",
+      "kind": "button",
+      "refersTo": "icon-link",
+      "description": "Profile links (GitHub, LinkedIn): a 44px circle with a hairline that turns ink on hover.",
+      "html": "<a class=\"ds-icon-link\" href=\"#\" aria-label=\"GitHub profile\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4\"/><path d=\"M9 18c-4.51 2-5-2-7-2\"/></svg></a>",
+      "css": ".ds-icon-link{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:999px;border:1px solid var(--s-rule,#e3e3e0);color:var(--s-ink,#0d0d0f);transition:border-color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),background-color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));}.ds-icon-link:hover{border-color:var(--s-ink,#0d0d0f);}.ds-icon-link:focus-visible{outline:2px solid currentColor;outline-offset:3px;}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Sticky 56px bar that copies the ground, ink and rule of the painted section under it (0.5s transition). Name, section pills, résumé pill.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-nav-name\" href=\"#\">Felix Andersson</a><nav aria-label=\"Sections\"><ul class=\"ds-nav-links\"><li><a href=\"#\">Experience</a></li><li><a href=\"#\">Products</a></li><li><a href=\"#\">About</a></li><li><a href=\"#\">Contact</a></li></ul></nav><a class=\"ds-nav-cv\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"/><path d=\"M14 2v4a2 2 0 0 0 2 2h4\"/><path d=\"M16 13H8\"/><path d=\"M16 17H8\"/><path d=\"M10 9H8\"/></svg><span>Résumé</span></a></header>",
+      "css": ".ds-nav{--n-ground:var(--paper,#ffffff);--n-ink:var(--ink,#0d0d0f);--n-rule:var(--rule,#e3e3e0);display:flex;align-items:center;gap:24px;height:56px;padding:0 24px;background:var(--n-ground);color:var(--n-ink);border-bottom:1px solid var(--n-rule);font-family:var(--font, 'Archivo', ui-sans-serif, system-ui, sans-serif);transition:background-color 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),color 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),border-color 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));}.ds-nav-name{font-weight:760;font-stretch:88%;font-size:1.0625rem;letter-spacing:-0.01em;text-decoration:none;color:inherit;margin-right:auto;}.ds-nav-links{display:flex;gap:4px;margin:0;padding:0;list-style:none;}.ds-nav-links a{display:inline-flex;align-items:center;min-height:40px;padding:0 12px;border-radius:999px;font-size:0.9375rem;font-weight:560;font-stretch:90%;text-decoration:none;color:inherit;transition:background-color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));}.ds-nav-links a:hover{background:color-mix(in srgb,var(--n-ink) 8%,transparent);}.ds-nav-links a:focus-visible,.ds-nav-cv:focus-visible,.ds-nav-name:focus-visible{outline:2px solid currentColor;outline-offset:3px;}.ds-nav-cv{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border-radius:999px;background:var(--n-ink);color:var(--n-ground);font-weight:620;font-stretch:90%;font-size:0.9375rem;text-decoration:none;}"
+    },
+    {
+      "name": "Plate with crop marks",
+      "kind": "card",
+      "refersTo": "plate",
+      "description": "The framed exhibit: 10px frame on the surface, 1px ink ring at 12%, soft offset shadow, and printer’s crop marks 14px outside the corners.",
+      "html": "<div class=\"ds-plate-demo\"><div class=\"ds-plate\"><div class=\"ds-plate-img\" role=\"img\" aria-label=\"Screenshot\"></div><span class=\"ds-crop\" aria-hidden=\"true\"></span></div></div>",
+      "css": ".ds-plate-demo{padding:32px;background:var(--s-ground,#ffffff);}.ds-plate{position:relative;border-radius:10px;background:var(--s-surface,#f3f3f1);box-shadow:0 0 0 1px color-mix(in srgb,var(--s-ink,#0d0d0f) 12%,transparent),0 18px 40px -18px rgb(0 0 0 / 0.35),0 4px 10px -4px rgb(0 0 0 / 0.12);}.ds-plate-img{aspect-ratio:16/10;border-radius:10px;}.ds-crop{position:absolute;inset:-14px;pointer-events:none;--c:color-mix(in srgb,var(--s-ink,#0d0d0f) 45%,transparent);background:linear-gradient(var(--c),var(--c)) top left/9px 1px,linear-gradient(var(--c),var(--c)) top left/1px 9px,linear-gradient(var(--c),var(--c)) top right/9px 1px,linear-gradient(var(--c),var(--c)) top right/1px 9px,linear-gradient(var(--c),var(--c)) bottom left/9px 1px,linear-gradient(var(--c),var(--c)) bottom left/1px 9px,linear-gradient(var(--c),var(--c)) bottom right/9px 1px,linear-gradient(var(--c),var(--c)) bottom right/1px 9px;background-repeat:no-repeat;}"
+    },
+    {
+      "name": "Night Plate",
+      "kind": "card",
+      "refersTo": "plate-night",
+      "description": "A dark exhibit framed on a light page (the 100k-row demo, the review pipeline). Crop marks stay in house ink.",
+      "html": "<div class=\"ds-plate-night-demo\"><div class=\"ds-plate-night\"><p class=\"ds-plate-night-text\">git push, pre-push hook, one consolidated review</p><span class=\"ds-crop-night\" aria-hidden=\"true\"></span></div></div>",
+      "css": ".ds-plate-night-demo{padding:32px;background:var(--paper,#ffffff);}.ds-plate-night{position:relative;border-radius:10px;background:#141417;color:var(--night-ink,#f2f2ee);padding:28px;font-family:var(--font, 'Archivo', ui-sans-serif, system-ui, sans-serif);box-shadow:0 0 0 1px #000,0 24px 50px -24px rgb(0 0 0 / 0.55),0 4px 10px -4px rgb(0 0 0 / 0.2);}.ds-plate-night-text{margin:0;font-weight:620;font-stretch:92%;}.ds-crop-night{position:absolute;inset:-14px;pointer-events:none;--c:color-mix(in srgb,var(--ink,#0d0d0f) 45%,transparent);background:linear-gradient(var(--c),var(--c)) top left/9px 1px,linear-gradient(var(--c),var(--c)) top left/1px 9px,linear-gradient(var(--c),var(--c)) top right/9px 1px,linear-gradient(var(--c),var(--c)) top right/1px 9px,linear-gradient(var(--c),var(--c)) bottom left/9px 1px,linear-gradient(var(--c),var(--c)) bottom left/1px 9px,linear-gradient(var(--c),var(--c)) bottom right/9px 1px,linear-gradient(var(--c),var(--c)) bottom right/1px 9px;background-repeat:no-repeat;}"
+    },
+    {
+      "name": "Callout pin and legend",
+      "kind": "custom",
+      "refersTo": "callout-pin",
+      "description": "Numbered pins in the product accent over a screenshot, keyed to a legend; hovering a legend line enlarges its pin. Shown painted as LifeUI.",
+      "html": "<div class=\"ds-pins-lifeui\" style=\"--s-ground:#F4F4F7;--s-surface:#FFFFFF;--s-ink:#16161A;--s-muted:#5A5C68;--s-rule:#E0E0E7;--s-accent:#5854D6;--s-accent-text:#4844BE;--s-on-accent:#FFFFFF\"><div class=\"ds-pin-stage\"><span class=\"ds-pin\" style=\"left:22%;top:40%\">1</span><span class=\"ds-pin ds-pin-lit\" style=\"left:70%;top:30%\">2</span></div><ol class=\"ds-legend\"><li><span class=\"ds-pin ds-pin-static\">1</span><span>Only one activity runs at a time.</span></li><li><span class=\"ds-pin ds-pin-static\">2</span><span>Tempos today, shown as a share of your reference.</span></li></ol></div>",
+      "css": ".ds-pins-lifeui{background:var(--s-ground);padding:24px;border-radius:10px;font-family:var(--font, 'Archivo', ui-sans-serif, system-ui, sans-serif);}.ds-pin-stage{position:relative;aspect-ratio:16/7;border-radius:10px;background:var(--s-surface);box-shadow:0 0 0 1px color-mix(in srgb,var(--s-ink) 12%,transparent);}.ds-pin{position:absolute;display:grid;place-items:center;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:var(--s-accent);color:var(--s-on-accent);font-size:0.8125rem;font-weight:750;font-variant-numeric:tabular-nums;box-shadow:0 0 0 3px color-mix(in srgb,var(--s-accent) 30%,transparent),0 4px 10px -2px rgb(0 0 0 / 0.35);transition:transform 0.25s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));}.ds-pin-lit{transform:scale(1.25);}.ds-pin-static{position:static;margin:0;flex:none;box-shadow:none;}.ds-legend{display:grid;gap:16px;margin:20px 0 0;padding:0;list-style:none;}.ds-legend li{display:flex;gap:14px;align-items:flex-start;color:var(--s-muted);font-size:0.975rem;line-height:1.5;transition:color 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));}.ds-legend li:hover{color:var(--s-ink);}"
+    },
+    {
+      "name": "Palette chip",
+      "kind": "chip",
+      "refersTo": "palette-chip",
+      "description": "A product color on the spec sheet: 44px swatch with an inset ring, the color name, and its hex in tabular muted figures.",
+      "html": "<ul class=\"ds-palette\"><li><span class=\"ds-chip\" style=\"background:#E7E5E1\"></span><span class=\"ds-chip-name\">Concrete</span><span class=\"ds-chip-hex\">#E7E5E1</span></li><li><span class=\"ds-chip\" style=\"background:#0D0D0F\"></span><span class=\"ds-chip-name\">Carbon</span><span class=\"ds-chip-hex\">#0D0D0F</span></li><li><span class=\"ds-chip\" style=\"background:#D62828\"></span><span class=\"ds-chip-name\">Tension red</span><span class=\"ds-chip-hex\">#D62828</span></li></ul>",
+      "css": ".ds-palette{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0;padding:0;list-style:none;font-family:var(--font, 'Archivo', ui-sans-serif, system-ui, sans-serif);color:var(--s-ink,#0d0d0f);}.ds-palette li{display:grid;gap:2px;}.ds-chip{display:block;height:44px;border-radius:6px;margin-bottom:6px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--s-ink,#0d0d0f) 16%,transparent);}.ds-chip-name{font-weight:600;font-stretch:92%;font-size:0.875rem;}.ds-chip-hex{color:var(--s-muted,#55555c);font-size:0.8125rem;font-variant-numeric:tabular-nums;}"
+    },
+    {
+      "name": "Arrow link and folio",
+      "kind": "custom",
+      "description": "The arrow link (underline as a 1px border, arrow nudges on hover) and the folio, the running foot that closes every spread.",
+      "html": "<div class=\"ds-foot\"><a class=\"ds-arrow-link\" href=\"#\">See the specimen<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M7 17 17 7\"/><path d=\"M7 7h10v10\"/></svg></a><p class=\"ds-folio\"><span>LoLImpact</span><span>Set in Martian Mono and Geist</span><span>Ground #E7E5E1</span><span>Interface in English</span></p></div>",
+      "css": ".ds-foot{font-family:var(--font, 'Archivo', ui-sans-serif, system-ui, sans-serif);color:var(--s-ink,#0d0d0f);display:grid;gap:40px;}.ds-arrow-link{display:inline-flex;align-items:center;gap:6px;justify-self:start;font-weight:600;font-stretch:92%;text-decoration:none;color:inherit;border-bottom:1px solid currentColor;padding-bottom:2px;}.ds-arrow-link svg{transition:transform 0.25s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));}.ds-arrow-link:hover svg{transform:translate(2px,-2px);}.ds-arrow-link:focus-visible{outline:2px solid currentColor;outline-offset:3px;}.ds-folio{display:flex;flex-wrap:wrap;gap:6px 28px;margin:0;padding-top:14px;border-top:1px solid var(--s-rule,#e3e3e0);font-size:0.8125rem;line-height:1.35;font-weight:600;font-stretch:82%;letter-spacing:0.01em;color:var(--s-muted,#55555c);font-variant-numeric:tabular-nums;}.ds-folio span:first-child{color:var(--s-ink,#0d0d0f);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Interface Specimen",
+    "overview": "The site is a foundry's specimen book, and the faces on show are interfaces. A type foundry proves a font by setting it in use; this system proves each product by showing its real screens, in its real typeface, on its real palette. The house itself is deliberately neutral stock: white paper, near-black ink, hairline rules, printer's crop marks around framed plates, and a single variable grotesque (Archivo) that carries every house voice by moving along its width and weight axes.\n\nColor never belongs to the house. Every painted section declares its surface through eight `--s-*` slots, and each product spread overrides those slots with the product's own ground, ink, muted, rule and accent, so the page repaints as you scroll from one product to the next. The sticky nav copies the surface of whatever section sits under it. The one reversed surface the house owns is the night back cover (Contact); the only other dark full-bleed grounds are products whose own interfaces are dark.\n\nDensity is editorial rather than dashboard: generous section air (88–168px), wide 12-column fractional splits, hairline-divided columns instead of boxes, and screenshots at full measure. Motion is spent in one place, the hero panel's repaint, and everything else is quiet state feedback. The build refuses the dark developer hero, card grids, skill badges, eyebrow kickers, section numbers, gradient text and decorative grid backgrounds.",
+    "keyCharacteristics": [
+      "White specimen stock and near-black ink; no house accent color at all.",
+      "One variable grotesque (Archivo, wdth 62–125, wght 100–900) used across its widths as the whole house hierarchy.",
+      "Product names and type samples set in each product's own face; product palettes painted through the `--s-*` surface contract.",
+      "Framed plates with a 1px ink ring, a soft offset shadow and printer's crop marks; numbered callout pins keyed to a legend.",
+      "Hairline rules as the only structural dividers; ink rules open a sheet, grey rules divide it.",
+      "One authored motion moment on an exponential ease-out."
+    ],
+    "rules": [
+      {
+        "name": "The Borrowed Color Rule",
+        "body": "The house owns no hue. Any saturated color on the page belongs to a product and appears only inside that product's spread, its hero panel, its tab timer, or its swatches. Adding a house accent breaks the premise.",
+        "section": "colors"
+      },
+      {
+        "name": "The Declared Surface Rule",
+        "body": "Every painted section declares its surface through the eight slots `--s-ground`, `--s-surface`, `--s-ink`, `--s-muted`, `--s-rule`, `--s-accent`, `--s-accent-text`, `--s-on-accent`, and marks itself `data-paint`. Components read only `--s-*` (and `color-mix` derivatives of it), never the house tokens directly, so any spread can repaint them. `--s-accent-text` is the AA-safe text version of the accent; every spread declares it, and it is reserved for accent-colored text.",
+        "section": "colors"
+      },
+      {
+        "name": "The Night Is Rare Rule",
+        "body": "The Contact back cover is the only reversed house surface. A dark exhibit on a light page is framed as a night plate, never run as a full-bleed dark band.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "The house speaks only Archivo. Hierarchy is made with width and weight on one family: expanded (104–112%) for the name and the address, about 94% for heads, 82–92% for labels, controls and nav. Never add a second house face.",
+        "section": "typography"
+      },
+      {
+        "name": "The Own Face Rule",
+        "body": "A product's name, hero tab, \"Aa\" samples and face names are set in that product's real typeface, and a product face never appears outside its product's context. Inter and Geist are on the page because LifeUI, KatArch, LoLImpact and KnowGraph use them; that is product truth, not a house choice.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Any number that is compared or scanned (dates, scale figures, hex values, pin numerals, the copyright line) uses tabular figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The Plate Rule",
+        "body": "Only exhibits cast shadows. If it is not a screenshot, a demo, a device or a pin on one, it is flat.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** declare every new painted section's surface through all eight `--s-*` slots and mark it `data-paint`, so the nav and every component repaint with it.",
+      "**Do** style components from `--s-*` and `color-mix()` derivatives of it, never from `--paper` or `--ink` directly, unless the component is the house itself.",
+      "**Do** set a new product's name, tab and type samples in that product's real, self-hosted typeface, and give it a full `theme` with an AA-safe `accentText` and `onAccent`.",
+      "**Do** build hierarchy with Archivo's width axis: 104–112% to announce, about 94% for heads, 82–92% for labels, controls and nav.",
+      "**Do** frame every screenshot or live exhibit as a plate with the 1px ink ring, the soft offset shadow and crop marks; use a night plate for a dark exhibit on a light page.",
+      "**Do** key details in a screenshot with numbered accent pins and a matching legend, and close every spread with a folio.",
+      "**Do** divide columns and rows with 1px hairlines (an ink rule to open a set, grey rules within it).",
+      "**Do** use `cubic-bezier(0.16, 1, 0.3, 1)` for every transition, keep state feedback between 0.2s and 0.45s, and remove authored motion under `prefers-reduced-motion`.",
+      "**Do** make every interactive target at least 44px (40px in the nav bar) with the 2px `currentColor` focus ring."
+    ],
+    "donts": [
+      "**Don't** introduce a house accent color; color comes only from the products.",
+      "**Don't** add a second house typeface, or use a product's face outside that product's context.",
+      "**Don't** put eyebrow or kicker labels above headlines; labels name data (sheet cells, dates, notes, folios) and nothing else.",
+      "**Don't** number sections; numerals belong to callout pins and data.",
+      "**Don't** set content in bordered, rounded, shadowed card grids; the only framed objects are plates.",
+      "**Don't** use gradient text or decorative grid or pattern backgrounds.",
+      "**Don't** add dark full-bleed bands beyond the Contact back cover and products whose own grounds are dark.",
+      "**Don't** gate content behind hover: product previews are tabs reachable by click, touch and keyboard.",
+      "**Don't** add a second authored animation; the hero repaint and the nav color change are the moment.",
+      "**Don't** use em-dashes in copy."
+    ]
+  }
+}

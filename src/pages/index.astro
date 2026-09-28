@@ -1,0 +1,61 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import Experience from '../components/Experience.astro';
+import Specimen from '../components/Specimen.astro';
+import About from '../components/About.astro';
+import Contact from '../components/Contact.astro';
+import Viewer from '../components/Viewer.astro';
+import { projects } from '../data/projects';
+---
+
+<Base
+  title="Felix Andersson, Senior Frontend Engineer"
+  description="Senior Frontend Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, plus five products shipped end to end in 2026."
+>
+  <Nav />
+  <main id="main">
+    <Hero />
+    <Experience />
+
+    <section id="products" class="products-intro surface" data-paint aria-labelledby="products-title">
+      <div class="wrap products-grid">
+        <h2 id="products-title" class="t-section">Five products, built end to end in 2026</h2>
+        <div class="products-copy">
+          <p class="t-lede">
+            Outside of Cisco, I build complete products on my own: the product brief, the design system, the frontend, and
+            whatever backend each one needs. Every one is live and open source.
+          </p>
+          <p class="products-how muted">
+            Each product below keeps its own typeface and palette, so the page changes color as you scroll through them.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {projects.map((p) => <Specimen project={p} />)}
+
+    <About />
+    <Contact />
+  </main>
+  <Viewer />
+</Base>
+
+<style>
+  .products-intro {
+    padding-top: var(--section-y);
+    padding-bottom: clamp(56px, 7vw, 104px);
+  }
+  .products-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 28px clamp(32px, 5vw, 80px);
+    align-items: end;
+  }
+  .products-copy { display: grid; gap: 16px; max-width: 48ch; }
+  .products-how { font-size: 0.975rem; }
+  @media (max-width: 900px) {
+    .products-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

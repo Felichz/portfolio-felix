@@ -1,0 +1,100 @@
+---
+import Icon from './Icon.astro';
+---
+
+<dialog class="viewer" data-viewer aria-label="Screenshot">
+  <form method="dialog" class="viewer-bar">
+    <p class="viewer-alt" data-viewer-alt></p>
+    <button class="viewer-close" aria-label="Close">
+      <Icon name="x" />
+    </button>
+  </form>
+  <div class="viewer-body" data-viewer-body></div>
+</dialog>
+
+<style>
+  .viewer {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: #0a0a0c;
+    color: #f2f2ee;
+  }
+  .viewer::backdrop { background: transparent; }
+  .viewer[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); animation: viewer-in 0.35s var(--ease-out); }
+  @keyframes viewer-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .viewer-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px var(--gutter);
+  }
+  .viewer-alt {
+    flex: 1;
+    font-size: 0.9375rem;
+    color: #b4b4ba;
+    max-width: 110ch;
+  }
+  .viewer-close {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid #3a3a42;
+    background: none;
+    color: inherit;
+  }
+  .viewer-close:hover { border-color: #f2f2ee; }
+  .viewer-close :global(svg) { width: 20px; height: 20px; }
+  .viewer-body {
+    overflow: auto;
+    display: grid;
+    place-items: center;
+    padding: 0 var(--gutter) var(--gutter);
+  }
+  .viewer-body :global(img) {
+    max-width: 100%;
+    max-height: calc(100dvh - 90px);
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.9);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .viewer[open] { animation: none; }
+  }
+</style>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-viewer]');
+  const body = dialog?.querySelector<HTMLElement>('[data-viewer-body]');
+  const alt = dialog?.querySelector<HTMLElement>('[data-viewer-alt]');
+
+  if (dialog && body && alt) {
+    // The full-size image is only created when someone asks for it.
+    const img = document.createElement('img');
+    img.decoding = 'async';
+    document.addEventListener('click', (e) => {
+      const trigger = (e.target as HTMLElement).closest<HTMLElement>('[data-zoom]');
+      if (!trigger) return;
+      img.src = trigger.dataset.zoom ?? '';
+      img.alt = trigger.dataset.alt ?? '';
+      alt.textContent = trigger.dataset.alt ?? '';
+      body.replaceChildren(img);
+      dialog.showModal();
+    });
+    // Click on the dark area closes; the image itself does not.
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog || (e.target as HTMLElement).classList.contains('viewer-body')) dialog.close();
+    });
+    dialog.addEventListener('close', () => body.replaceChildren());
+  }
+</script>

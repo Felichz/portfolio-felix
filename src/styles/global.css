@@ -1,0 +1,314 @@
+/* ------------------------------------------------------------------
+   Fonts. The house face is Archivo (variable width + weight).
+   Product faces are loaded only where a product name or specimen uses them.
+------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Archivo';
+  src: url('/fonts/archivo-wdth.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+}
+@font-face { font-family: 'Martian Mono'; src: url('/fonts/martian-mono-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Martian Mono'; src: url('/fonts/martian-mono-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Newsreader'; src: url('/fonts/newsreader-500.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Geist'; src: url('/fonts/geist-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('/fonts/inter-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('/fonts/inter-600.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/jetbrains-mono-500.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Bricolage Grotesque'; src: url('/fonts/bricolage-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Figtree'; src: url('/fonts/figtree-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+
+/* ------------------------------------------------------------------
+   Tokens
+------------------------------------------------------------------- */
+:root {
+  --paper: #ffffff;
+  --plate: #f3f3f1;
+  --ink: #0d0d0f;
+  --ink-2: #55555c;
+  --rule: #e3e3e0;
+  --rule-strong: #0d0d0f;
+
+  --night: #0d0d0f;
+  --night-2: #151518;
+  --night-ink: #f2f2ee;
+  --night-muted: #a3a3aa;
+  --night-rule: #2a2a30;
+
+  --font: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  --wrap: 1360px;
+  --gutter: clamp(16px, 4vw, 48px);
+  --section-y: clamp(88px, 11vw, 168px);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --radius: 10px;
+
+  /* The surface a section paints. Specimen spreads override these. */
+  --s-ground: var(--paper);
+  --s-surface: var(--plate);
+  --s-ink: var(--ink);
+  --s-muted: var(--ink-2);
+  --s-rule: var(--rule);
+  --s-accent: var(--ink);
+  --s-accent-text: var(--ink);
+  --s-on-accent: var(--paper);
+
+  color-scheme: light;
+}
+
+.face-martian { font-family: 'Martian Mono', var(--mono); }
+.face-newsreader { font-family: 'Newsreader', Georgia, serif; font-weight: 500; }
+.face-geist { font-family: 'Geist', var(--font); }
+.face-inter { font-family: 'Inter', var(--font); font-weight: 600; }
+.face-jetbrains { font-family: 'JetBrains Mono', var(--mono); font-weight: 500; }
+.face-bricolage { font-family: 'Bricolage Grotesque', var(--font); font-weight: 700; }
+.face-figtree { font-family: 'Figtree', var(--font); }
+
+/* ------------------------------------------------------------------
+   Base
+------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: 72px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+img, svg, video, canvas { display: block; max-width: 100%; }
+.icon { width: 1em; height: 1em; flex: none; }
+img { height: auto; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+h1, h2, h3, h4, p, ul, ol, figure, dl, dd { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+
+h1, h2, h3 { text-wrap: balance; font-weight: 750; }
+p { text-wrap: pretty; }
+
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection { background: var(--s-ink); color: var(--s-ground); }
+
+.wrap {
+  width: 100%;
+  max-width: calc(var(--wrap) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 16px; top: -100px;
+  z-index: 100;
+  background: var(--ink); color: var(--paper);
+  padding: 10px 16px; border-radius: 8px;
+  font-weight: 600; text-decoration: none;
+}
+.skip-link:focus { top: 12px; }
+
+/* A painted section: every section declares its surface through --s-* */
+.surface {
+  background: var(--s-ground);
+  color: var(--s-ink);
+}
+.surface--night {
+  --s-ground: var(--night);
+  --s-surface: var(--night-2);
+  --s-ink: var(--night-ink);
+  --s-muted: var(--night-muted);
+  --s-rule: var(--night-rule);
+  --s-accent: var(--night-ink);
+  --s-accent-text: var(--night-ink);
+  --s-on-accent: var(--night);
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------
+   Type roles
+------------------------------------------------------------------- */
+.t-section {
+  font-size: clamp(2.25rem, 1.2rem + 3.6vw, 4.25rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-weight: 780;
+  font-stretch: 94%;
+}
+.t-sub {
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  font-weight: 720;
+  font-stretch: 96%;
+}
+.t-lede {
+  font-size: clamp(1.125rem, 1rem + 0.45vw, 1.375rem);
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+}
+.t-label {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  font-weight: 600;
+  font-stretch: 82%;
+  letter-spacing: 0.01em;
+  color: var(--s-muted);
+}
+.t-num { font-variant-numeric: tabular-nums; }
+
+.prose { max-width: 64ch; }
+.prose p + p { margin-top: 1em; }
+.muted { color: var(--s-muted); }
+
+/* ------------------------------------------------------------------
+   Buttons and links
+------------------------------------------------------------------- */
+.btn {
+  --b-bg: transparent;
+  --b-ink: var(--s-ink);
+  --b-line: var(--s-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--b-line);
+  background: var(--b-bg);
+  color: var(--b-ink);
+  font-weight: 600;
+  font-stretch: 92%;
+  font-size: 0.975rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.btn:hover { --b-bg: color-mix(in srgb, var(--s-ink) 7%, transparent); text-decoration: none; }
+.btn:active { transform: translateY(1px); }
+.btn--solid { --b-bg: var(--s-ink); --b-ink: var(--s-ground); }
+.btn--solid:hover { --b-bg: color-mix(in srgb, var(--s-ink) 86%, var(--s-ground)); }
+.btn--accent { --b-bg: var(--s-accent); --b-ink: var(--s-on-accent); --b-line: var(--s-accent); }
+.btn--accent:hover { --b-bg: color-mix(in srgb, var(--s-accent) 88%, var(--s-ink)); }
+.btn svg { width: 16px; height: 16px; flex: none; }
+
+.icon-link {
+  display: inline-grid;
+  place-items: center;
+  width: 44px; height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--s-rule);
+  color: var(--s-ink);
+  transition: border-color 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
+}
+.icon-link:hover { border-color: var(--s-ink); }
+.icon-link svg { width: 18px; height: 18px; }
+
+.arrow-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-stretch: 92%;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 2px;
+}
+.arrow-link svg { width: 14px; height: 14px; transition: transform 0.25s var(--ease-out); }
+.arrow-link:hover svg { transform: translate(2px, -2px); }
+
+/* ------------------------------------------------------------------
+   Plates (framed screenshots) with printer's crop marks
+------------------------------------------------------------------- */
+.plate {
+  position: relative;
+  border-radius: var(--radius);
+  background: var(--s-surface);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--s-ink) 12%, transparent),
+    0 18px 40px -18px rgb(0 0 0 / 0.35),
+    0 4px 10px -4px rgb(0 0 0 / 0.12);
+}
+.plate > picture img,
+.plate > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}
+.plate--night {
+  /* A dark exhibit on a light page: the Cisco demos are framed as plates, like the product screenshots. */
+  --crop-ink: var(--ink);
+  --s-ground: #141417;
+  --s-surface: #141417;
+  --s-ink: var(--night-ink);
+  --s-muted: var(--night-muted);
+  --s-rule: var(--night-rule);
+  background: #141417;
+  color: var(--s-ink);
+  box-shadow:
+    0 0 0 1px #000,
+    0 24px 50px -24px rgb(0 0 0 / 0.55),
+    0 4px 10px -4px rgb(0 0 0 / 0.2);
+}
+.crop {
+  position: absolute;
+  inset: -14px;
+  pointer-events: none;
+  --c: color-mix(in srgb, var(--crop-ink, var(--s-ink)) 45%, transparent);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 9px 1px,
+    linear-gradient(var(--c), var(--c)) top left / 1px 9px,
+    linear-gradient(var(--c), var(--c)) top right / 9px 1px,
+    linear-gradient(var(--c), var(--c)) top right / 1px 9px,
+    linear-gradient(var(--c), var(--c)) bottom left / 9px 1px,
+    linear-gradient(var(--c), var(--c)) bottom left / 1px 9px,
+    linear-gradient(var(--c), var(--c)) bottom right / 9px 1px,
+    linear-gradient(var(--c), var(--c)) bottom right / 1px 9px;
+  background-repeat: no-repeat;
+}
+
+.zoom {
+  all: unset;
+  display: block;
+  cursor: zoom-in;
+  border-radius: var(--radius);
+}
+.zoom:focus-visible { outline: 2px solid var(--s-ink); outline-offset: 4px; }

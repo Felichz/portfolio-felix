@@ -1,0 +1,61 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL('/og.png', Astro.site);
+
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Felix Andersson',
+  jobTitle: 'Senior Frontend Engineer',
+  email: 'mailto:andersson.fx@gmail.com',
+  address: { '@type': 'PostalAddress', addressLocality: 'Montevideo', addressCountry: 'UY' },
+  url: Astro.site?.toString(),
+  sameAs: ['https://github.com/Felichz', 'https://www.linkedin.com/in/felixandersson/'],
+  knowsAbout: ['React', 'TypeScript', 'Design systems', 'Frontend performance', 'Accessibility'],
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/archivo-wdth.woff2" as="font" type="font/woff2" crossorigin />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(person)} />
+  </head>
+  <body>
+    <Fragment set:html={`<!--
+THESIS: A specimen book of interfaces. Each product is proven in use, in its own typeface and palette, the way a foundry proves a face. Refuses the dark developer hero, the card grid and the skill badges.
+OWN-WORLD: White specimen stock and near-black ink, one variable grotesque (Archivo) across its widths, hairline rules, printer's crop marks on framed plates. Color never belongs to the house: every spread repaints the page in its product's own ground, ink and accent.
+STORY: Recruiters get name, role, Cisco proof and five shipped products in one viewport. Engineers go deeper through the live 100k-row demo, the AI review pipeline and each specimen, then write.
+FIRST VIEWPORT: Name at display size across the top. Left: role, lede, email and resume. Right: a panel painted in the active product's ground, with product tabs set in their own faces over a full 16:10 screenshot.
+FORM: The Interface Specimen, grounded candidate 6, seed 88d12097.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+-->`} />
+    <a class="skip-link" href="#main">Skip to content</a>
+    <slot />
+  </body>
+</html>

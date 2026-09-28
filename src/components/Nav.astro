@@ -1,0 +1,138 @@
+---
+import Icon from './Icon.astro';
+---
+
+<header class="nav" data-nav>
+  <div class="wrap nav-inner">
+    <a class="nav-name" href="#top">Felix Andersson</a>
+    <nav aria-label="Sections">
+      <ul class="nav-links">
+        <li><a href="#experience">Experience</a></li>
+        <li><a href="#products">Products</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+    <a class="nav-cv" href="/felix-andersson-resume.pdf" target="_blank" rel="noopener">
+      <Icon name="file" />
+      <span>Résumé</span>
+    </a>
+  </div>
+</header>
+
+<style>
+  .nav {
+    --n-ground: var(--paper);
+    --n-ink: var(--ink);
+    --n-rule: var(--rule);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--n-ground);
+    color: var(--n-ink);
+    border-bottom: 1px solid var(--n-rule);
+    transition:
+      background-color 0.5s var(--ease-out),
+      color 0.5s var(--ease-out),
+      border-color 0.5s var(--ease-out);
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 56px;
+  }
+  .nav-name {
+    font-weight: 760;
+    font-stretch: 88%;
+    font-size: 1.0625rem;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    margin-right: auto;
+  }
+  .nav-links {
+    display: flex;
+    gap: 4px;
+  }
+  .nav-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 0.9375rem;
+    font-weight: 560;
+    font-stretch: 90%;
+    text-decoration: none;
+    transition: background-color 0.2s var(--ease-out);
+  }
+  .nav-links a:hover {
+    background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  }
+  .nav-cv {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: var(--n-ink);
+    color: var(--n-ground);
+    font-weight: 620;
+    font-stretch: 90%;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: background-color 0.5s var(--ease-out), color 0.5s var(--ease-out);
+  }
+  .nav-cv :global(svg) { width: 16px; height: 16px; }
+
+  @media (max-width: 760px) {
+    .nav-links li:not(:last-child) { display: none; }
+    .nav-inner { gap: 8px; }
+  }
+  @media (max-width: 380px) {
+    .nav-links { display: none; }
+  }
+</style>
+
+<script>
+  // The nav takes the colors of whichever painted section sits under it.
+  const nav = document.querySelector<HTMLElement>('[data-nav]');
+  const sections = [...document.querySelectorAll<HTMLElement>('[data-paint]')];
+
+  if (nav && sections.length) {
+    const apply = (section: HTMLElement) => {
+      const s = getComputedStyle(section);
+      nav.style.setProperty('--n-ground', s.getPropertyValue('--s-ground').trim());
+      nav.style.setProperty('--n-ink', s.getPropertyValue('--s-ink').trim());
+      nav.style.setProperty('--n-rule', s.getPropertyValue('--s-rule').trim());
+      const meta = document.querySelector('meta[name="theme-color"]');
+      meta?.setAttribute('content', s.getPropertyValue('--s-ground').trim());
+    };
+
+    // The section crossing the line just under the nav is the current one.
+    let current: HTMLElement | null = null;
+    let queued = false;
+    const update = () => {
+      queued = false;
+      const line = nav.offsetHeight + 1;
+      const hit = sections.find((s) => {
+        const r = s.getBoundingClientRect();
+        return r.top <= line && r.bottom > line;
+      });
+      if (hit && hit !== current) {
+        current = hit;
+        apply(hit);
+      }
+    };
+    const schedule = () => {
+      if (!queued) {
+        queued = true;
+        requestAnimationFrame(update);
+      }
+    };
+    addEventListener('scroll', schedule, { passive: true });
+    addEventListener('resize', schedule, { passive: true });
+    update();
+  }
+</script>

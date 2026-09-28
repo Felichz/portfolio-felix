@@ -1,0 +1,54 @@
+{
+  "title": "Choose the visual world for your portfolio",
+  "question": "The roll assigned the Type Specimen. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "The Interface Specimen",
+      "kicker": "THE ROLL",
+      "lineage": "Foundry type specimen books (Klim, Grilli Type, Dinamo): a face proven by showing it in use",
+      "thesis": "Each product is a specimen spread: its own typeface, palette and live UI shown in use, like a foundry proves a font.",
+      "palette": ["#FFFFFF", "#0E0E10", "#5854D6", "#D62828", "#FFB08A", "#909CF5"],
+      "materials": ["white specimen stock + ink", "each spread repaints to its product's own palette", "one variable grotesque in every width", "crop marks and folios"],
+      "viewport": "Your name set huge, one line on Cisco + 2026 products, CTAs; below, a specimen index where each product name is set in its own typeface with palette chips and a preview plate on hover.",
+      "risk": "Three products have Spanish UIs; the repaint between spreads must keep AA contrast and not feel like five different sites."
+    },
+    {
+      "id": "challenger-seven-segment",
+      "label": "Seven-Segment Readout",
+      "lineage": "bedside clocks, scoreboards, gas-price totems",
+      "thesis": "Your hard numbers (100k rows, 60 FPS, 262 tests) lit as segment readouts on a matte black instrument panel.",
+      "case": "Fuses as a detail, not a world: great for metrics, but it can't show five product UIs and reads gimmicky to recruiters.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-seven-segment-alarm-clock-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/signals-instruments-seven-segment-alarm-clock.webp"
+    },
+    {
+      "id": "challenger-livery",
+      "label": "Endurance Livery Garage",
+      "lineage": "Gulf / Martini racing liveries, number roundels, pit boards",
+      "thesis": "Each project is a numbered car with its own livery stripe; the career is the race log.",
+      "case": "Bold and memorable, but the racing costume competes with the product screenshots that should lead.",
+      "hero": "https://impeccable.style/worlds/cards/pop-culture-shelf-endurance-livery-garage-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/pop-culture-shelf-endurance-livery-garage.webp"
+    },
+    {
+      "id": "challenger-datamatics",
+      "label": "Datamatics Field",
+      "lineage": "Ryoji Ikeda's black/white data installations",
+      "thesis": "Pure black-and-white barcode fields as the backdrop to a live 100k-row data demo.",
+      "case": "Fuses poorly: pure monochrome can't show your products' own palettes, which are the main proof.",
+      "hero": "https://impeccable.style/worlds/cards/ikeda-datamatics-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/ikeda-datamatics.webp"
+    }
+  ],
+  "reroll": true,
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "The classic senior-dev portfolio (hero, experience timeline, project cards) at full craft.",
+    "palette": ["#0A0A0B", "#EDEDED", "#8B8B8B", "#3B82F6"],
+    "viewport": "Name + title + short intro, then experience list and a grid of project cards with screenshots.",
+    "risk": "Looks like many other candidates' sites; relies entirely on content to stand out."
+  },
+  "steer": true
+}
