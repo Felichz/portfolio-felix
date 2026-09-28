@@ -1,14 +1,17 @@
 ---
 import '../styles/global.css';
+import Nav from '../components/Nav.astro';
+import Viewer from '../components/Viewer.astro';
 
 interface Props {
   title: string;
   description: string;
+  image?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, image = '/og.png' } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
-const ogImage = new URL('/og.png', Astro.site);
+const ogImage = new URL(image, Astro.site);
 
 const person = {
   '@context': 'https://schema.org',
@@ -35,6 +38,17 @@ const person = {
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="/fonts/archivo-wdth.woff2" as="font" type="font/woff2" crossorigin />
 
+    <!-- Theme before first paint: saved choice, else the system setting. -->
+    <script is:inline>
+      (() => {
+        let t = null;
+        try { t = localStorage.getItem('fa-theme'); } catch {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'dark' ? '#0c0c0e' : '#ffffff');
+      })();
+    </script>
+
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -48,14 +62,18 @@ const person = {
   </head>
   <body>
     <Fragment set:html={`<!--
-THESIS: A specimen book of interfaces. Each product is proven in use, in its own typeface and palette, the way a foundry proves a face. Refuses the dark developer hero, the card grid and the skill badges.
-OWN-WORLD: White specimen stock and near-black ink, one variable grotesque (Archivo) across its widths, hairline rules, printer's crop marks on framed plates. Color never belongs to the house: every spread repaints the page in its product's own ground, ink and accent.
-STORY: Recruiters get name, role, Cisco proof and five shipped products in one viewport. Engineers go deeper through the live 100k-row demo, the AI review pipeline and each specimen, then write.
-FIRST VIEWPORT: Name at display size across the top. Left: role, lede, email and resume. Right: a panel painted in the active product's ground, with product tabs set in their own faces over a full 16:10 screenshot.
-FORM: The Interface Specimen, grounded candidate 6, seed 88d12097.
+THESIS: A specimen book of interfaces, now bound as a short catalogue: one screen of name and proof, a horizontal shelf of products, and a case study behind each. Every product keeps its own typeface and accent; the page never changes ground under the reader.
+OWN-WORLD: Specimen stock and ink in two editions (white and near-black), one variable grotesque (Archivo) across its widths, hairline rules, printer's crop marks on framed plates, numbered pins in each product's accent. Screenshots follow the reader's theme.
+STORY: Recruiters get name, role, Cisco proof and five products in the first two viewports. Engineers open a case study, then the Cisco exhibits, then write.
+FIRST VIEWPORT: Name at display size, a three-part band (role and lede, actions, place and local time), and the top of the product shelf with its tabs set in each product's face.
+FORM: The Interface Specimen, grounded candidate 6, seed 88d12097, second edition.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
 -->`} />
     <a class="skip-link" href="#main">Skip to content</a>
-    <slot />
+    <Nav />
+    <main id="main">
+      <slot />
+    </main>
+    <Viewer />
   </body>
 </html>

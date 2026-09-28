@@ -1,134 +1,49 @@
 ---
-import { Picture } from 'astro:assets';
 import Icon from './Icon.astro';
-import { projects } from '../data/projects';
-
-const first = projects[0]!;
-const vars = (t: (typeof projects)[number]['theme']) =>
-  `--hp-ground:${t.ground};--hp-ink:${t.ink};--hp-muted:${t.muted};--hp-rule:${t.rule};--hp-accent:${t.accent};--hp-surface:${t.surface}`;
 ---
 
-<section id="top" class="hero surface" data-paint>
+<section id="top" class="hero">
   <div class="wrap">
     <h1 class="hero-name">Felix Andersson</h1>
-
-    <div class="hero-grid">
-      <div class="hero-copy">
+    <div class="hero-band">
+      <div class="hero-intro">
         <p class="hero-role">Senior Frontend Engineer</p>
         <p class="t-lede hero-lede">
           Five years on Cisco’s Magnetic design system and the Meraki Dashboard, where I built data tables that stay at
-          60&nbsp;FPS with more than 100,000 rows. This year I also shipped five products of my own, each with its own design
-          system.
+          60&nbsp;FPS with more than 100,000 rows. This year I also designed and shipped five products of my own.
         </p>
         <div class="hero-actions">
           <a class="btn btn--solid" href="mailto:andersson.fx@gmail.com"><Icon name="mail" />Email me</a>
           <a class="btn" href="/felix-andersson-resume.pdf" target="_blank" rel="noopener">Résumé<span class="btn-note">PDF</span></a>
           <span class="hero-socials">
-            <a class="icon-link" href="https://github.com/Felichz" target="_blank" rel="noopener" aria-label="GitHub profile">
-              <Icon name="github" />
-            </a>
-            <a class="icon-link" href="https://www.linkedin.com/in/felixandersson/" target="_blank" rel="noopener" aria-label="LinkedIn profile">
-              <Icon name="linkedin" />
-            </a>
+            <a class="icon-btn" href="https://github.com/Felichz" target="_blank" rel="noopener" aria-label="GitHub profile"><Icon name="github" /></a>
+            <a class="icon-btn" href="https://www.linkedin.com/in/felixandersson/" target="_blank" rel="noopener" aria-label="LinkedIn profile"><Icon name="linkedin" /></a>
           </span>
         </div>
-        <p class="t-label hero-meta">Montevideo, Uruguay · UTC−3 · Open to remote senior frontend roles</p>
       </div>
-
-      <div class="hero-work" data-hero style={vars(first.theme)}>
-        <div class="hero-panel" aria-hidden="true"></div>
-
-        <div class="hero-tabs" role="tablist" aria-label="Products I built in 2026">
-          {
-            projects.map((p, i) => (
-              <button
-                type="button"
-                role="tab"
-                class={`hero-tab ${p.face}`}
-                id={`tab-${p.id}`}
-                aria-selected={i === 0 ? 'true' : 'false'}
-                aria-controls={`slide-${p.id}`}
-                tabindex={i === 0 ? 0 : -1}
-                data-theme={vars(p.theme)}
-              >
-                {p.wordmark ? (
-                  <span>
-                    <b>{p.wordmark[0]}</b>
-                    {p.wordmark[1]}
-                  </span>
-                ) : (
-                  <span>{p.name}</span>
-                )}
-                <i class="hero-tab-timer" aria-hidden="true" />
-              </button>
-            ))
-          }
+      <dl class="hero-meta">
+        <div>
+          <dt class="t-label">Based in</dt>
+          <dd>Montevideo, Uruguay</dd>
         </div>
-
-        <div class="hero-stage">
-          <div class="plate hero-plate">
-            {
-              projects.map((p, i) => (
-                <div
-                  class="hero-slide"
-                  role="tabpanel"
-                  id={`slide-${p.id}`}
-                  aria-labelledby={`tab-${p.id}`}
-                  data-state={i === 0 ? 'on' : 'off'}
-                >
-                  <Picture
-                    src={p.main.src}
-                    alt={p.main.alt}
-                    formats={['avif', 'webp']}
-                    fallbackFormat="webp"
-                    widths={[640, 960, 1280, 1600, 1920]}
-                    sizes="(min-width: 1100px) 60vw, 100vw"
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    fetchpriority={i === 0 ? 'high' : 'auto'}
-                    decoding="async"
-                  />
-                </div>
-              ))
-            }
-            <span class="crop" aria-hidden="true"></span>
-          </div>
-
-          <div class="hero-captions">
-            {
-              projects.map((p, i) => (
-                <p class="hero-caption" data-for={`slide-${p.id}`} hidden={i !== 0}>
-                  <span class="hero-swatches" aria-hidden="true">
-                    {p.palette.slice(0, 5).map((c) => (
-                      <i style={`background:${c.hex}`} />
-                    ))}
-                  </span>
-                  <span class="hero-caption-text">
-                    {p.index}
-                    <span class="hero-caption-stack">{p.indexStack}</span>
-                  </span>
-                  <a class="arrow-link" href={`#${p.id}`}>
-                    See the specimen
-                    <Icon name="arrow-down" />
-                  </a>
-                </p>
-              ))
-            }
-          </div>
+        <div>
+          <dt class="t-label">Local time</dt>
+          <dd class="t-num"><time data-clock></time><span class="muted">UTC−3</span></dd>
         </div>
-      </div>
+        <div>
+          <dt class="t-label">Open to</dt>
+          <dd>Remote senior frontend roles</dd>
+        </div>
+      </dl>
     </div>
   </div>
 </section>
 
 <style>
   .hero {
-    --hero-pad-b: clamp(40px, 5vw, 72px);
-    position: relative;
-    padding-top: clamp(24px, 3.2vw, 44px);
-    padding-bottom: var(--hero-pad-b);
-    overflow: clip;
+    padding-top: clamp(28px, 3.6vw, 52px);
+    padding-bottom: clamp(40px, 4.4vw, 64px);
   }
-
   .hero-name {
     font-size: clamp(3.25rem, 0.9rem + 8.2vw, 6rem);
     line-height: 0.9;
@@ -136,21 +51,14 @@ const vars = (t: (typeof projects)[number]['theme']) =>
     font-stretch: 112%;
     letter-spacing: -0.04em;
   }
-
-  .hero-grid {
+  .hero-band {
     display: grid;
-    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
-    gap: clamp(32px, 4vw, 64px);
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: 32px clamp(32px, 6vw, 120px);
     margin-top: clamp(24px, 2.6vw, 36px);
-    align-items: start;
+    align-items: end;
   }
-
-  .hero-copy {
-    padding-top: 22px;
-    display: grid;
-    gap: 22px;
-    justify-items: start;
-  }
+  .hero-intro { display: grid; gap: 18px; justify-items: start; }
   .hero-role {
     font-size: clamp(1.25rem, 1.05rem + 0.7vw, 1.625rem);
     line-height: 1.15;
@@ -158,257 +66,45 @@ const vars = (t: (typeof projects)[number]['theme']) =>
     font-stretch: 92%;
     letter-spacing: -0.015em;
   }
-  .hero-lede { max-width: 40ch; }
-  .hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-  }
-  .btn-note {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--s-muted);
-    letter-spacing: 0.02em;
-  }
-  .hero-meta { max-width: 40ch; }
+  .hero-lede { max-width: 58ch; color: var(--ink-2); }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 4px; }
   .hero-socials { display: inline-flex; gap: 10px; }
+  .btn-note { font-size: 0.75rem; font-weight: 600; color: var(--ink-3); letter-spacing: 0.02em; }
+
+  .hero-meta { display: grid; border-top: 1px solid var(--rule); }
+  .hero-meta > div {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+    padding-block: 11px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero-meta dd { font-weight: 560; font-size: 0.975rem; }
+  .hero-meta time { margin-right: 8px; }
+  .hero-meta time:empty { display: none; }
+
+  @media (max-width: 900px) {
+    .hero-band { grid-template-columns: minmax(0, 1fr); }
+  }
   @media (max-width: 420px) {
     .btn-note { display: none; }
-  }
-
-  /* ---- The painted work panel ---- */
-  .hero-work {
-    --s-ink: var(--hp-ink);
-    --s-muted: var(--hp-muted);
-    --s-surface: var(--hp-surface);
-    position: relative;
-    padding: 18px 0 0 clamp(20px, 2.6vw, 40px);
-    color: var(--hp-ink);
-  }
-  .hero-panel {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: -100vw;
-    bottom: calc(-1 * var(--hero-pad-b));
-    background: var(--hp-ground);
-    transition: background-color 0.7s var(--ease-out);
-  }
-  .hero-tabs,
-  .hero-stage {
-    position: relative;
-  }
-
-  .hero-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 18px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .hero-tabs::-webkit-scrollbar { display: none; }
-  .hero-tab {
-    position: relative;
-    flex: none;
-    min-height: 44px;
-    padding: 6px 12px 10px;
-    border: 0;
-    background: none;
-    color: var(--hp-muted);
-    font-size: 1.125rem;
-    line-height: 1.2;
-    white-space: nowrap;
-    transition: color 0.3s var(--ease-out);
-  }
-  .hero-tab b { font-weight: 700; }
-  .hero-tab.face-martian { font-size: 1rem; letter-spacing: 0.02em; }
-  .hero-tab.face-martian span { font-weight: 400; }
-  .hero-tab.face-newsreader { font-size: 1.25rem; }
-  .hero-tab:hover { color: var(--hp-ink); }
-  .hero-tab[aria-selected='true'] { color: var(--hp-ink); }
-  .hero-tab::after {
-    content: '';
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 2px;
-    height: 2px;
-    background: color-mix(in srgb, var(--hp-ink) 16%, transparent);
-    opacity: 0;
-    transition: opacity 0.3s var(--ease-out);
-  }
-  .hero-tab[aria-selected='true']::after { opacity: 1; }
-  .hero-tab-timer {
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 2px;
-    height: 2px;
-    background: var(--hp-accent);
-    transform: scaleX(0);
-    transform-origin: left;
-    z-index: 1;
-  }
-  .hero-tab[aria-selected='true'] .hero-tab-timer { transform: scaleX(1); }
-  [data-hero][data-auto] .hero-tab[aria-selected='true'] .hero-tab-timer {
-    animation: timer var(--hero-interval, 6s) linear both;
-  }
-  [data-hero][data-paused] .hero-tab-timer { animation-play-state: paused !important; }
-  @keyframes timer {
-    from { transform: scaleX(0); }
-    to { transform: scaleX(1); }
-  }
-
-  .hero-plate {
-    aspect-ratio: 16 / 10;
-    width: min(100%, calc((100svh - 330px) * 1.6));
-    min-width: min(100%, 520px);
-  }
-  .hero-slide {
-    position: absolute;
-    inset: 0;
-    visibility: hidden;
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .hero-slide :global(img) {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top left;
-  }
-  .hero-slide[data-state='on'] {
-    visibility: visible;
-    z-index: 2;
-  }
-  .hero-slide[data-state='prev'] {
-    visibility: visible;
-    z-index: 1;
-  }
-  [data-hero][data-ready] .hero-slide[data-state='on'] {
-    animation: wipe 0.9s var(--ease-out) both;
-  }
-  @keyframes wipe {
-    from { clip-path: inset(0 100% 0 0); }
-    to { clip-path: inset(0 0 0 0); }
-  }
-
-  .hero-captions { margin-top: 18px; min-height: 44px; }
-  .hero-caption {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px 24px;
-    font-size: 0.975rem;
-  }
-  .hero-caption[hidden] { display: none; }
-  .hero-swatches { display: inline-flex; gap: 4px; align-self: center; margin-right: -12px; }
-  .hero-swatches i {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hp-ink) 40%, transparent);
-  }
-  .hero-caption-text { font-weight: 560; }
-  .hero-caption-stack {
-    margin-left: 10px;
-    color: var(--hp-muted);
-    font-weight: 450;
-    font-stretch: 88%;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    [data-hero][data-ready] .hero-slide[data-state='on'] { animation: none; }
-    .hero-panel { transition: none; }
-  }
-
-  @media (max-width: 1000px) {
-    .hero-grid { grid-template-columns: minmax(0, 1fr); }
-    .hero-copy { padding-top: 0; }
-    .hero-work {
-      margin-inline: calc(-1 * var(--gutter));
-      padding: 14px var(--gutter) 0;
-    }
-    .hero-panel { right: 0; }
-    .hero-plate { width: 100%; min-width: 0; }
   }
 </style>
 
 <script>
-  const root = document.querySelector<HTMLElement>('[data-hero]');
-  if (root) {
-    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
-    const slides = [...root.querySelectorAll<HTMLElement>('.hero-slide')];
-    const captions = [...root.querySelectorAll<HTMLElement>('.hero-caption')];
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-    let active = 0;
-    let userTookControl = false;
-
-    const activate = (next: number, focus = false) => {
-      if (next === active) return;
-      root.dataset.ready = '';
-      const prev = active;
-      active = (next + tabs.length) % tabs.length;
-      tabs.forEach((t, i) => {
-        const on = i === active;
-        t.setAttribute('aria-selected', String(on));
-        t.tabIndex = on ? 0 : -1;
-      });
-      slides.forEach((s, i) => {
-        s.dataset.state = i === active ? 'on' : i === prev ? 'prev' : 'off';
-      });
-      captions.forEach((c, i) => (c.hidden = i !== active));
-      root.setAttribute('style', tabs[active]!.dataset.theme ?? '');
-      if (focus) tabs[active]!.focus();
-      tabs[active]!.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduce.matches ? 'auto' : 'smooth' });
+  // Montevideo's local time, so a remote team can see the overlap at a glance.
+  const el = document.querySelector<HTMLTimeElement>('[data-clock]');
+  if (el) {
+    const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Montevideo', hour: '2-digit', minute: '2-digit' });
+    const tick = () => {
+      el.textContent = fmt.format(new Date());
     };
-
-    const stopAuto = () => {
-      userTookControl = true;
-      delete root.dataset.auto;
-    };
-
-    tabs.forEach((tab, i) => {
-      tab.addEventListener('click', () => {
-        stopAuto();
-        activate(i);
-      });
-      // The timer bar drives auto-advance, so pausing the animation pauses the carousel.
-      tab.querySelector('.hero-tab-timer')?.addEventListener('animationend', () => {
-        if (!userTookControl && i === active) activate(active + 1);
-      });
-    });
-
-    root.querySelector('[role="tablist"]')?.addEventListener('keydown', (e) => {
-      const ev = e as KeyboardEvent;
-      const map: Record<string, number> = { ArrowRight: active + 1, ArrowLeft: active - 1, Home: 0, End: tabs.length - 1 };
-      if (ev.key in map) {
-        ev.preventDefault();
-        stopAuto();
-        activate(map[ev.key]!, true);
-      }
-    });
-
-    // Pause while the visitor is looking closely, or when the hero is off screen.
-    let hovering = false;
-    let visible = true;
-    const syncPause = () => {
-      const paused = hovering || !visible || document.hidden || root.contains(document.activeElement);
-      if (paused) root.dataset.paused = '';
-      else delete root.dataset.paused;
-    };
-    root.addEventListener('pointerenter', () => ((hovering = true), syncPause()));
-    root.addEventListener('pointerleave', () => ((hovering = false), syncPause()));
-    root.addEventListener('focusin', syncPause);
-    root.addEventListener('focusout', () => setTimeout(syncPause));
-    document.addEventListener('visibilitychange', syncPause);
-    new IntersectionObserver(([entry]) => {
-      visible = !!entry?.isIntersecting;
-      syncPause();
-    }).observe(root);
-
-    if (!reduce.matches) root.dataset.auto = '';
+    tick();
+    // Re-render on the minute boundary, then every minute.
+    setTimeout(() => {
+      tick();
+      setInterval(tick, 60_000);
+    }, 60_000 - (Date.now() % 60_000));
   }
 </script>

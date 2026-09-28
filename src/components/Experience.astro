@@ -1,394 +1,214 @@
 ---
-import RowsDemo from './RowsDemo';
-import Icon from './Icon.astro';
+import MainThread from './MainThread.astro';
+import Pipeline from './Pipeline.astro';
 
+// Chronological, left to right.
 const roles = [
   {
-    when: 'Nov 2023 to now',
-    title: 'Frontend Product Engineer, component library',
-    body: 'I maintain the React and TypeScript component library Meraki teams build on: data table features built to detailed design specs, support for hundreds of developers adopting the system, code review standards, and the team’s AI review tooling.',
+    when: '2020 to 2021',
+    title: 'Frontend Engineer',
+    org: 'Device Magic',
+    body: 'Owned the whole web frontend after the senior developer left and carried it to the MVP launch: a dynamic forms engine with unlimited nested groups and real-time expressions, made orders of magnitude faster on large forms.',
   },
   {
-    when: 'Aug 2022 to Nov 2023',
-    title: 'Frontend Engineer, Meraki Dashboard',
-    body: 'Built the dashboard’s most used data pages (Access Points, Switches, Clients): tables with filtering, sorting and export for customers with 100k+ row datasets. Broke critical features down so several people could build them in parallel, and helped teams migrate from legacy components without breaking their users.',
+    when: '2021 to 2022',
+    title: 'Design system',
+    org: 'Cisco Magnetic',
+    body: 'Joined Magnetic in its early stages, building reusable React components with accessibility and performance as the bar, from detailed design specs to the first production release.',
   },
   {
-    when: 'Aug 2021 to Jul 2022',
-    title: 'Frontend Engineer, design system',
-    body: 'Joined Magnetic in its early stages, building reusable React components with accessibility and performance as the bar, turning detailed design specs into the library, and testing it for its first production release.',
+    when: '2022 to 2023',
+    title: 'Meraki Dashboard',
+    org: 'Cisco Meraki',
+    body: 'Built the most used data pages (Access Points, Switches, Clients): tables with filtering, sorting and export for customers with 100k+ rows. Broke critical features down so several people could build in parallel.',
+  },
+  {
+    when: '2023 to now',
+    title: 'Component library',
+    org: 'Cisco Magnetic',
+    body: 'I maintain the React and TypeScript library Meraki teams build on: data table features to detailed specs, support for hundreds of adopting developers, review standards and the team’s AI review tooling.',
   },
 ];
-
-const workers = ['Consumer contract', 'State ownership', 'Accessibility and interaction', 'Visual proof', 'Scope and simplicity'];
-const skills = ['Implementation guardrails', 'Post-implementation hardening', 'Structural complexity cleanup', 'Cosmetic cleanup', 'Deprecation patterns'];
 ---
 
-<section id="experience" class="exp surface" data-paint aria-labelledby="exp-title">
+<section id="experience" class="exp" aria-labelledby="exp-title">
   <div class="wrap">
     <header class="exp-head">
       <h2 id="exp-title" class="t-section">Five years inside Cisco’s design system</h2>
-      <p class="t-lede exp-intro">
-        Since 2021 I’ve worked on Magnetic, the design system behind the Meraki Dashboard, as a contractor through Vairix. I
-        started with its first components, moved on to shipping dashboard pages on top of them, and now maintain the component
-        library other teams depend on. When the thing you own is everyone’s dependency, you care a lot about UX and technical
-        quality.
+      <p class="t-lede muted">
+        Through Vairix, I’ve worked on Magnetic, the design system behind the Meraki Dashboard, since its first components. When
+        the thing you own is every team’s dependency, you care a lot about UX and technical quality.
       </p>
     </header>
 
-    <ol class="roles">
+    <ol class="timeline">
       {
-        roles.map((r) => (
-          <li class="role">
-            <p class="t-label t-num role-when">{r.when}</p>
-            <h3 class="role-title">
+        roles.map((r, i) => (
+          <li class:list={['stop', i === roles.length - 1 && 'stop--now']}>
+            <p class="t-label t-num">{r.when}</p>
+            <h3 class="stop-title">
               {r.title}
-              <span class="role-org">Cisco, via Vairix</span>
+              <span class="stop-org">{r.org}</span>
             </h3>
-            <p class="role-body">{r.body}</p>
+            <p class="stop-body">{r.body}</p>
           </li>
         ))
       }
-      <li class="role role--before">
-        <p class="t-label t-num role-when">Dec 2020 to May 2021</p>
-        <h3 class="role-title">
-          Frontend Engineer
-          <span class="role-org">Device Magic, via Vairix</span>
-        </h3>
-        <p class="role-body">
-          My first real product. I took over the whole web frontend when the senior developer left and carried it to the MVP
-          launch. It was a dynamic forms engine with unlimited nested groups and real-time expression evaluation, which meant
-          deep recursive logic and an orders-of-magnitude speedup for large forms. When the backend switched to an incompatible
-          XML format mid-project, I wrote a client-side adapter that translated it on the fly instead of rewriting the app.
-        </p>
-      </li>
     </ol>
 
-    <div class="block block--wide" id="rows-demo">
-      <div class="block-copy">
-        <h3 class="t-sub">100,000 rows, no dropped frames</h3>
-        <div class="prose muted-prose">
-          <p>
-            Big Meraki customers have tables with more than 100,000 rows, and a filter that runs on the main thread freezes the
-            page on every keystroke. I built filtering that renders results progressively as you type: it scans in small
-            slices, yields to the browser between them, and shows matches the moment they exist.
-          </p>
-          <p>
-            Try both strategies below. The work is the same (matching against the formatted values you see in each cell); only
-            the scheduling changes. Watch the input and the frame strip.
-          </p>
+    <div class="exhibits">
+      <article class="exhibit" id="rows">
+        <h3 class="t-sub">100,000 rows without freezing the page</h3>
+        <p class="exhibit-lede muted">
+          Big Meraki customers have tables with more than 100,000 rows. A filter that runs as one long task freezes typing and
+          painting on every keystroke. I split it into short slices that yield to the browser and render matches the moment
+          they exist, so the table stays at 60&nbsp;FPS while you type.
+        </p>
+        <div class="exhibit-plate">
+          <MainThread />
         </div>
-        <p class="t-label demo-note">Synthetic data. A re-creation of the technique, not Cisco code.</p>
-      </div>
-      <div class="block-demo plate plate--night">
-        <RowsDemo client:visible />
-        <span class="crop" aria-hidden="true"></span>
-      </div>
-    </div>
+        <p class="t-label">Schematic, not a measurement.</p>
+      </article>
 
-    <div class="block block--ai" id="ai-review">
-      <div class="block-copy">
+      <article class="exhibit" id="ai-review">
         <h3 class="t-sub">Raising the review bar when AI arrived</h3>
-        <div class="prose muted-prose">
-          <p>
-            In early 2025, AI adoption became a high-priority goal for every team. For a library that every Meraki team depends
-            on, the usual risk is quality slipping during the transition. I spent two to three months building the opposite:
-            tooling that raised our review bar while letting the team take on more work.
-          </p>
-          <p>
-            Breaking changes had been a pain for years. One nobody noticed could silently break types, tests and behavior in
-            consumer apps, and some had forced hotfixes and reverts to unblock releases. Before writing the scanner I mined the
-            repo history (every hotfix PR, every revert, every incident), worked out the root causes, and designed it to catch
-            each case I found.
-          </p>
-          <p>
-            For code review I pulled thousands of our GitLab review comments, used LLMs to find the ones that caught real bugs
-            or improved maintainability, and distilled the top 100+ into calibration examples for five specialized reviewers.
-            The team lead said it was exactly what the team needed, and key to opening the repo to outside contributions. The
-            team still runs it on every push.
-          </p>
+        <p class="exhibit-lede muted">
+          When AI adoption became a top goal for every team, I spent two to three months building tooling that raised our review
+          bar instead of letting quality slip. The team still runs it on every push.
+        </p>
+        <div class="exhibit-plate">
+          <Pipeline />
         </div>
-      </div>
-
-      <figure class="pipe plate plate--night" aria-labelledby="pipe-cap">
-        <figcaption id="pipe-cap" class="visually-hidden">
-          Diagram of the review pipeline: a git push triggers a pre-push hook running Codex CLI, which runs an API breaking
-          change scanner and a review orchestrator with five specialized workers, consolidated into one review.
-        </figcaption>
-
-        <div class="pipe-row pipe-row--start">
-          <div class="pipe-node pipe-node--small">
-            <Icon name="code" />
-            <span>git push</span>
+        <details class="story">
+          <summary>How I built it</summary>
+          <div class="story-body prose muted">
+            <p>
+              Breaking changes had been a pain for years. One nobody noticed could silently break types, tests and behavior in
+              consumer apps, and some had forced hotfixes and reverts to unblock releases. Before writing the scanner I mined the
+              repo history (every hotfix PR, every revert, every incident), worked out the root causes, and designed it to catch
+              each case I found.
+            </p>
+            <p>
+              For code review I pulled thousands of our GitLab review comments, used LLMs to find the ones that caught real bugs
+              or improved maintainability, and distilled the top 100+ into calibration examples for five specialized reviewers.
+              Alongside it went an AGENTS.md for the repo and five coding skills with explicit boundaries, from implementation
+              guardrails to deprecation patterns.
+            </p>
+            <p>The team lead said it was exactly what the team needed, and key to opening the repo to outside contributions.</p>
           </div>
-          <span class="pipe-link" aria-hidden="true"></span>
-          <div class="pipe-node pipe-node--small">
-            <span>Pre-push hook</span>
-            <span class="pipe-meta">runs Codex CLI</span>
-          </div>
-        </div>
-
-        <div class="pipe-split" aria-hidden="true"><i class="stem"></i><i class="bar"></i><i class="drop l"></i><i class="drop r"></i></div>
-
-        <div class="pipe-row pipe-row--tools">
-          <div class="pipe-tool">
-            <p class="pipe-source">Designed from every hotfix, revert and incident in the repo’s history</p>
-            <div class="pipe-node">
-              <span class="pipe-title">API breaking-change scanner</span>
-              <p class="pipe-desc">
-                An 11-step pass over the diff from every angle a consumer feels: API contracts, types, accessibility, CSS,
-                events and refs. Findings ranked P1 to P3.
-              </p>
-            </div>
-          </div>
-          <div class="pipe-tool">
-            <p class="pipe-source">Calibrated on 100+ review comments distilled from thousands</p>
-            <div class="pipe-node">
-              <span class="pipe-title">Review orchestrator</span>
-              <ul class="pipe-workers">
-                {workers.map((w) => <li>{w}</li>)}
-              </ul>
-              <p class="pipe-desc">Each worker catches what the other four miss. A parent dedupes and consolidates.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="pipe-split pipe-split--join" aria-hidden="true"><i class="stem"></i><i class="bar"></i><i class="drop l"></i><i class="drop r"></i></div>
-
-        <div class="pipe-row pipe-row--end">
-          <div class="pipe-node pipe-node--small pipe-node--result">
-            <Icon name="check" />
-            <span>One consolidated review before the code leaves the machine</span>
-          </div>
-        </div>
-
-        <div class="pipe-skills">
-          <p class="t-label">Alongside it: an AGENTS.md for the repo and five coding skills with explicit boundaries</p>
-          <ul>
-            {skills.map((s) => <li>{s}</li>)}
-          </ul>
-        </div>
-        <span class="crop" aria-hidden="true"></span>
-      </figure>
+        </details>
+      </article>
     </div>
   </div>
 </section>
 
 <style>
-  .exp {
-    padding-block: var(--section-y);
-  }
+  .exp { padding-block: var(--section-y); border-top: 1px solid var(--rule); }
   .exp-head {
     display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    gap: 32px clamp(32px, 5vw, 80px);
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: 24px clamp(32px, 5vw, 80px);
     align-items: end;
   }
-  .exp-intro { color: var(--s-muted); max-width: 52ch; }
+  .exp-head p { max-width: 50ch; }
 
-  .roles {
-    margin-top: clamp(56px, 7vw, 96px);
-    border-top: 1px solid var(--s-rule);
-  }
-  .role {
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 5fr);
-    gap: 8px clamp(24px, 3vw, 48px);
-    padding-block: 28px;
-    border-bottom: 1px solid var(--s-rule);
-  }
-  .role-when { padding-top: 4px; }
-  .role-title {
-    font-size: 1.25rem;
-    line-height: 1.25;
-    font-weight: 700;
-    font-stretch: 94%;
-    letter-spacing: -0.01em;
-  }
-  .role-org {
-    display: block;
-    margin-top: 4px;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--s-muted);
-  }
-  .role-body { color: var(--s-muted); max-width: 60ch; }
-  .role--before .role-title { font-weight: 650; }
-
-  .block {
-    margin-top: clamp(88px, 10vw, 150px);
-    display: grid;
-    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
-    gap: 40px clamp(32px, 4vw, 72px);
-    align-items: start;
-  }
-  .block-copy {
-    display: grid;
-    gap: 20px;
-    position: sticky;
-    top: 88px;
-  }
-  .muted-prose { color: var(--s-muted); }
-  .muted-prose p + p { margin-top: 0.9em; }
-  .demo-note {
-    padding-top: 14px;
-    border-top: 1px solid var(--s-rule);
-  }
-  .block-demo { min-width: 0; }
-
-  /* The demo gets the full measure: copy runs as a two-column header above it. */
-  .block--wide { grid-template-columns: minmax(0, 1fr); gap: clamp(28px, 3vw, 44px); }
-  .block--wide .block-copy {
-    position: static;
-    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
-    gap: 16px clamp(32px, 4vw, 72px);
-    align-items: start;
-  }
-  .block--wide .block-copy .t-sub { grid-row: span 2; }
-  .block--wide .muted-prose { columns: 2 22rem; column-gap: clamp(24px, 3vw, 48px); max-width: none; }
-  .block--wide .muted-prose p { break-inside: avoid; }
-  .block--wide .muted-prose p + p { margin-top: 0; }
-  .block--wide .demo-note { grid-column: 2; }
-
-  /* ---- Pipeline diagram ---- */
-  .pipe {
-    --node: #1b1b20;
-    --line: #3a3a42;
-    display: grid;
-    gap: 0;
-    padding: clamp(20px, 3vw, 40px);
-  }
-  .pipe-row { display: flex; align-items: stretch; justify-content: center; gap: 0; }
-  .pipe-row--start { flex-direction: column; align-items: center; }
-  .pipe-link {
-    width: 1px;
-    height: 22px;
-    background: var(--line);
+  /* ---- Horizontal timeline ---- */
+  .timeline {
     position: relative;
-  }
-  .pipe-link::after {
-    content: '';
-    position: absolute;
-    left: -3px;
-    bottom: -1px;
-    border: 3.5px solid transparent;
-    border-top: 6px solid var(--line);
-    border-bottom: 0;
-  }
-  .pipe-node {
     display: grid;
-    gap: 6px;
-    align-content: start;
-    padding: 16px 18px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--node);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(20px, 2.6vw, 40px);
+    margin-top: clamp(48px, 5vw, 72px);
+    padding-top: 26px;
   }
-  .pipe-node--small {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    font-weight: 620;
-    font-stretch: 92%;
-    white-space: nowrap;
-  }
-  .pipe-node--small :global(svg) { width: 16px; height: 16px; color: var(--s-muted); }
-  .pipe-meta {
-    color: var(--s-muted);
-    font-weight: 500;
-    font-size: 0.875rem;
-  }
-  .pipe-title { font-weight: 700; font-stretch: 94%; font-size: 1.0625rem; }
-  .pipe-desc { color: var(--s-muted); font-size: 0.9375rem; line-height: 1.5; }
-  .pipe-source {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    font-stretch: 84%;
-    color: var(--s-muted);
-    padding: 0 4px 10px;
-    border-bottom: 1px dashed var(--line);
-    margin-bottom: 12px;
-  }
-  .pipe-row--tools {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  .pipe-tool { display: grid; align-content: start; }
-  .pipe-workers {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 6px 0 4px;
-  }
-  .pipe-workers li {
-    padding: 4px 10px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    font-size: 0.8125rem;
-    font-weight: 560;
-    font-stretch: 90%;
-  }
-  .pipe-split {
-    height: 36px;
-    position: relative;
-  }
-  .pipe-split i {
-    position: absolute;
-    background: var(--line);
-  }
-  /* Fork: a stem down from the hook, a bar across, a drop into each tool. Join mirrors it. */
-  .pipe-split .stem { left: 50%; top: 0; width: 1px; height: 50%; }
-  .pipe-split .bar { left: 25%; right: 25%; top: 50%; height: 1px; }
-  .pipe-split .drop { top: 50%; width: 1px; height: 50%; }
-  .pipe-split .drop.l { left: 25%; }
-  .pipe-split .drop.r { left: 75%; }
-  .pipe-split--join .stem { top: 50%; }
-  .pipe-split--join .drop { top: 0; }
-  .pipe-node--result { border-color: color-mix(in srgb, var(--s-ink) 40%, transparent); }
-  .pipe-node--result { white-space: normal; }
-  .pipe-node--result :global(svg) { color: var(--s-ink); }
-
-  .pipe-skills {
-    margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid var(--s-rule);
-    display: grid;
-    gap: 12px;
-  }
-  .pipe-skills ul { display: flex; flex-wrap: wrap; gap: 6px 18px; }
-  .pipe-skills li {
-    font-weight: 560;
-    font-stretch: 92%;
-    font-size: 0.9375rem;
-    padding-left: 14px;
-    position: relative;
-  }
-  .pipe-skills li::before {
+  .timeline::before {
     content: '';
     position: absolute;
     left: 0;
-    top: 0.6em;
-    width: 6px;
+    right: 0;
+    top: 5px;
     height: 1px;
-    background: currentColor;
+    background: linear-gradient(90deg, var(--rule-2), var(--ink) 92%);
+  }
+  .stop { position: relative; display: grid; gap: 8px; align-content: start; }
+  .stop::before {
+    content: '';
+    position: absolute;
+    top: -26px;
+    left: 0;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--rule-2);
+  }
+  .stop--now::before {
+    background: var(--ink);
+    border-color: var(--ink);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ink) 12%, transparent);
+  }
+  .stop-title { font-size: 1.1875rem; line-height: 1.2; font-weight: 720; font-stretch: 94%; letter-spacing: -0.01em; }
+  .stop-org { display: block; margin-top: 3px; font-size: 0.875rem; font-weight: 520; color: var(--ink-2); }
+  .stop-body { font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); }
+
+  /* ---- Exhibits ---- */
+  .exhibits {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(28px, 4vw, 64px);
+    margin-top: clamp(64px, 7vw, 104px);
+  }
+  .exhibit { display: grid; gap: 16px; align-content: start; }
+  .exhibit-lede { max-width: 56ch; }
+  .exhibit-plate {
+    padding: clamp(18px, 2.4vw, 32px);
+    border-radius: 14px;
+    background: var(--raised);
+    box-shadow: 0 0 0 1px var(--rule);
   }
 
-  @media (max-width: 1100px) {
-    .exp-head { grid-template-columns: minmax(0, 1fr); }
-    .block { grid-template-columns: minmax(0, 1fr); }
-    .block-copy { position: static; max-width: 68ch; }
-    .block--wide .block-copy { grid-template-columns: minmax(0, 1fr); max-width: 68ch; }
-    .block--wide .block-copy .t-sub { grid-row: auto; }
-    .block--wide .demo-note { grid-column: auto; }
-    .block--wide .muted-prose { columns: auto; }
-    .block--wide .muted-prose p + p { margin-top: 0.9em; }
+  .story { border-top: 1px solid var(--rule); }
+  .story summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    font-weight: 620;
+    font-stretch: 92%;
+    cursor: pointer;
+    list-style: none;
   }
-  @media (max-width: 760px) {
-    .role { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-    .pipe-row--tools { grid-template-columns: minmax(0, 1fr); gap: 28px; }
-    .pipe-split .bar, .pipe-split .drop { display: none; }
-    .pipe-split .stem { top: 0; height: 100%; }
+  .story summary::-webkit-details-marker { display: none; }
+  .story summary::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.3s var(--ease-out);
+  }
+  .story[open] summary::after { transform: translateY(1px) rotate(-135deg); }
+  /* Smooth open where the browser supports animating details content. */
+  .story::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size 0.4s var(--ease-out), content-visibility 0.4s allow-discrete;
+  }
+  .story[open]::details-content { block-size: auto; }
+  .story-body { padding-bottom: 8px; font-size: 0.975rem; }
+
+  @media (max-width: 1000px) {
+    .exp-head, .exhibits { grid-template-columns: minmax(0, 1fr); }
+    .timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
+    .timeline::before { display: none; }
+    .stop { padding-top: 22px; border-top: 1px solid var(--rule); }
+    .stop::before { top: -6px; }
+  }
+  @media (max-width: 560px) {
+    .timeline { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .story::details-content { transition: none; }
   }
 </style>

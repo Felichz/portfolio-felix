@@ -1,0 +1,108 @@
+---
+import Icon from './Icon.astro';
+
+const workers = ['Consumer contract', 'State ownership', 'Accessibility and interaction', 'Visual proof', 'Scope and simplicity'];
+---
+
+<figure class="pipe" aria-labelledby="pipe-cap">
+  <figcaption id="pipe-cap" class="visually-hidden">
+    The review pipeline: a git push triggers a pre-push hook running Codex CLI, which runs an API breaking-change scanner and a
+    review orchestrator with five specialized workers, consolidated into one review.
+  </figcaption>
+
+  <div class="pipe-start">
+    <span class="node node--sm"><Icon name="code" />git push</span>
+    <i class="v" aria-hidden="true"></i>
+    <span class="node node--sm">Pre-push hook <span class="dim">runs Codex CLI</span></span>
+  </div>
+
+  <div class="fork" aria-hidden="true"><i class="stem"></i><i class="bar"></i><i class="drop l"></i><i class="drop r"></i></div>
+
+  <div class="tools">
+    <div class="tool">
+      <p class="src">Designed from every hotfix, revert and incident in the repo’s history</p>
+      <div class="node">
+        <span class="title">API breaking-change scanner</span>
+        <span class="desc">An 11-step pass over the diff from every angle a consumer feels: API contracts, types, accessibility, CSS, events, refs. Findings ranked P1 to P3.</span>
+      </div>
+    </div>
+    <div class="tool">
+      <p class="src">Calibrated on 100+ review comments distilled from thousands</p>
+      <div class="node">
+        <span class="title">Review orchestrator</span>
+        <span class="workers">{workers.map((w) => <span>{w}</span>)}</span>
+        <span class="desc">Each worker catches what the other four miss; a parent dedupes and consolidates.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="fork fork--join" aria-hidden="true"><i class="stem"></i><i class="bar"></i><i class="drop l"></i><i class="drop r"></i></div>
+
+  <div class="pipe-end">
+    <span class="node node--sm node--result"><Icon name="check" />One consolidated review before the code leaves the machine</span>
+  </div>
+</figure>
+
+<style>
+  .pipe { display: grid; font-size: 0.9375rem; }
+  .pipe-start, .pipe-end { display: flex; flex-direction: column; align-items: center; }
+  .v { width: 1px; height: 18px; background: var(--rule-2); }
+  .node {
+    display: grid;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid var(--rule-2);
+    border-radius: 10px;
+    background: var(--paper);
+  }
+  .node--sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-weight: 620;
+    font-stretch: 92%;
+    white-space: nowrap;
+  }
+  .node--sm :global(svg) { width: 15px; height: 15px; color: var(--ink-2); }
+  .node--result { white-space: normal; text-align: center; border-color: var(--ink); }
+  .dim { color: var(--ink-3); font-weight: 500; font-size: 0.875rem; }
+  .title { font-weight: 700; font-stretch: 94%; }
+  .desc { color: var(--ink-2); font-size: 0.875rem; line-height: 1.5; }
+  .src {
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-stretch: 84%;
+    color: var(--ink-3);
+    padding: 0 2px 8px;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed var(--rule-2);
+  }
+  .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .tool { display: grid; align-content: start; }
+  .workers { display: flex; flex-wrap: wrap; gap: 5px; margin-block: 4px; }
+  .workers span {
+    padding: 3px 9px;
+    border: 1px solid var(--rule-2);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 580;
+    font-stretch: 90%;
+  }
+  .fork { position: relative; height: 30px; }
+  .fork i { position: absolute; background: var(--rule-2); }
+  .fork .stem { left: 50%; top: 0; width: 1px; height: 50%; }
+  .fork .bar { left: 25%; right: 25%; top: 50%; height: 1px; }
+  .fork .drop { top: 50%; width: 1px; height: 50%; }
+  .fork .l { left: 25%; }
+  .fork .r { left: 75%; }
+  .fork--join .stem { top: 50%; }
+  .fork--join .drop { top: 0; }
+
+  @media (max-width: 640px) {
+    .tools { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+    .fork .bar, .fork .drop { display: none; }
+    .fork .stem { top: 0; height: 100%; }
+    .node--sm { white-space: normal; }
+  }
+</style>

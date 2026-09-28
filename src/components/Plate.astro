@@ -1,0 +1,62 @@
+---
+import { Picture, getImage } from 'astro:assets';
+import type { Shot } from '../data/projects';
+
+interface Props {
+  shot: Shot;
+  sizes: string;
+  widths?: number[];
+  /** Crop marks around the frame. */
+  crop?: boolean;
+  zoom?: boolean;
+  eager?: boolean;
+  /** view-transition-name, so the frame can morph between pages. */
+  vt?: string;
+  class?: string;
+}
+
+const { shot, sizes, widths = [480, 800, 1200, 1600, 2000], crop = false, zoom = true, eager = false, vt, class: className } = Astro.props;
+const single = shot.light === shot.dark;
+const phone = !!shot.phone;
+const w = phone ? [280, 420, 640] : widths;
+
+const full = async (src: ImageMetadata) => (await getImage({ src, format: 'webp', width: Math.min(src.width, 2880), quality: 84 })).src;
+const zoomLight = zoom ? await full(shot.light) : undefined;
+const zoomDark = zoom ? (single ? zoomLight : await full(shot.dark)) : undefined;
+
+const common = {
+  alt: shot.alt,
+  formats: ['avif', 'webp'] as ('avif' | 'webp')[],
+  fallbackFormat: 'webp' as const,
+  widths: w,
+  sizes,
+  decoding: 'async' as const,
+  // Both variants stay lazy: the hidden one is display:none, so the browser never fetches it.
+  loading: (eager && single ? 'eager' : 'lazy') as 'eager' | 'lazy',
+};
+const Tag = zoom ? 'button' : 'div';
+---
+
+<div class:list={['plate', phone && 'plate--phone', className]} style={vt ? `view-transition-name:${vt}` : undefined}>
+  <Tag
+    class:list={[zoom && 'zoom']}
+    type={zoom ? 'button' : undefined}
+    data-zoom-light={zoomLight}
+    data-zoom-dark={zoomDark}
+    data-alt={zoom ? shot.alt : undefined}
+    aria-label={zoom ? `Enlarge screenshot: ${shot.caption ?? shot.alt}` : undefined}
+  >
+    {
+      single ? (
+        <Picture src={shot.dark} {...common} />
+      ) : (
+        <>
+          <Picture src={shot.light} {...common} class="only-light" />
+          <Picture src={shot.dark} {...common} class="only-dark" />
+        </>
+      )
+    }
+  </Tag>
+  <slot />
+  {crop && <span class="crop" aria-hidden="true" />}
+</div>

@@ -1,18 +1,26 @@
 ---
 name: Felix Andersson
-description: A specimen book of interfaces. White stock, near-black ink, one variable grotesque, and color borrowed only from the products on show.
+description: A specimen book of interfaces, second edition. Short catalogue, two editions of the same stock (white and near-black), one variable grotesque, and color borrowed only from the products on show.
 colors:
   paper: "#ffffff"
-  plate: "#f3f3f1"
+  plate: "#f4f4f2"
+  raised: "#f7f7f5"
   ink: "#0d0d0f"
   ink-2: "#55555c"
-  rule: "#e3e3e0"
-  night: "#0d0d0f"
-  night-2: "#151518"
-  night-ink: "#f2f2ee"
-  night-muted: "#a3a3aa"
-  night-rule: "#2a2a30"
-  plate-night: "#141417"
+  ink-3: "#6e6e76"
+  rule: "#e4e4e1"
+  rule-2: "#d3d3cf"
+  ring: "rgb(13 13 15 / 0.12)"
+  paper-dark: "#0c0c0e"
+  plate-dark: "#141417"
+  raised-dark: "#111114"
+  ink-dark: "#ededea"
+  ink-2-dark: "#a3a3aa"
+  ink-3-dark: "#7c7c85"
+  rule-dark: "#232328"
+  rule-2-dark: "#34343b"
+  ring-dark: "rgb(255 255 255 / 0.09)"
+  bezel: "#0e0e10"
 typography:
   display:
     fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
@@ -21,41 +29,38 @@ typography:
     lineHeight: 0.9
     letterSpacing: "-0.04em"
     fontVariation: "'wdth' 112"
-  address:
-    fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "clamp(1.75rem, 0.6rem + 4.6vw, 5rem)"
-    fontWeight: 760
-    lineHeight: 1
-    letterSpacing: "-0.04em"
-    fontVariation: "'wdth' 104"
   headline:
     fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "clamp(2.25rem, 1.2rem + 3.6vw, 4.25rem)"
+    fontSize: "clamp(2.125rem, 1.2rem + 3vw, 3.75rem)"
     fontWeight: 780
     lineHeight: 1
     letterSpacing: "-0.035em"
     fontVariation: "'wdth' 94"
   title:
     fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "clamp(1.5rem, 1.1rem + 1.4vw, 2.25rem)"
+    fontSize: "clamp(1.375rem, 1.1rem + 0.9vw, 1.875rem)"
     fontWeight: 720
-    lineHeight: 1.08
-    letterSpacing: "-0.025em"
+    lineHeight: 1.1
+    letterSpacing: "-0.02em"
     fontVariation: "'wdth' 96"
   title-small:
     fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "1.25rem"
-    fontWeight: 700
+    fontSize: "1.1875rem"
+    fontWeight: 720
     lineHeight: 1.25
     letterSpacing: "-0.01em"
     fontVariation: "'wdth' 94"
-  specimen-name:
-    fontSize: "clamp(3rem, 1rem + 7vw, 6rem)"
+  product-name:
+    fontSize: "clamp(3rem, 1rem + 6.4vw, 5.75rem)"
     lineHeight: 0.95
-    letterSpacing: "-0.03em"
+    letterSpacing: "-0.035em"
+  product-name-shelf:
+    fontSize: "clamp(2.25rem, 1.4rem + 2.4vw, 3.5rem)"
+    lineHeight: 1
+    letterSpacing: "-0.035em"
   lede:
     fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "clamp(1.125rem, 1rem + 0.45vw, 1.375rem)"
+    fontSize: "clamp(1.0625rem, 0.98rem + 0.4vw, 1.3125rem)"
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: "-0.005em"
@@ -66,6 +71,11 @@ typography:
     lineHeight: 1.6
     letterSpacing: "normal"
     fontVariation: "'wdth' 100"
+  body-small:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontSize: "0.975rem"
+    fontWeight: 400
+    lineHeight: 1.55
   label:
     fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
     fontSize: "0.8125rem"
@@ -75,25 +85,29 @@ typography:
     fontVariation: "'wdth' 82"
   control:
     fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "0.975rem"
+    fontSize: "0.9375rem"
     fontWeight: 600
-    lineHeight: 1.2
     fontVariation: "'wdth' 92"
+  nav:
+    fontFamily: "Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 560
+    fontVariation: "'wdth' 90"
 rounded:
   focus: "4px"
   swatch: "6px"
-  control: "8px"
   plate: "10px"
-  device-screen: "22px"
-  device: "28px"
+  exhibit: "14px"
+  panel: "16px"
+  device-screen: "21px"
+  device: "26px"
   pill: "999px"
 spacing:
   gutter: "clamp(16px, 4vw, 48px)"
-  section: "clamp(88px, 11vw, 168px)"
+  section: "clamp(80px, 9vw, 136px)"
   block: "clamp(56px, 7vw, 96px)"
-  sheet: "clamp(48px, 6vw, 80px)"
-  stage: "clamp(40px, 5vw, 72px)"
   column: "clamp(32px, 5vw, 80px)"
+  shelf: "clamp(28px, 4vw, 64px)"
   control-gap: "10px"
   container: "1360px"
 components:
@@ -110,34 +124,55 @@ components:
     rounded: "{rounded.pill}"
     padding: "0 18px"
     height: "44px"
-  icon-link:
+  icon-button:
     textColor: "{colors.ink}"
     rounded: "{rounded.pill}"
     size: "44px"
   nav-link:
-    textColor: "{colors.ink}"
+    textColor: "{colors.ink-2}"
+    typography: "{typography.nav}"
     rounded: "{rounded.pill}"
     padding: "0 12px"
     height: "40px"
+  nav-theme-toggle:
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.pill}"
+    size: "40px"
   nav-resume:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.paper}"
+    typography: "{typography.nav}"
     rounded: "{rounded.pill}"
     padding: "0 16px"
     height: "40px"
+  shelf-tab:
+    textColor: "{colors.ink-3}"
+    padding: "6px 12px 10px"
+    height: "44px"
+  shelf-tab-active:
+    textColor: "{colors.ink}"
   plate:
     backgroundColor: "{colors.plate}"
     rounded: "{rounded.plate}"
-  plate-night:
-    backgroundColor: "{colors.plate-night}"
-    textColor: "{colors.night-ink}"
-    rounded: "{rounded.plate}"
-  palette-chip:
-    rounded: "{rounded.swatch}"
-    height: "44px"
-  callout-pin:
+  plate-phone:
+    backgroundColor: "{colors.bezel}"
+    rounded: "{rounded.device}"
+    padding: "5px"
+  exhibit-panel:
+    backgroundColor: "{colors.raised}"
+    rounded: "{rounded.exhibit}"
+    padding: "clamp(18px, 2.4vw, 32px)"
+  contact-panel:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.paper}"
+    rounded: "{rounded.panel}"
+    padding: "clamp(24px, 3vw, 40px)"
+  pin:
     rounded: "{rounded.pill}"
-    size: "28px"
+    size: "26px"
+  palette-dot:
+    rounded: "{rounded.swatch}"
+    size: "22px"
 ---
 
 # Design System: Felix Andersson
@@ -146,158 +181,176 @@ components:
 
 **Creative North Star: "The Interface Specimen"**
 
-The site is a foundry's specimen book, and the faces on show are interfaces. A type foundry proves a font by setting it in use; this system proves each product by showing its real screens, in its real typeface, on its real palette. The house itself is deliberately neutral stock: white paper, near-black ink, hairline rules, printer's crop marks around framed plates, and a single variable grotesque (Archivo) that carries every house voice by moving along its width and weight axes.
+The site is a foundry's specimen book, and the faces on show are interfaces. A foundry proves a font by setting it in use; this system proves each product by showing its real screens, in its real typeface, with its real accent. This is the second edition, bound as a short catalogue: one screen of name and proof, a horizontal shelf of five products, a Cisco chapter with two exhibits, an about page with a contact panel, and a case study behind each product. The page never changes ground under the reader. Products bring their faces, their screenshots and one accent each; they do not repaint the house.
 
-Color never belongs to the house. Every painted section declares its surface through eight `--s-*` slots, and each product spread overrides those slots with the product's own ground, ink, muted, rule and accent, so the page repaints as you scroll from one product to the next. The sticky nav copies the surface of whatever section sits under it. The one reversed surface the house owns is the night back cover (Contact); the only other dark full-bleed grounds are products whose own interfaces are dark.
+The house is neutral stock printed in two editions: white paper with near-black ink, and near-black paper with off-white ink. The edition is the reader's: a saved choice, else the system setting, applied before first paint and switched from the nav with a short crossfade. Everything follows the edition, including the screenshots, which exist in both themes wherever the product has both. One variable grotesque, Archivo, carries every house voice by moving along its width and weight axes. Hairline rules divide; framed plates with printer's crop marks hold the evidence; numbered pins in the product's accent point into it.
 
-Density is editorial rather than dashboard: generous section air (88–168px), wide 12-column fractional splits, hairline-divided columns instead of boxes, and screenshots at full measure. Motion is spent in one place, the hero panel's repaint, and everything else is quiet state feedback. The build refuses the dark developer hero, card grids, skill badges, eyebrow kickers, section numbers, gradient text and decorative grid backgrounds.
+Density is editorial rather than dashboard: generous section air, fractional two-column splits, ruled columns instead of boxes, screenshots at full measure. Motion is spent on one idea, continuity: the shelf screenshot and product name morph into the case study, and the theme switch crossfades. Everything else is quiet state feedback. The build refuses the dark developer hero, card grids, skill badges, eyebrow kickers, section numbers, side-stripe borders, gradient text and decorative grid backgrounds.
 
 **Key Characteristics:**
-- White specimen stock and near-black ink; no house accent color at all.
-- One variable grotesque (Archivo, wdth 62–125, wght 100–900) used across its widths as the whole house hierarchy.
-- Product names and type samples set in each product's own face; product palettes painted through the `--s-*` surface contract.
-- Framed plates with a 1px ink ring, a soft offset shadow and printer's crop marks; numbered callout pins keyed to a legend.
-- Hairline rules as the only structural dividers; ink rules open a sheet, grey rules divide it.
-- One authored motion moment on an exponential ease-out.
+- Two editions of the same stock (white and near-black), chosen before first paint; no house accent color at all.
+- One variable grotesque (Archivo, wdth 62 to 125, wght 100 to 900) used across its widths as the whole house hierarchy.
+- Product names and "Aa" samples set in each product's own face; each product lends one accent pair for four small marks.
+- Screenshots follow the reader's edition; products without a light UI stay dark in both.
+- Framed plates with a 1px ring, a soft offset shadow, and crop marks on the lead plate; numbered pins keyed to a legend.
+- Hairline rules as the structural dividers; an ink rule opens a set, grey rules divide it.
+- One authored motion idea: cross-document morph from shelf to case study, off under reduced motion.
 
 ## Colors
 
-A monochrome house (paper, ink and three grays, plus a matching night set) that lends the page to borrowed product palettes.
+A monochrome house in two editions (paper, ink, two grays, two rules, a plate and a raised tint per edition) that lends four small marks to each product's accent.
 
 ### Primary
-- **Specimen Ink** (`ink`): the house's only "color". Body text, headings, the solid button, the nav résumé pill, ink rules that open the highlights row and the toolset, and the default `--s-accent` on house surfaces. Selection inverts it against the ground.
+- **Specimen Ink** (`ink` / `ink-dark`): the house's only "color". Body text, headings, the solid button, the nav résumé pill, the ink rule that opens the highlights row and the toolset, the current stop on the timeline, and the task blocks in the main-thread schematic. It is also the ground of the contact panel. Selection inverts it against the paper. 19.4:1 on paper in light, 16.7:1 in dark.
 
 ### Neutral
-- **Specimen Stock** (`paper`): the house ground for the hero, Experience, the products intro and About. Also the text color on solid ink buttons.
-- **Plate Stock** (`plate`): the default `--s-surface`, the fill behind a framed screenshot before it loads.
-- **Pencil Gray** (`ink-2`): the default `--s-muted`. Ledes in secondary position, role bodies, labels, callout legend text, strip captions. 7.4:1 on paper.
-- **Hairline** (`rule`): the default `--s-rule`. Row dividers, sheet cell borders, the nav's bottom border, folio rules.
-- **Night** (`night`), **Night Raised** (`night-2`), **Night Ink** (`night-ink`), **Night Muted** (`night-muted`), **Night Rule** (`night-rule`): the reversed set, applied as a whole through the night surface. Used for the Contact back cover only.
-- **Exhibit Black** (`plate-night`): the ground of a night plate, a dark exhibit framed on a light page (the 100k-row demo and the AI review pipeline diagram). It shares its value with the rows demo's own ground so the demo sits seamlessly in its frame.
+- **Specimen Stock** (`paper` / `paper-dark`): the page ground in each edition, the text on ink controls and on the contact panel, the fill of pipeline nodes, and the outline ring around a pin. The `theme-color` meta carries this value and changes with the edition.
+- **Plate Stock** (`plate` / `plate-dark`): the fill behind a framed screenshot before it loads.
+- **Raised Tint** (`raised` / `raised-dark`): the ground of the exhibit panels that hold the Cisco diagrams, one step off the paper.
+- **Pencil Gray** (`ink-2` / `ink-2-dark`): secondary copy. Ledes in muted position, taglines, timeline bodies, highlight bodies, callout legend text, labels, nav links, the theme toggle icon. 7.4:1 on paper in light, 7.8:1 in dark.
+- **Soft Gray** (`ink-3` / `ink-3-dark`): the quietest legible text. Inactive shelf tabs, the PDF note on the résumé button, the "Interface in Spanish" line, schematic sublabels. 5.1:1 in light, 4.7:1 in dark; it does not go lower.
+- **Hairline** (`rule` / `rule-dark`): row and cell dividers, section top rules, the nav's bottom border, the hairline ring around exhibit panels.
+- **Firm Hairline** (`rule-2` / `rule-2-dark`): borders on controls at rest (outline buttons, icon buttons, keycaps), pipeline node strokes and connectors, timeline stops before now, and the schematic rails.
+- **Plate Ring** (`ring` / `ring-dark`): the 1px edge around every plate, drawn as a spread shadow so it never shifts layout.
+- **Bezel** (`bezel`): the phone frame around a mobile screenshot. The same near-black in both editions, because it is a device, not paper.
 
-### Borrowed (product) palettes
-Product colors are data, not house tokens. Each product in `src/data/projects.ts` carries a `theme` (scheme, ground, surface, ink, muted, rule, accent, accentText, onAccent) and a `palette` of named swatches. The theme is written onto its spread as `--s-*` custom properties; the palette is shown as chips on the spec sheet and as five small swatches in the hero caption. The full per-product values are recorded in `.impeccable/design.json` under `extensions.surfaces`.
+### Borrowed accents (product data, not house tokens)
+Each product in `src/data/projects.ts` carries `accent: { light, dark, onLight, onDark }`. The element that owns a product's marks sets them inline as `--a-light`, `--a-dark`, `--on-light`, `--on-dark` and carries `data-accent`; the global stylesheet resolves them to `--accent` and `--on-accent` for the current edition. The five pairs are recorded in `.impeccable/design.json` under `extensions.productAccents`.
 
 ### Named Rules
-**The Borrowed Color Rule.** The house owns no hue. Any saturated color on the page belongs to a product and appears only inside that product's spread, its hero panel, its tab timer, or its swatches. Adding a house accent breaks the premise.
+**The Two Editions Rule.** Every house color is a pair set on `:root` and `:root[data-theme='dark']`. Components use the role (`--paper`, `--ink`, `--rule`), never a literal, so they print correctly in both editions. The edition is decided before first paint from the saved choice, else `prefers-color-scheme`; nothing on the page changes ground on its own.
 
-**The Declared Surface Rule.** Every painted section declares its surface through the eight slots `--s-ground`, `--s-surface`, `--s-ink`, `--s-muted`, `--s-rule`, `--s-accent`, `--s-accent-text`, `--s-on-accent`, and marks itself `data-paint`. Components read only `--s-*` (and `color-mix` derivatives of it), never the house tokens directly, so any spread can repaint them. `--s-accent-text` is the AA-safe text version of the accent; every spread declares it, and it is reserved for accent-colored text.
+**The Borrowed Accent Rule.** The house owns no hue. A product's accent appears in exactly four places: the underline under the active shelf tab, the short ticks before a slide's points, the numbered pins, and the position number on its case study. Never on buttons, links, headings, rules or grounds. An accent used as text or under pin numerals must hold 4.5:1 against paper and against its on-accent color in both editions.
 
-**The Night Is Rare Rule.** The Contact back cover is the only reversed house surface. A dark exhibit on a light page is framed as a night plate, never run as a full-bleed dark band.
+**The Matching Plate Rule.** A screenshot prints in the reader's edition. Plates carry a light and a dark capture, only the matching one is displayed, and since both are lazy, only the matching one downloads. A product with no light UI of its own (KnowGraph, PlaySync) shows its dark capture in both editions and says "dark only" in its facts; never fabricate a light version.
 
 ## Typography
 
-**Display Font:** Archivo, self-hosted variable (wdth 62–125%, wght 100–900), with ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif
+**Display Font:** Archivo, self-hosted variable (wdth 62 to 125%, wght 100 to 900), with ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif
 **Body Font:** Archivo (same file)
-**Product faces (guests, not house):** Martian Mono (400, 700), Newsreader (500), Geist (400), Inter (400, 600), Bricolage Grotesque (700), Figtree (400), JetBrains Mono (500), each self-hosted as a single woff2 per weight.
+**Label/Mono Font:** none in the house; labels are Archivo at wdth 82. The `--mono` stack exists only as the fallback for the product mono faces.
+**Product faces (guests, not house):** Inter (400, 600), Newsreader (500), Bricolage Grotesque (700), Martian Mono (400, 700), Geist (400), Figtree (400), JetBrains Mono (500), each a single self-hosted woff2 per weight, applied through `face-*` classes.
 
-**Character:** One grotesque plays every house role by changing width: expanded and heavy to announce, near-normal to explain, condensed and semibold to label and operate. The guest faces are the exhibits, and the neutrality of the house face is what lets them read as specimens.
+**Character:** One grotesque plays every house role by changing width: expanded and heavy to announce the name, slightly condensed to head a section, condensed and semibold to label and operate. The guest faces are the exhibits, and the neutrality of the house face is what lets them read as specimens.
 
 ### Hierarchy
-- **Display** (820, wdth 112, `clamp(3.25rem, 0.9rem + 8.2vw, 6rem)`, line-height 0.9, -0.04em): the name, once, at the top of the first viewport.
-- **Address** (760, wdth 104, `clamp(1.75rem, 0.6rem + 4.6vw, 5rem)`, line-height 1, -0.04em): the email on the back cover, the second expanded-heavy moment. Underline draws in on hover.
-- **Headline** (780, wdth 94, `clamp(2.25rem, 1.2rem + 3.6vw, 4.25rem)`, line-height 1, -0.035em): section heads (Experience, Products, About). The Contact question uses the same voice slightly smaller (760, `clamp(2rem, 1.1rem + 3.2vw, 3.75rem)`, max 18ch).
-- **Specimen name** (the product's own face, `clamp(3rem, 1rem + 7vw, 6rem)`, line-height 0.95, -0.03em): the head of each spread. Martian Mono runs smaller (`clamp(2.5rem, 0.8rem + 6vw, 5.25rem)`); wordmarks that mix weights (LOL + IMPACT) keep the split.
-- **Title** (720, wdth 96, `clamp(1.5rem, 1.1rem + 1.4vw, 2.25rem)`, line-height 1.08, -0.025em): sub-blocks inside a section (the rows demo, the review pipeline).
-- **Title small** (700–720, wdth 94, 1.1875–1.25rem, line-height 1.25, -0.01em): role titles and spread highlight heads. The hero role line sits one step up (700, wdth 92, `clamp(1.25rem, 1.05rem + 0.7vw, 1.625rem)`).
-- **Lede** (400, `clamp(1.125rem, 1rem + 0.45vw, 1.375rem)`, line-height 1.5): opening paragraphs, max 40–52ch.
-- **Body** (400, wdth 100, 1.0625rem, line-height 1.6): running prose, max 64ch; secondary paragraphs in muted.
-- **Label** (600, wdth 82, 0.8125rem, line-height 1.35, +0.01em, sentence case, muted): data names on the spec sheet and toolset, dates, location meta, notes, and the folio. Never used as a kicker over a headline.
-- **Control** (600, wdth 92, 0.975rem): buttons and arrow links. Nav links run 560 / wdth 90 / 0.9375rem; the nav name 760 / wdth 88.
+- **Display** (820, wdth 112, `clamp(3.25rem, 0.9rem + 8.2vw, 6rem)`, line-height 0.9, -0.04em): the name, once, at the top of the home page.
+- **Headline** (780, wdth 94, `clamp(2.125rem, 1.2rem + 3vw, 3.75rem)`, line-height 1, -0.035em): section heads (Selected work, the Cisco chapter, How I got here). The contact question uses the same voice smaller (760, wdth 94, `clamp(1.625rem, 1.1rem + 1.4vw, 2.375rem)`, line-height 1.05).
+- **Product name** (the product's own face, `clamp(3rem, 1rem + 6.4vw, 5.75rem)`, line-height 0.95, -0.035em): the head of a case study. On the shelf it runs at the shelf size (`clamp(2.25rem, 1.4rem + 2.4vw, 3.5rem)`, line-height 1) and in the pager at `clamp(1.75rem, 1.2rem + 1.8vw, 2.75rem)`. Martian Mono always runs a step smaller at weight 400 with its wordmark half (LOL) in 700; Inter tightens to -0.04em.
+- **Title** (720, wdth 96, `clamp(1.375rem, 1.1rem + 0.9vw, 1.875rem)`, line-height 1.1, -0.02em): the two Cisco exhibit heads.
+- **Title small** (720, wdth 94, 1.1875rem, line-height 1.2 to 1.25, -0.01em): timeline role titles and case study highlight heads. The hero role line sits one step up (700, wdth 92, `clamp(1.25rem, 1.05rem + 0.7vw, 1.625rem)`).
+- **Lede** (400, `clamp(1.0625rem, 0.98rem + 0.4vw, 1.3125rem)`, line-height 1.5): opening paragraphs, 50 to 58ch, usually in Pencil Gray; the about lede stays in ink.
+- **Body** (400, wdth 100, 1.0625rem, line-height 1.6): running prose, max 64ch. Case study story runs slightly larger (`clamp(1.0625rem, 1rem + 0.2vw, 1.1875rem)`).
+- **Body small** (400, 0.9375 to 0.975rem, line-height 1.55): timeline bodies, highlight bodies, callout legend, toolset values, fact values (at 520 to 560 weight when they are data).
+- **Label** (600, wdth 82, 0.8125rem, line-height 1.35, +0.01em, sentence case, Pencil Gray): names data. Definition terms (Based in, Role, Stack), dates, captions, the position readout, the schematic note. Never a kicker over a headline.
+- **Control** (600, wdth 92, 0.9375rem): buttons. Arrow links run 620 / wdth 92. Nav links 560 / wdth 90 / 0.9375rem; the nav name 760 / wdth 88 / 1.0625rem.
 
 ### Named Rules
-**The One Family Rule.** The house speaks only Archivo. Hierarchy is made with width and weight on one family: expanded (104–112%) for the name and the address, about 94% for heads, 82–92% for labels, controls and nav. Never add a second house face.
+**The One Family Rule.** The house speaks only Archivo. Hierarchy comes from width and weight on one family: expanded (112%) for the name alone, about 94% for section heads, 82 to 92% for labels, buttons and nav. Never add a second house face.
 
-**The Own Face Rule.** A product's name, hero tab, "Aa" samples and face names are set in that product's real typeface, and a product face never appears outside its product's context. Inter and Geist are on the page because LifeUI, KatArch, LoLImpact and KnowGraph use them; that is product truth, not a house choice.
+**The Own Face Rule.** A product's name (shelf tab, slide name, case study name, pager name), its "Aa" samples and its face names are set in that product's real typeface, and a product face never appears outside its product's context. Inter and Geist are on the page because KatArch, LifeUI, KnowGraph and LoLImpact use them; a detector warning about them is product truth, not a house choice.
 
-**The Tabular Figures Rule.** Any number that is compared or scanned (dates, scale figures, hex values, pin numerals, the copyright line) uses tabular figures.
+**The Tabular Figures Rule.** Any number that is compared or scanned (positions like 01 / 05, dates, the local time, scale figures, pin numerals, the copyright line) uses tabular figures.
 
 ## Layout
 
-A single centered column capped at 1360px plus gutters (`clamp(16px, 4vw, 48px)`), with sections stacked full-bleed so each can paint its own ground. Inside the wrap, content is placed on fractional 12-column splits rather than a visible grid: 4/8 (hero copy against the work panel; block copy against its exhibit), 7/5 (section head against its intro; spread story against the callout legend; spread name and tagline against the links), 5/7 (About), and 3/4/5 (experience rows: dates, title, body).
+A single centered column capped at 1360px plus gutters (`clamp(16px, 4vw, 48px)`). Inside it, content sits on fractional two-column splits rather than a visible grid: 7/4 for the hero band (intro against the ruled meta list), 5/7 for the shelf head (title against tabs and arrows), 6/5 for the Cisco head, 1/1 for the two exhibits, 7/5 for about against the contact panel, and 7/5 again for the case study head and for story against the callout legend. Column gaps run `clamp(32px, 5vw, 80px)`.
 
-Vertical rhythm is set by a small clamp ladder: sections pad `clamp(88px, 11vw, 168px)`; major blocks inside a section are separated by `clamp(56px, 7vw, 96px)`; the spec sheet and folio by `clamp(48px, 6vw, 80px)`; a spread's stage drops `clamp(40px, 5vw, 72px)` below its head. Column gaps run `clamp(32px, 5vw, 80px)`. Controls sit in rows with a 10px gap.
+The one element that leaves the column is the shelf. Its track spans the viewport, insets its first slide to the column edge (`max(gutter, (100vw - 1360px) / 2)`), and snaps each slide to that edge. A slide is up to 1180px wide, split 1.7/1 between the screenshot and its copy, with the next product visible past the right edge.
 
-Multi-column content is divided by hairline rules, never by boxes: experience rows are ruled top and bottom; the three spread highlights sit under a 1px ink rule with grey rules between them; the spec sheet is a 12-column ruled table (Role, Stack, Scale, Typefaces at 3 columns each, then Palette across the full width); the toolset is a ruled definition list.
+Vertical rhythm is a short clamp ladder. Sections pad `clamp(80px, 9vw, 136px)` and open with a 1px top rule; the hero pads tighter (`clamp(28px, 3.6vw, 52px)` top) so the shelf head lands inside the first viewport on desktop. Major blocks inside a section or case study separate by `clamp(56px, 7vw, 96px)`. Controls sit in rows with a 10px gap. Anchors scroll with a 72px top padding so the sticky nav never covers a heading.
 
-Responsive behavior: at 1100px the spread head, story and experience head collapse to one column and the spec sheet goes to two cells per row; at 1000px the hero stacks and its work panel goes full-bleed; at 900px About and the products intro stack; at 760px everything is single-column, the overlapping second plate drops below the main one with a negative overlap, highlights stack, the strip goes to two columns, pins shrink to 22px, and the nav keeps only Contact beside the résumé pill; below 380px the nav keeps only the name and the pill. The hero plate is sized to the viewport height (`min(100%, (100svh - 330px) * 1.6)`) so the whole 16:10 screenshot fits the first viewport on desktop.
+Multi-column content is divided by hairlines, never by boxes: the hero meta list, the case study facts row (2/1/1.4) and spec sheet (2/1/1/1) are ruled cells; the three highlights sit under a 1px ink rule; the toolset is a ruled definition list under an ink rule; the timeline is one rule with a stop per role that darkens from Firm Hairline to ink as it reaches now.
+
+**The Shelf Rule.** Products are browsed one at a time on the horizontal shelf, the only element that leaves the column. The home page never lays products out as a grid, and every way of moving along it (tabs, arrows, keys, drag, swipe) lands on a snapped slide.
+
+Responsive behavior: at 1000px the shelf head, Cisco head, exhibits and case study body stack, the timeline goes to two columns with a rule above each stop, the case study head reflows (actions below the tagline) and the spec sheet goes to two cells per row. At 900px the hero band and about stack and the contact panel stops being sticky. At 800px a slide becomes one column (screenshot over copy), the arrows and position readout hide, and mouse drag turns off (touch scrolls natively). At 700px the nav keeps only the name, theme toggle and résumé pill; facts, highlights and sheet go single column; pins shrink to 20px. At 640px the pipeline's two tools stack; at 560px the timeline is one column; at 420px the PDF note on the résumé button hides.
 
 ## Elevation & Depth
 
-The page is flat. Sections, text, rules and controls carry no shadow; depth is conveyed by painted grounds changing from section to section. Shadows belong only to exhibits: plates (framed screenshots and dark demos), phone frames, the callout pins that sit on top of plates, and the full-size image viewer. Every shadow is soft and offset downward with negative spread, paired with a 1px ring that does the actual edge work.
+The page is flat. Sections, text, rules, controls and the exhibit panels carry no drop shadow; depth is conveyed by the plate tint and one step of raised tint. Shadows belong only to screenshots: plates, phone frames, the pins that sit on a plate, and the full-size image in the viewer. Every shadow is soft and offset downward with negative spread, and each edition has its own (deeper in dark, where a light shadow would vanish).
 
 ### Shadow Vocabulary
-- **Plate** (`box-shadow: 0 0 0 1px color-mix(in srgb, var(--s-ink) 12%, transparent), 0 18px 40px -18px rgb(0 0 0 / 0.35), 0 4px 10px -4px rgb(0 0 0 / 0.12)`): every framed screenshot. The ring takes the surface ink, so it adapts to each spread.
-- **Night plate** (`box-shadow: 0 0 0 1px #000, 0 24px 50px -24px rgb(0 0 0 / 0.55), 0 4px 10px -4px rgb(0 0 0 / 0.2)`): dark exhibits on a light page.
-- **Device** (`box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 1px color-mix(in srgb, var(--s-ink) 14%, transparent), 0 30px 50px -20px rgb(0 0 0 / 0.55)`): the phone frame around a mobile screenshot.
-- **Pin** (`box-shadow: 0 0 0 3px color-mix(in srgb, var(--s-accent) 30%, transparent), 0 4px 10px -2px rgb(0 0 0 / 0.35)`): a callout pin sitting on a plate. Legend pins are flat.
-- **Swatch ring** (`box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--s-ink) 16%, transparent)`): palette chips, so a chip that matches its ground still reads.
+- **Plate** (`box-shadow: 0 0 0 1px var(--ring), var(--shadow)`, where `--shadow` is `0 18px 40px -20px rgb(0 0 0 / 0.28), 0 4px 10px -4px rgb(0 0 0 / 0.1)` in light and `0 24px 50px -24px rgb(0 0 0 / 0.8), 0 4px 12px -4px rgb(0 0 0 / 0.5)` in dark): every framed screenshot. The ring does the edge work; the shadow only lifts.
+- **Device** (`box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 0 1px var(--ring), var(--shadow)`): the phone frame; the inner white hairline keeps the bezel from merging with dark paper.
+- **Pin** (`box-shadow: 0 0 0 2px var(--paper), 0 4px 10px -2px rgb(0 0 0 / 0.35)`): a numbered pin on a plate, cut out from the screenshot by a paper ring. Legend pins are flat.
+- **Exhibit ring** (`box-shadow: 0 0 0 1px var(--rule)`): the raised diagram panels. A ring, not a shadow.
+- **Viewer image** (`box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.9)`): the enlarged screenshot on the viewer's dark ground.
 
 ### Named Rules
-**The Plate Rule.** Only exhibits cast shadows. If it is not a screenshot, a demo, a device or a pin on one, it is flat.
+**The Plate Rule.** Only screenshots cast shadows. Diagrams, panels and controls are flat; if it is not a screenshot, a phone or a pin on one, it gets at most a hairline ring.
 
 ## Shapes
 
-Two corner families. Exhibits are gently rounded like a screen (10px on plates and diagram nodes, 8px on controls inside the demo, 6px on palette chips, 28px outer and 22px inner on phone frames). Everything the visitor presses is a full pill (999px): buttons, nav links, the résumé pill, icon links, the copy button, worker tags in the pipeline diagram. Pins are circles.
+Two corner families. Exhibits are gently rounded like a screen: 10px on plates and pipeline nodes, 14px on the raised exhibit panels, 16px on the contact panel, 6px on palette dots, 26px outer and 21px inner on phone frames. Everything the visitor presses is a full pill (999px): buttons, nav links, the theme toggle, the résumé pill, icon buttons, worker tags in the pipeline. Pins and timeline stops are circles.
 
-Printer's crop marks are the house's signature geometry: eight 9×1px ticks drawn 14px outside each plate's corners in ink at 45%, on the hero plate, every spread's main plate, and both night plates. Rules are always 1px. Icons are one stroke family (24px grid, 1.6 stroke, round caps and joins) drawn inline, colored by `currentColor`.
+Printer's crop marks are the house's signature geometry: eight 9 by 1px ticks drawn 14px outside the corners of the case study's lead plate, in ink at 38%. Shelf and gallery plates do not carry them. Rules are always 1px (the pipeline's source notes use a dashed 1px rule; the timeline rule is a 1px line from Firm Hairline to ink). Icons are one stroke family (24px grid, 1.6 stroke, round caps and joins) drawn inline and colored by `currentColor`. Disclosure chevrons are drawn from two 1.5px borders, not glyphs.
 
 ## Components
 
 ### Buttons
-Quiet, pill-shaped and ink-driven; they inherit the surface they sit on.
-- **Shape:** full pill (999px), minimum height 44px, 18px side padding, Archivo 600 at wdth 92, icons 16px with a 0.5em gap.
-- **Solid:** ink ground, stock text. The primary action once per context (Email me in the hero). Hover mixes 14% ground into the ink.
-- **Outline:** transparent with a 1px ink line and ink text. Hover lays a 7% ink wash. On spreads the line softens to ink at 30%.
-- **Accent:** only inside a product spread (Open the live app): the product's accent as ground and `--s-on-accent` text. Hover mixes 12% ink into the accent.
-- **Press:** 1px downward nudge. **Focus:** 2px solid `currentColor` outline, 3px offset, 4px radius, everywhere.
-- **Icon link:** a 44px circle with a 1px `--s-rule` line and an 18px icon; the line turns ink on hover.
-- **Arrow link:** Archivo 600 at wdth 92 with a 1px underline drawn as a border and a 14px arrow that nudges 2px up and right on hover.
+Quiet, pill-shaped and ink-driven.
+- **Shape:** full pill (999px), minimum height 44px, 18px side padding, Archivo 600 at wdth 92, 0.9375rem, 16px icons with a 0.5em gap.
+- **Solid:** ink ground, paper text, used once per context (Email me in the hero, Read the case study on a slide, Open the live app on a case study). Hover mixes 16% paper into the ink.
+- **Outline:** transparent with a 1px Firm Hairline and ink text (Résumé with a Soft Gray "PDF" note, Source, Copy). Hover turns the line to ink.
+- **Press:** 1px downward nudge. **Focus:** 2px solid ink outline, 3px offset, 4px radius, everywhere; inside the contact panel the outline is paper.
+- **Icon button:** a 44px circle with a 1px Firm Hairline and an 18px icon; the line turns ink on hover. Disabled (the shelf's first and last arrow) drops to 35% opacity.
+- **Arrow link:** Archivo 620 at wdth 92 with a 1px underline drawn as a background, a 14px arrow that moves 2px up and right (external) or 3px right (internal) on hover.
 
 ### Navigation
-A sticky 56px bar that takes the color of the page under it. Name on the left (760, wdth 88), four section links as pills (560, wdth 90, 40px tall, 8% ink wash on hover), and the résumé as an ink pill with a file icon. A scroll listener finds the painted section crossing the line under the bar and copies its `--s-ground`, `--s-ink` and `--s-rule` onto the bar (and into the `theme-color` meta); the change transitions over 0.5s. Below 760px only Contact stays beside the pill; below 380px only the name and the pill.
+A sticky 56px bar in paper at 94% with a 10px backdrop blur and a hairline bottom border. Name on the left (760, wdth 88); section links as pills in Pencil Gray (Work, Experience, About) that go ink with a 6% ink wash on hover; the theme toggle, a 40px round button showing a moon in light and a sun in dark, labeled with the edition it switches to; and the résumé as an ink pill with a file icon. The toggle saves the choice, updates `theme-color`, and crossfades the two editions with a view transition where supported (none under reduced motion). The bar is named `nav` for view transitions so it holds still while pages change. Below 700px the section links hide.
 
-### Plates
-The framed exhibit, the house's main object. A 10px-radius frame on `--s-surface` with the plate shadow and crop marks. Spread screenshots are buttons (`zoom-in` cursor) and open a full-screen night viewer with the alt text as its caption. Night plates hold the live 100k-row demo and the review pipeline diagram. Strip plates (three per row, two on phones) lift 3px on hover with a muted caption beneath.
+### Hero band
+The name at display size, then a band: role line, a muted lede, and the action row (Email me, Résumé, GitHub, LinkedIn) on the left; on the right a ruled definition list (Based in, Local time, Open to). Local time is Montevideo's, rendered live with `Intl.DateTimeFormat`, re-rendered on the minute, followed by a muted UTC−3.
 
-### Hero work panel (signature)
-The first viewport's right side is a panel painted in the active product's ground that bleeds off the right edge and down to the section floor. Product tabs sit on it, each set in its product's own face, above a 16:10 plate and a caption line (five palette swatches, the product's one-line index, its stack, and a "See the specimen" arrow link). Tabs are real ARIA tabs driven by click and keyboard (arrows, Home, End), never hover. An accent-colored 2px timer bar under the active tab runs for 6s and advances to the next product; it pauses on hover, on focus inside the panel, when the hero is off screen or the tab is hidden, stops for good once the visitor takes control, and never starts under reduced motion.
+### Product shelf (signature)
+The home page's product browser: five products, one at a time, on a horizontal track with mandatory scroll snap. Above it, tabs set in each product's own face (Soft Gray at rest, ink when current) with a 2px accent underline that grows in from the left over 0.45s, a tabular position readout (01 / 05) and previous/next icon buttons. The track takes arrow keys, Home and End when focused (focus shows as an outline 6px around the active plate), mouse drag with a 60px flick threshold (touch and trackpads scroll natively), and clicking a dimmed neighbour brings it forward instead of opening it. Neighbours fade toward the paper with a 60% paper veil (35% on hover), so a dark screenshot never turns muddy on white. Each slide holds a plate (lifts 3px on hover), the product name in its face, the tagline, three points under hairlines with an 8px accent tick, a proof label, and Read the case study plus Live and Source arrow links. The plate and name carry `view-transition-name` values `shot-{id}` and `name-{id}`.
 
-This is the system's one authored motion: on change, the panel ground transitions over 0.7s and the incoming screenshot wipes in left to right with `clip-path: inset(0 100% 0 0)` to `inset(0)` over 0.9s, both on the house ease-out `cubic-bezier(0.16, 1, 0.3, 1)`. Reduced motion removes both.
+### Plate
+The framed screenshot, the house's main object: a 10px frame on Plate Stock with the plate ring and shadow, holding a `<picture>` per edition (AVIF and WebP) of which only the matching one displays. Phone captures sit in a 5px Bezel frame at 26px. On a case study, plates render as zoom buttons (`zoom-in` cursor, labeled "Enlarge screenshot") that open the viewer at the matching edition's full-size image.
 
-### Specimen spread (signature)
-One product per full-bleed section, painted in the product's theme. In order: the name in the product's face at specimen size, tagline and the Live / Source buttons; the stage, a main plate with numbered callout pins in the product accent and, where it exists, a second plate (phone frame or second screen) overlapping its lower right; the story (max 64ch) beside the numbered legend, where hovering a legend line enlarges its pin by 1.25; three highlights under an ink rule; the spec sheet (Role, Stack, Scale, Typefaces with "Aa" samples in each face, Palette chips with names and hex); a strip of further screens; and the folio.
+### Pins and legend
+Numbered 26px circles in the product accent with on-accent numerals (0.75rem, 760, tabular), placed by percentage over the lead plate and ringed in paper. The legend beside the story repeats each number as a flat pin; hovering a legend line turns its text to ink and scales the matching pin to 1.3 over 0.25s. Pins shrink to 20px below 700px.
 
-### Folio
-The running foot that closes every spread, set as a label under a hairline: product name in ink, then "Set in [faces]", the ground hex, and the interface language, separated by space rather than punctuation.
+### Case study
+One template for all five products. Header: All work back link and the position (current number in the accent, total in ink), the name in the product's face, tagline and actions (Open the live app solid, Source outline), then a ruled facts row (Role, Year, Interface with language and "light and dark" or "dark only"). Then the lead plate at full column width with crop marks and pins; the story (max 64ch) beside the pin legend, with a ruled note where the live app has a caveat; three highlights under an ink rule; a gallery of further screens with label captions, desktop screens two to a row and phones in a narrower fixed column (`clamp(170px, 18vw, 240px)`); the spec sheet (Stack, Scale, Typefaces with a 2rem "Aa" in each face, Palette as 22px dots with an inset ink ring); and a pager with previous and next names in their faces and a keycap hint. Left and right arrow keys browse between case studies unless a field or dialog has focus.
 
-### Palette chip
-A 44px-tall swatch (6px radius, inset ring) with the color's name in 600 / wdth 92 and its hex in tabular muted figures. Six per row on desktop, three below 1100px.
+### Exhibit panel
+The Cisco diagrams sit in flat raised panels (14px, Raised Tint, hairline ring, `clamp(18px, 2.4vw, 32px)` padding), never on plates. The main-thread schematic is an inline SVG in ink tones only (tasks in ink, rails in Firm Hairline, notes in Pencil Gray at wdth 86) with a "Schematic, not a measurement." label under it. The review pipeline is HTML: paper nodes with Firm Hairline strokes at 10px, 1px connectors, pill worker tags, and a result node stroked in ink. Under the pipeline, a ruled disclosure ("How I built it") opens by animating its height over 0.4s where the browser supports `::details-content`, with a chevron that turns over 0.3s.
 
-### Back cover (Contact)
-The night surface: the hiring question in headline voice, the email as the address type with a copy button, arrow links to LinkedIn, GitHub and the résumé, location as a label, and a colophon that names the typefaces.
+### Contact panel
+The one reversed block, and reversed in both editions: an ink panel (16px, `clamp(24px, 3vw, 40px)` padding) with paper text, sticky 88px from the top beside the about column on desktop. It holds the hiring question, the email (700, `clamp(1.25rem, 0.9rem + 1.2vw, 1.875rem)`) whose underline draws in over 0.45s on hover, a Copy outline button restyled in paper at 30% (label turns to Copied, or Selected when the clipboard is blocked), and arrow links to LinkedIn, GitHub and the résumé, all between paper hairlines at 18%.
+
+### Viewer
+A full-screen `<dialog>` on a fixed near-black ground (#0a0a0c) in both editions, with the alt text as a caption and a 44px round close button; the full-size image loads only on open and the dialog fades in over 0.35s (none under reduced motion). Clicking the dark area closes it.
+
+### Motion
+One easing for everything: `cubic-bezier(0.16, 1, 0.3, 1)`. State feedback runs 0.2s to 0.5s. The authored moment is cross-document: `@view-transition { navigation: auto; }` morphs the shelf's plate and name into the case study's lead plate and heading over 0.45s, and the theme switch crossfades on the same timing. Under `prefers-reduced-motion` the view transitions, smooth scrolling, the shelf's smooth jumps, the tab underline, the neighbour fade, the plate lift and the disclosure animation are all off.
+
+**The Continuity Rule.** Motion exists to show that two views are the same thing: a shelf slide and its case study, one edition and the other. Anything that morphs between pages carries a stable `view-transition-name` (`shot-{id}`, `name-{id}`, `nav`); nothing animates for decoration.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** declare every new painted section's surface through all eight `--s-*` slots and mark it `data-paint`, so the nav and every component repaint with it.
-- **Do** style components from `--s-*` and `color-mix()` derivatives of it, never from `--paper` or `--ink` directly, unless the component is the house itself.
-- **Do** set a new product's name, tab and type samples in that product's real, self-hosted typeface, and give it a full `theme` with an AA-safe `accentText` and `onAccent`.
-- **Do** build hierarchy with Archivo's width axis: 104–112% to announce, about 94% for heads, 82–92% for labels, controls and nav.
-- **Do** frame every screenshot or live exhibit as a plate with the 1px ink ring, the soft offset shadow and crop marks; use a night plate for a dark exhibit on a light page.
-- **Do** key details in a screenshot with numbered accent pins and a matching legend, and close every spread with a folio.
+- **Do** define any new house color as a pair on `:root` and `:root[data-theme='dark']`, and style components from the role variables so they print in both editions.
+- **Do** capture every screenshot in both themes when the product has both, and render it through Plate so only the matching edition displays and downloads; mark a product without a light UI "dark only".
+- **Do** give a new product an accent pair (`light`, `dark`, `onLight`, `onDark`) that holds 4.5:1 against paper and against its on-accent in both editions, and use it only for the tab underline, slide ticks, pins and the case study position.
+- **Do** set a new product's name, tabs, pager name and "Aa" samples in that product's real, self-hosted typeface.
+- **Do** build hierarchy with Archivo's width axis: 112% for the name, about 94% for heads, 82 to 92% for labels, buttons and nav.
+- **Do** frame screenshots as plates (1px ring, soft offset shadow), keep crop marks for the case study's lead plate, and key details with numbered accent pins and a matching legend.
+- **Do** put diagrams in flat raised exhibit panels with a hairline ring, drawn in ink tones only.
 - **Do** divide columns and rows with 1px hairlines (an ink rule to open a set, grey rules within it).
-- **Do** use `cubic-bezier(0.16, 1, 0.3, 1)` for every transition, keep state feedback between 0.2s and 0.45s, and remove authored motion under `prefers-reduced-motion`.
-- **Do** make every interactive target at least 44px (40px in the nav bar) with the 2px `currentColor` focus ring.
+- **Do** use `cubic-bezier(0.16, 1, 0.3, 1)` for every transition, keep state feedback between 0.2s and 0.5s, and turn authored motion off under `prefers-reduced-motion`.
+- **Do** make every interactive target at least 44px (40px in the nav bar) with the 2px ink focus ring, and give every horizontal browser keyboard support.
 
 ### Don't:
-- **Don't** introduce a house accent color; color comes only from the products.
+- **Don't** introduce a house accent color, or use a product accent on buttons, links, headings, rules or grounds.
+- **Don't** repaint a section, the nav or the page ground in a product's palette; the page never changes ground under the reader.
 - **Don't** add a second house typeface, or use a product's face outside that product's context.
-- **Don't** put eyebrow or kicker labels above headlines; labels name data (sheet cells, dates, notes, folios) and nothing else.
-- **Don't** number sections; numerals belong to callout pins and data.
-- **Don't** set content in bordered, rounded, shadowed card grids; the only framed objects are plates.
-- **Don't** use gradient text or decorative grid or pattern backgrounds.
-- **Don't** add dark full-bleed bands beyond the Contact back cover and products whose own grounds are dark.
-- **Don't** gate content behind hover: product previews are tabs reachable by click, touch and keyboard.
-- **Don't** add a second authored animation; the hero repaint and the nav color change are the moment.
+- **Don't** put eyebrow or kicker labels above headlines; labels name data (terms, dates, captions, positions) and nothing else.
+- **Don't** number sections; numerals belong to positions, pins and data.
+- **Don't** set content in card grids; products live on the shelf, highlights and facts are ruled columns.
+- **Don't** use side-stripe borders, gradient text, or decorative grid or pattern backgrounds.
+- **Don't** cast shadows from anything that is not a screenshot, a phone or a pin on one.
+- **Don't** show a light screenshot of a product that has no light UI.
 - **Don't** use em-dashes in copy.

@@ -83,9 +83,10 @@ import Icon from './Icon.astro';
     const img = document.createElement('img');
     img.decoding = 'async';
     document.addEventListener('click', (e) => {
-      const trigger = (e.target as HTMLElement).closest<HTMLElement>('[data-zoom]');
+      const trigger = (e.target as HTMLElement).closest<HTMLElement>('[data-zoom-light], [data-zoom]');
       if (!trigger) return;
-      img.src = trigger.dataset.zoom ?? '';
+      const dark = document.documentElement.dataset.theme === 'dark';
+      img.src = (dark ? trigger.dataset.zoomDark : trigger.dataset.zoomLight) ?? trigger.dataset.zoom ?? '';
       img.alt = trigger.dataset.alt ?? '';
       alt.textContent = trigger.dataset.alt ?? '';
       body.replaceChildren(img);

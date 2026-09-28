@@ -1,18 +1,24 @@
 ---
 import Icon from './Icon.astro';
+
+const home = Astro.url.pathname === '/';
+const href = (hash: string) => (home ? hash : `/${hash}`);
 ---
 
-<header class="nav" data-nav>
+<header class="nav">
   <div class="wrap nav-inner">
-    <a class="nav-name" href="#top">Felix Andersson</a>
+    <a class="nav-name" href="/">Felix Andersson</a>
     <nav aria-label="Sections">
       <ul class="nav-links">
-        <li><a href="#experience">Experience</a></li>
-        <li><a href="#products">Products</a></li>
-        <li><a href="#about">About</a></li>
-        <li><a href="#contact">Contact</a></li>
+        <li><a href={href('#work')}>Work</a></li>
+        <li><a href={href('#experience')}>Experience</a></li>
+        <li><a href={href('#about')}>About</a></li>
       </ul>
     </nav>
+    <button class="nav-theme" type="button" data-theme-toggle aria-label="Switch to dark theme">
+      <Icon name="moon" class="for-light" />
+      <Icon name="sun" class="for-dark" />
+    </button>
     <a class="nav-cv" href="/felix-andersson-resume.pdf" target="_blank" rel="noopener">
       <Icon name="file" />
       <span>Résumé</span>
@@ -22,24 +28,19 @@ import Icon from './Icon.astro';
 
 <style>
   .nav {
-    --n-ground: var(--paper);
-    --n-ink: var(--ink);
-    --n-rule: var(--rule);
     position: sticky;
     top: 0;
     z-index: 50;
-    background: var(--n-ground);
-    color: var(--n-ink);
-    border-bottom: 1px solid var(--n-rule);
-    transition:
-      background-color 0.5s var(--ease-out),
-      color 0.5s var(--ease-out),
-      border-color 0.5s var(--ease-out);
+    background: color-mix(in srgb, var(--paper) 94%, transparent);
+    backdrop-filter: saturate(1.4) blur(10px);
+    -webkit-backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--rule);
+    view-transition-name: nav;
   }
   .nav-inner {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 8px;
     height: 56px;
   }
   .nav-name {
@@ -50,10 +51,7 @@ import Icon from './Icon.astro';
     text-decoration: none;
     margin-right: auto;
   }
-  .nav-links {
-    display: flex;
-    gap: 4px;
-  }
+  .nav-links { display: flex; gap: 2px; margin-right: 8px; }
   .nav-links a {
     display: inline-flex;
     align-items: center;
@@ -64,11 +62,25 @@ import Icon from './Icon.astro';
     font-weight: 560;
     font-stretch: 90%;
     text-decoration: none;
-    transition: background-color 0.2s var(--ease-out);
+    color: var(--ink-2);
+    transition: color 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
   }
-  .nav-links a:hover {
-    background: color-mix(in srgb, var(--n-ink) 8%, transparent);
+  .nav-links a:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+  .nav-theme {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: var(--ink-2);
+    transition: color 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
   }
+  .nav-theme:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+  .nav-theme :global(svg) { width: 18px; height: 18px; }
+  :global(:root[data-theme='dark']) .nav-theme :global(.for-light),
+  :global(:root:not([data-theme='dark'])) .nav-theme :global(.for-dark) { display: none; }
   .nav-cv {
     display: inline-flex;
     align-items: center;
@@ -76,63 +88,42 @@ import Icon from './Icon.astro';
     min-height: 40px;
     padding: 0 16px;
     border-radius: 999px;
-    background: var(--n-ink);
-    color: var(--n-ground);
+    background: var(--ink);
+    color: var(--paper);
     font-weight: 620;
     font-stretch: 90%;
     font-size: 0.9375rem;
     text-decoration: none;
-    transition: background-color 0.5s var(--ease-out), color 0.5s var(--ease-out);
   }
   .nav-cv :global(svg) { width: 16px; height: 16px; }
 
-  @media (max-width: 760px) {
-    .nav-links li:not(:last-child) { display: none; }
-    .nav-inner { gap: 8px; }
-  }
-  @media (max-width: 380px) {
+  @media (max-width: 700px) {
     .nav-links { display: none; }
   }
 </style>
 
 <script>
-  // The nav takes the colors of whichever painted section sits under it.
-  const nav = document.querySelector<HTMLElement>('[data-nav]');
-  const sections = [...document.querySelectorAll<HTMLElement>('[data-paint]')];
-
-  if (nav && sections.length) {
-    const apply = (section: HTMLElement) => {
-      const s = getComputedStyle(section);
-      nav.style.setProperty('--n-ground', s.getPropertyValue('--s-ground').trim());
-      nav.style.setProperty('--n-ink', s.getPropertyValue('--s-ink').trim());
-      nav.style.setProperty('--n-rule', s.getPropertyValue('--s-rule').trim());
-      const meta = document.querySelector('meta[name="theme-color"]');
-      meta?.setAttribute('content', s.getPropertyValue('--s-ground').trim());
+  const btn = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+  const root = document.documentElement;
+  const label = () => {
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    btn?.setAttribute('aria-label', `Switch to ${next} theme`);
+  };
+  label();
+  btn?.addEventListener('click', () => {
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    const apply = () => {
+      root.dataset.theme = next;
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#0c0c0e' : '#ffffff');
+      try {
+        localStorage.setItem('fa-theme', next);
+      } catch {}
+      label();
     };
-
-    // The section crossing the line just under the nav is the current one.
-    let current: HTMLElement | null = null;
-    let queued = false;
-    const update = () => {
-      queued = false;
-      const line = nav.offsetHeight + 1;
-      const hit = sections.find((s) => {
-        const r = s.getBoundingClientRect();
-        return r.top <= line && r.bottom > line;
-      });
-      if (hit && hit !== current) {
-        current = hit;
-        apply(hit);
-      }
-    };
-    const schedule = () => {
-      if (!queued) {
-        queued = true;
-        requestAnimationFrame(update);
-      }
-    };
-    addEventListener('scroll', schedule, { passive: true });
-    addEventListener('resize', schedule, { passive: true });
-    update();
-  }
+    // A short crossfade between the two editions where the browser supports it.
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    if (doc.startViewTransition && !reduce) doc.startViewTransition(apply);
+    else apply();
+  });
 </script>

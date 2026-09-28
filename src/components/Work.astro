@@ -1,0 +1,370 @@
+---
+import Icon from './Icon.astro';
+import Plate from './Plate.astro';
+import { projects, type Project } from '../data/projects';
+
+const accent = (p: Project) =>
+  `--a-light:${p.accent.light};--a-dark:${p.accent.dark};--on-light:${p.accent.onLight};--on-dark:${p.accent.onDark}`;
+const total = String(projects.length).padStart(2, '0');
+---
+
+<section id="work" class="work" aria-labelledby="work-title" data-work>
+  <div class="wrap work-head">
+    <div class="work-title">
+      <h2 id="work-title" class="t-section">Selected work</h2>
+      <p class="muted">
+        Five products I designed and built end to end in 2026, each from a written brief and its own design system. Open any of
+        them for the full case study.
+      </p>
+    </div>
+    <div class="work-controls">
+      <ul class="work-tabs" aria-label="Jump to a product">
+        {
+          projects.map((p, i) => (
+            <li data-accent style={accent(p)}>
+              <button type="button" class={`work-tab ${p.face}`} data-go={i} aria-current={i === 0 ? 'true' : undefined}>
+                {p.wordmark ? (
+                  <span>
+                    <b>{p.wordmark[0]}</b>
+                    {p.wordmark[1]}
+                  </span>
+                ) : (
+                  p.name
+                )}
+              </button>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="work-arrows">
+        <p class="work-pos t-label t-num" aria-live="polite"><span data-pos>01</span> / {total}</p>
+        <button class="icon-btn" type="button" data-prev aria-label="Previous product" disabled><Icon name="chevron-left" /></button>
+        <button class="icon-btn" type="button" data-next aria-label="Next product"><Icon name="chevron-right" /></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="work-track" data-track tabindex="0" role="region" aria-label="Products. Use the arrow keys to move between them.">
+    <ol class="work-list">
+      {
+        projects.map((p, i) => (
+          <li class="slide" data-slide data-accent style={accent(p)} aria-label={`${i + 1} of ${projects.length}: ${p.name}`}>
+            <a class="slide-shot" href={`/work/${p.id}/`} tabindex="-1" aria-hidden="true">
+              <Plate shot={p.main} zoom={false} vt={`shot-${p.id}`} sizes="(min-width: 1200px) 740px, (min-width: 800px) 60vw, 88vw" widths={[480, 740, 1000, 1480]} />
+            </a>
+            <div class="slide-copy">
+              <h3 class={`slide-name ${p.face}`} style={`view-transition-name:name-${p.id}`}>
+                <a href={`/work/${p.id}/`}>
+                  {p.wordmark ? (
+                    <>
+                      <b>{p.wordmark[0]}</b>
+                      {p.wordmark[1]}
+                    </>
+                  ) : (
+                    p.name
+                  )}
+                </a>
+              </h3>
+              <p class="slide-tagline">{p.tagline}</p>
+              <ul class="slide-points">
+                {p.highlights.map((h) => (
+                  <li>{h.title}</li>
+                ))}
+              </ul>
+              <p class="slide-proof t-label">
+                {p.proof}
+                {p.language === 'Spanish' && <span class="slide-lang">Interface in Spanish</span>}
+              </p>
+              <div class="slide-actions">
+                <a class="btn btn--solid" href={`/work/${p.id}/`}>
+                  Read the case study
+                  <Icon name="arrow-right" />
+                </a>
+                <a class="arrow-link" href={p.live} target="_blank" rel="noopener">
+                  Live <Icon name="arrow-up-right" />
+                </a>
+                <a class="arrow-link" href={p.source} target="_blank" rel="noopener">
+                  Source <Icon name="arrow-up-right" />
+                </a>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .work { padding-bottom: clamp(56px, 6vw, 96px); }
+
+  .work-head {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 20px clamp(32px, 5vw, 80px);
+    align-items: end;
+    padding-top: clamp(28px, 3vw, 44px);
+    border-top: 1px solid var(--rule);
+  }
+  .work-title { display: grid; gap: 14px; }
+  .work-title p { max-width: 48ch; }
+  .work-controls { display: flex; align-items: center; justify-content: flex-end; gap: 20px; min-width: 0; }
+  .work-tabs {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    min-width: 0;
+  }
+  .work-tabs::-webkit-scrollbar { display: none; }
+  .work-tab {
+    position: relative;
+    min-height: 44px;
+    padding: 6px 12px 10px;
+    border: 0;
+    background: none;
+    color: var(--ink-3);
+    font-size: 1.0625rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition: color 0.3s var(--ease-out);
+  }
+  .work-tab.face-martian { font-size: 0.9375rem; letter-spacing: 0.02em; }
+  .work-tab.face-martian span { font-weight: 400; }
+  .work-tab.face-newsreader { font-size: 1.1875rem; }
+  .work-tab:hover { color: var(--ink); }
+  .work-tab[aria-current='true'] { color: var(--ink); }
+  .work-tab::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 2px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.45s var(--ease-out);
+  }
+  .work-tab[aria-current='true']::after { transform: scaleX(1); }
+  .work-arrows { display: flex; gap: 8px; flex: none; align-items: center; }
+
+  /* ---- The shelf ---- */
+  .work-track {
+    --inset: max(var(--gutter), calc((100vw - var(--wrap)) / 2));
+    margin-top: clamp(28px, 3vw, 44px);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--inset);
+    scrollbar-width: none;
+    cursor: grab;
+  }
+  .work-track::-webkit-scrollbar { display: none; }
+  .work-track[data-dragging] { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+  .work-track:focus-visible { outline: none; }
+  .work-track:focus-visible .slide[data-active] .slide-shot .plate { outline: 2px solid var(--ink); outline-offset: 6px; }
+  .work-list {
+    display: flex;
+    gap: clamp(28px, 4vw, 64px);
+    padding-inline: var(--inset);
+    width: max-content;
+  }
+  .slide {
+    position: relative;
+    width: min(1180px, calc(100vw - var(--inset) * 2 - 56px));
+    scroll-snap-align: start;
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    gap: clamp(28px, 3.4vw, 52px);
+    align-items: center;
+  }
+  /* Neighbours fade toward the page, so dark screenshots don't turn muddy on white. */
+  .slide::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    background: var(--paper);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s var(--ease-out);
+  }
+  .slide:not([data-active])::after { opacity: 0.6; }
+  .slide:not([data-active]):hover::after { opacity: 0.35; }
+  .slide-shot { display: block; border-radius: var(--radius); }
+  .slide-shot .plate { transition: transform 0.5s var(--ease-out); }
+  .slide-shot:hover .plate { transform: translateY(-3px); }
+  .slide-shot :global(img) { -webkit-user-drag: none; }
+
+  .slide-copy { display: grid; gap: 16px; align-content: center; justify-items: start; }
+  .slide-lang { display: block; margin-top: 4px; color: var(--ink-3); }
+  .work-pos { align-self: center; margin-right: 6px; min-width: 4.5ch; }
+  .slide-name {
+    font-size: clamp(2.25rem, 1.4rem + 2.4vw, 3.5rem);
+    line-height: 1;
+    font-weight: inherit;
+    letter-spacing: -0.035em;
+  }
+  .slide-name a { text-decoration: none; }
+  .slide-name.face-martian { font-size: clamp(1.875rem, 1.2rem + 2vw, 2.875rem); letter-spacing: -0.02em; font-weight: 400; }
+  .slide-name.face-martian b { font-weight: 700; }
+  .slide-name.face-inter { letter-spacing: -0.04em; }
+  .slide-tagline { font-size: 1.0625rem; line-height: 1.5; color: var(--ink-2); max-width: 44ch; }
+  .slide-points { display: grid; gap: 6px; width: 100%; padding-block: 12px; border-block: 1px solid var(--rule); }
+  .slide-points li {
+    position: relative;
+    padding-left: 18px;
+    font-weight: 560;
+    font-stretch: 94%;
+    font-size: 0.975rem;
+  }
+  .slide-points li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 8px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .slide-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 4px; }
+
+  @media (max-width: 1000px) {
+    .work-head { grid-template-columns: minmax(0, 1fr); }
+    .work-controls { justify-content: space-between; }
+  }
+  @media (max-width: 800px) {
+    .slide { grid-template-columns: minmax(0, 1fr); width: calc(100vw - var(--inset) * 2 - 28px); align-items: start; }
+    .work-list { gap: 20px; }
+    .work-arrows { display: none; }
+    .work-track { cursor: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slide::after, .slide-shot .plate, .work-tab::after { transition: none; }
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-work]');
+  const track = root?.querySelector<HTMLElement>('[data-track]');
+  if (root && track) {
+    const slides = [...track.querySelectorAll<HTMLElement>('[data-slide]')];
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-go]')];
+    const prev = root.querySelector<HTMLButtonElement>('[data-prev]')!;
+    const pos = root.querySelector<HTMLElement>('[data-pos]');
+    const next = root.querySelector<HTMLButtonElement>('[data-next]')!;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    let active = 0;
+
+    const setActive = (i: number) => {
+      active = i;
+      slides.forEach((s, j) => (j === i ? s.setAttribute('data-active', '') : s.removeAttribute('data-active')));
+      tabs.forEach((t, j) => (j === i ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current')));
+      if (pos) pos.textContent = String(i + 1).padStart(2, '0');
+      prev.disabled = i === 0;
+      next.disabled = i === slides.length - 1;
+      // Keep the active tab visible by scrolling the tab strip only, never the page.
+      const tab = tabs[i];
+      const strip = tab?.closest('ul');
+      if (tab && strip) {
+        const li = tab.parentElement!;
+        const left = li.offsetLeft - strip.offsetLeft;
+        if (left < strip.scrollLeft || left + li.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+          strip.scrollTo({ left: left - 8, behavior: reduce.matches ? 'auto' : 'smooth' });
+        }
+      }
+    };
+
+    const go = (i: number) => {
+      const target = slides[Math.max(0, Math.min(slides.length - 1, i))];
+      if (!target) return;
+      const inset = parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0;
+      track.scrollTo({ left: target.offsetLeft - inset, behavior: reduce.matches ? 'auto' : 'smooth' });
+    };
+
+    // The slide nearest the start edge is the active one.
+    const sync = () => {
+      const inset = parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0;
+      let best = 0;
+      let bestDist = Infinity;
+      slides.forEach((s, i) => {
+        const d = Math.abs(s.offsetLeft - inset - track.scrollLeft);
+        if (d < bestDist) (bestDist = d), (best = i);
+      });
+      if (best !== active || !slides[best]!.hasAttribute('data-active')) setActive(best);
+    };
+    let raf = 0;
+    track.addEventListener('scroll', () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(sync);
+    }, { passive: true });
+
+    prev.addEventListener('click', () => go(active - 1));
+    next.addEventListener('click', () => go(active + 1));
+    tabs.forEach((t) => t.addEventListener('click', () => go(Number(t.dataset.go))));
+    track.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') (e.preventDefault(), go(active + 1));
+      if (e.key === 'ArrowLeft') (e.preventDefault(), go(active - 1));
+      if (e.key === 'Home') (e.preventDefault(), go(0));
+      if (e.key === 'End') (e.preventDefault(), go(slides.length - 1));
+    });
+    // Clicking a dimmed neighbour brings it forward instead of opening it.
+    slides.forEach((s, i) =>
+      s.addEventListener('click', (e) => {
+        if (i !== active && !(e.target as HTMLElement).closest('.slide-actions')) {
+          e.preventDefault();
+          go(i);
+        }
+      }, true),
+    );
+
+    // Drag to scroll with a mouse; touch and trackpads scroll natively.
+    let startX = 0;
+    let startLeft = 0;
+    let moved = false;
+    let dragging = false;
+    let startActive = 0;
+    track.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      dragging = true;
+      startActive = active;
+      moved = false;
+      startX = e.clientX;
+      startLeft = track.scrollLeft;
+    });
+    addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) > 6) {
+        moved = true;
+        track.setAttribute('data-dragging', '');
+      }
+      if (moved) track.scrollLeft = startLeft - dx;
+    });
+    addEventListener('pointerup', () => {
+      if (!dragging) return;
+      dragging = false;
+      if (moved) {
+        // Read the drag before snapping comes back on, or the browser snaps first.
+        const dir = track.scrollLeft - startLeft;
+        sync();
+        track.removeAttribute('data-dragging');
+        // A deliberate flick moves one product even if it didn't cross the halfway point.
+        go(active === startActive && Math.abs(dir) > 60 ? startActive + Math.sign(dir) : active);
+      }
+    });
+    // Links and images are natively draggable; that would cancel the pointer gesture.
+    track.addEventListener('dragstart', (e) => e.preventDefault());
+    // A drag must not also count as a click on the link underneath.
+    track.addEventListener('click', (e) => {
+      if (moved) {
+        e.preventDefault();
+        e.stopPropagation();
+        moved = false;
+      }
+    }, true);
+
+    setActive(0);
+  }
+</script>
