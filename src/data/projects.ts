@@ -53,7 +53,8 @@ export interface Project {
   highlights: { title: string; body: string }[];
   typefaces: string[];
   palette: string[];
-  language: 'English' | 'Spanish';
+  /** Interface languages; English is the default everywhere. */
+  language: 'English and Spanish';
   onlyDark?: boolean;
   accent: { light: string; dark: string; onLight: string; onDark: string };
   main: Shot;
@@ -95,7 +96,7 @@ export const projects: Project[] = [
     ],
     typefaces: ['Inter', 'JetBrains Mono'],
     palette: ['#0B0E13', '#FF7A45', '#6EA2FF', '#3FD694', '#B69BFF'],
-    language: 'Spanish',
+    language: 'English and Spanish',
     accent: { light: '#C2410C', dark: '#FF7A45', onLight: '#FFFFFF', onDark: '#1A0D06' },
     main: themed(
       'katarch-main',
@@ -146,7 +147,7 @@ export const projects: Project[] = [
     ],
     typefaces: ['Geist', 'Newsreader'],
     palette: ['#100E0C', '#EEECE7', '#909CF5', '#74C692', '#E8BE62'],
-    language: 'Spanish',
+    language: 'English and Spanish',
     onlyDark: true,
     accent: { light: '#5B67D8', dark: '#909CF5', onLight: '#FFFFFF', onDark: '#100E0C' },
     main: darkOnly(
@@ -197,12 +198,12 @@ export const projects: Project[] = [
     ],
     typefaces: ['Bricolage Grotesque', 'Figtree'],
     palette: ['#0F0B10', '#FFB08A', '#FF8497', '#7FDCAE', '#F7EEE9'],
-    language: 'Spanish',
+    language: 'English and Spanish',
     onlyDark: true,
     accent: { light: '#C2562A', dark: '#FFB08A', onLight: '#FFFFFF', onDark: '#2B130C' },
     main: darkOnly(
       'playsync-main',
-      'PlaySync room on desktop: Big Buck Bunny playing at 0:13, the room code, a Watching together status, and a chat between Felix and Sofi.',
+      'PlaySync room on desktop: Big Buck Bunny playing, the room code, a Watching together status, and a chat between Felix and Sofi.',
     ),
     callouts: [
       { x: 74.8, y: 3.2, text: 'Live presence: who is here, and whether the room is watching together.' },
@@ -210,9 +211,9 @@ export const projects: Project[] = [
       { x: 71.6, y: 11, text: 'Chat, queue and people share one panel; on phones they become a bottom tab bar.' },
     ],
     gallery: [
-      darkOnly('playsync-mobile', 'The same PlaySync room on a phone, as a guest: the video at 0:14 and the chat.', { phone: true, caption: 'The guest, on a phone' }),
+      darkOnly('playsync-mobile', 'The same PlaySync room on a phone, as a guest: the video, a view-only notice with a button to ask for control, and the chat.', { phone: true, caption: 'The guest, on a phone' }),
       darkOnly('playsync-search', 'PlaySync YouTube search inside a room, with Blender open movie results.', { caption: 'Search without an API key' }),
-      darkOnly('playsync-landing', 'PlaySync landing page with the headline Mismo video, mismo segundo.', { caption: 'Landing' }),
+      darkOnly('playsync-landing', 'PlaySync landing page with the headline Same video, same second, and the room creation form.', { caption: 'Landing' }),
     ],
   },
   {
@@ -247,7 +248,7 @@ export const projects: Project[] = [
     ],
     typefaces: ['Inter'],
     palette: ['#FCFCFD', '#16161A', '#5854D6', '#F59E0B', '#148054'],
-    language: 'English',
+    language: 'English and Spanish',
     accent: { light: '#5854D6', dark: '#7C79F0', onLight: '#FFFFFF', onDark: '#0E0F12' },
     main: themed(
       'lifeui-main',
@@ -299,7 +300,7 @@ export const projects: Project[] = [
     ],
     typefaces: ['Martian Mono', 'Geist'],
     palette: ['#E7E5E1', '#F2F1ED', '#0D0D0F', '#D62828', '#9A9A9A'],
-    language: 'English',
+    language: 'English and Spanish',
     accent: { light: '#C81E1E', dark: '#E5484D', onLight: '#FFFFFF', onDark: '#1A0606' },
     main: themed(
       'lol-main',

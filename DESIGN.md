@@ -208,7 +208,7 @@ A monochrome house in two editions (paper, ink, two grays, two rules, a plate an
 - **Plate Stock** (`plate` / `plate-dark`): the fill behind a framed screenshot before it loads.
 - **Raised Tint** (`raised` / `raised-dark`): the ground of the exhibit panels that hold the Cisco diagrams, one step off the paper.
 - **Pencil Gray** (`ink-2` / `ink-2-dark`): secondary copy. Ledes in muted position, taglines, timeline bodies, highlight bodies, callout legend text, labels, nav links, the theme toggle icon. 7.4:1 on paper in light, 7.8:1 in dark.
-- **Soft Gray** (`ink-3` / `ink-3-dark`): the quietest legible text. Inactive shelf tabs, the PDF note on the résumé button, the "Interface in Spanish" line, schematic sublabels. 5.1:1 in light, 4.7:1 in dark; it does not go lower.
+- **Soft Gray** (`ink-3` / `ink-3-dark`): the quietest legible text. Inactive shelf tabs, the PDF note on the résumé button, schematic sublabels. 5.1:1 in light, 4.7:1 in dark; it does not go lower.
 - **Hairline** (`rule` / `rule-dark`): row and cell dividers, section top rules, the nav's bottom border, the hairline ring around exhibit panels.
 - **Firm Hairline** (`rule-2` / `rule-2-dark`): borders on controls at rest (outline buttons, icon buttons, keycaps), pipeline node strokes and connectors, timeline stops before now, and the schematic rails.
 - **Plate Ring** (`ring` / `ring-dark`): the 1px edge around every plate, drawn as a spread shadow so it never shifts layout.

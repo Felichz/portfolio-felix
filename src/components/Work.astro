@@ -73,7 +73,6 @@ const total = String(projects.length).padStart(2, '0');
               </ul>
               <p class="slide-proof t-label">
                 {p.proof}
-                {p.language === 'Spanish' && <span class="slide-lang">Interface in Spanish</span>}
               </p>
               <div class="slide-actions">
                 <a class="btn btn--solid" href={`/work/${p.id}/`}>
@@ -198,7 +197,6 @@ const total = String(projects.length).padStart(2, '0');
   .slide-shot :global(img) { -webkit-user-drag: none; }
 
   .slide-copy { display: grid; gap: 16px; align-content: center; justify-items: start; }
-  .slide-lang { display: block; margin-top: 4px; color: var(--ink-3); }
   .work-pos { align-self: center; margin-right: 6px; min-width: 4.5ch; }
   .slide-name {
     font-size: clamp(2.25rem, 1.4rem + 2.4vw, 3.5rem);
