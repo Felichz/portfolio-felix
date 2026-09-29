@@ -31,7 +31,7 @@
 :root {
   --bg: #f2f1ed;
   --bg-2: #e9e7e1;
-  --surface: rgb(255 255 255 / 0.58);
+  --surface: rgb(255 255 255 / 0.7);
   --surface-strong: rgb(255 255 255 / 0.82);
   --surface-solid: #fbfaf7;
   --ink: #111114;
@@ -66,7 +66,7 @@
 
   --gutter: clamp(16px, 2.6vw, 40px);
   --bar-h: 64px;
-  --dock-h: 60px;
+  --rail-w: 76px;
   --max: 1560px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
@@ -74,13 +74,12 @@
   --radius-lg: 22px;
 
   color-scheme: light;
-  transition: --glow 1.4s var(--ease-io), --glow-2 1.4s var(--ease-io);
 }
 
 :root[data-theme='dark'] {
   --bg: #0a0a0c;
   --bg-2: #111115;
-  --surface: rgb(24 24 30 / 0.55);
+  --surface: rgb(22 22 27 / 0.82);
   --surface-strong: rgb(28 28 34 / 0.82);
   --surface-solid: #141418;
   --ink: #eeeeea;
@@ -123,16 +122,6 @@
 /* Cross-document view transitions: the showcase screenshot grows into its case study. */
 @view-transition { navigation: auto; }
 ::view-transition-group(*) { animation-duration: 0.5s; animation-timing-function: var(--ease-out); }
-/* Theme switch: the new edition spreads out from the toggle. */
-:root[data-vt='theme']::view-transition-old(root) { animation: none; }
-:root[data-vt='theme']::view-transition-new(root) {
-  animation: theme-reveal 0.7s var(--ease-io);
-}
-:root[data-vt='theme'] * { view-transition-name: none !important; }
-@keyframes theme-reveal {
-  from { clip-path: circle(0 at var(--vt-x, 100%) var(--vt-y, 0)); }
-  to { clip-path: circle(150vmax at var(--vt-x, 100%) var(--vt-y, 0)); }
-}
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
@@ -210,6 +199,7 @@ a:hover { text-decoration-thickness: 2px; }
 
 /* ------------------------------------------------------------------
    Ambient: warm light, a faint dot grid and film grain behind everything.
+   Static layers on their own compositor layer: nothing here repaints on scroll.
 ------------------------------------------------------------------- */
 .ambient {
   position: fixed;
@@ -217,17 +207,18 @@ a:hover { text-decoration-thickness: 2px; }
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
+  contain: strict;
+  /* Only this layer animates the light; the root just holds the colors, so nothing else restyles. */
+  transition: --glow 0.9s var(--ease-io), --glow-2 0.9s var(--ease-io);
 }
 .ambient::before {
   content: '';
   position: absolute;
-  inset: -10%;
+  inset: 0;
   background:
     radial-gradient(46% 56% at 12% 20%, color-mix(in oklab, var(--glow) var(--glow-strength), transparent), transparent 72%),
-    radial-gradient(42% 52% at 90% 86%, color-mix(in oklab, var(--glow-2) var(--glow-strength), transparent), transparent 72%),
-    radial-gradient(30% 30% at 70% 8%, color-mix(in oklab, var(--glow) calc(var(--glow-strength) / 2), transparent), transparent 70%);
-  filter: blur(8px);
-  animation: drift 26s var(--ease-io) infinite alternate;
+    radial-gradient(42% 52% at 90% 86%, color-mix(in oklab, var(--glow-2) var(--glow-strength), transparent), transparent 72%);
+  will-change: transform;
 }
 .ambient::after {
   content: '';
@@ -235,7 +226,7 @@ a:hover { text-decoration-thickness: 2px; }
   inset: 0;
   opacity: var(--grain);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
+  will-change: transform;
 }
 .ambient-dots {
   position: absolute;
@@ -243,34 +234,38 @@ a:hover { text-decoration-thickness: 2px; }
   background-image: radial-gradient(var(--dots) 1px, transparent 1.2px);
   background-size: 22px 22px;
   mask-image: radial-gradient(70% 60% at 50% 45%, #000 20%, transparent 85%);
-}
-@keyframes drift {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to { transform: translate3d(2%, -3%, 0) scale(1.06); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ambient::before { animation: none; }
+  will-change: transform;
 }
 
+/* While the theme switches, nothing animates: one instant repaint instead of hundreds of transitions. */
+:root[data-theme-switching] *,
+:root[data-theme-switching] *::before,
+:root[data-theme-switching] *::after { transition: none !important; }
+
 /* ------------------------------------------------------------------
-   App shell: a fixed window. Bar on top, a horizontal deck of panels,
-   a dock below. The page itself never scrolls vertically.
+   App shell: a fixed window. Bar on top, a section rail on the left,
+   and a vertical deck of full-height sections that snaps one at a time.
+   The document itself never scrolls; the deck does.
 ------------------------------------------------------------------- */
 html.app, html.app body { overflow: hidden; overscroll-behavior: none; }
 .app body {
   display: grid;
-  grid-template-rows: var(--bar-h) minmax(0, 1fr) var(--dock-h);
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  grid-template-rows: var(--bar-h) minmax(0, 1fr);
+  grid-template-areas: 'bar bar' 'rail stage';
   height: 100vh;
   height: 100dvh;
 }
+.bar { grid-area: bar; }
+.dock { grid-area: rail; }
+.stage { grid-area: stage; }
 
 .stage {
   position: relative;
-  display: flex;
   min-height: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
   overscroll-behavior: contain;
   scrollbar-width: none;
   outline: none;
@@ -278,7 +273,6 @@ html.app, html.app body { overflow: hidden; overscroll-behavior: none; }
 .stage::-webkit-scrollbar { display: none; }
 
 .panel {
-  flex: 0 0 100%;
   height: 100%;
   scroll-snap-align: start;
   scroll-snap-stop: always;
@@ -288,27 +282,13 @@ html.app, html.app body { overflow: hidden; overscroll-behavior: none; }
   scrollbar-width: thin;
   scrollbar-color: var(--line-2) transparent;
   container: panel / size;
-  padding: clamp(14px, 2.4vh, 28px) var(--gutter);
+  padding: clamp(14px, 2.4vh, 28px) calc(var(--gutter) + var(--rail-w)) clamp(14px, 2.4vh, 28px) var(--gutter);
 }
 .panel-inner {
   position: relative;
   height: 100%;
   max-width: var(--max);
   margin-inline: auto;
-}
-
-/* Panels settle into place as they arrive, and ease back as they leave (tracked on the deck's scroll). */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) and (min-width: 761px) {
-    .panel { animation: panel-pass linear both; }
-    /* A separate, more specific rule, so minifiers can't fold the timeline into the shorthand. */
-    .stage > .panel { animation-timeline: view(x); }
-  }
-}
-@keyframes panel-pass {
-  0% { opacity: 0.15; transform: translateX(7%) scale(0.96); }
-  40%, 60% { opacity: 1; transform: none; }
-  100% { opacity: 0.15; transform: translateX(-7%) scale(0.96); }
 }
 
 /* Staggered reveal the first time a panel becomes active. */
@@ -374,8 +354,6 @@ html.app, html.app body { overflow: hidden; overscroll-behavior: none; }
   position: relative;
   border-radius: var(--radius-lg);
   background: var(--surface);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
-  backdrop-filter: blur(18px) saturate(1.5);
   box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px var(--line), var(--shadow);
 }
 /* Pointer spotlight: set --mx/--my on the element and it follows the cursor. */
@@ -406,30 +384,6 @@ html.app, html.app body { overflow: hidden; overscroll-behavior: none; }
   font-stretch: 92%;
   white-space: nowrap;
 }
-.pulse {
-  position: relative;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--house-2);
-  flex: none;
-}
-.pulse::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: inherit;
-  animation: pulse 2.4s var(--ease-out) infinite;
-}
-@keyframes pulse {
-  from { transform: scale(1); opacity: 0.7; }
-  to { transform: scale(3.2); opacity: 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .pulse::after { animation: none; }
-}
-
 /* ------------------------------------------------------------------
    Buttons and links
 ------------------------------------------------------------------- */
@@ -744,10 +698,25 @@ kbd .icon { width: 12px; height: 12px; }
   --on-accent: var(--on-dark);
 }
 
-/* Phones: a shorter bar, and the dock becomes a tab bar. */
+/* Phones: a shorter bar, the rail becomes a tab bar at the bottom, and the deck scrolls
+   naturally: each section is at least a screen tall and snaps loosely. */
 @media (max-width: 760px) {
-  :root { --bar-h: 58px; --dock-h: calc(60px + env(safe-area-inset-bottom)); }
-  .panel { padding: 18px var(--gutter) 28px; }
+  :root { --bar-h: 58px; --rail-w: 0px; --tabs-h: calc(60px + env(safe-area-inset-bottom)); }
+  .app body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--bar-h) minmax(0, 1fr) var(--tabs-h);
+    grid-template-areas: 'bar' 'stage' 'rail';
+  }
+  .stage { scroll-snap-type: y proximity; }
+  .panel {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+    container-type: inline-size;
+    scroll-snap-stop: normal;
+    padding: 22px var(--gutter) 40px;
+  }
+  .panel-inner { height: auto; }
 }
 
 /* Each panel sets the colors the ambient light drifts to. */

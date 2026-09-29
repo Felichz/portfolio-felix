@@ -2,21 +2,23 @@
 import { Picture } from 'astro:assets';
 import Icon from './Icon.astro';
 import portrait from '../assets/portrait/felix-portrait.webp';
-import { projects } from '../data/projects';
 
 const first = 'Felix';
 const last = 'Andersson';
-const accent = (p: (typeof projects)[number]) =>
-  `--a-light:${p.accent.light};--a-dark:${p.accent.dark};--on-light:${p.accent.onLight};--on-dark:${p.accent.onDark}`;
+
+// What a hiring team gets, each line backed by the Experience and Work sections.
+const strengths = [
+  { title: 'Design systems', body: 'React and TypeScript components every Meraki team builds on.' },
+  { title: 'Complex UI', body: 'Data-heavy dashboards, large tables, deeply nested forms.' },
+  { title: 'Ownership', body: 'A startup’s whole frontend, OKR epics, problem to release.' },
+  { title: 'AI-native tooling', body: 'The review pipeline my team runs on every push.' },
+];
 ---
 
 <section id="intro" class="panel" data-label="Intro" tabindex="-1" aria-labelledby="intro-name">
   <div class="panel-inner intro">
     <div class="intro-copy">
-      <p class="chip intro-status" data-reveal style="--d:0">
-        <span class="pulse" aria-hidden="true"></span>
-        Open to remote senior frontend roles
-      </p>
+      <p class="chip intro-status" data-reveal style="--d:0">Open to remote senior frontend roles</p>
 
       <h1 id="intro-name" class="intro-name" aria-label={`${first} ${last}`} data-name>
         <span class="line" aria-hidden="true">{[...first].map((c, i) => <span class="ch" style={`--i:${i}`}>{c}</span>)}</span>
@@ -27,8 +29,9 @@ const accent = (p: (typeof projects)[number]) =>
         Senior Frontend Engineer, <span class="t-serif">building interfaces people can trust.</span>
       </p>
       <p class="t-lede intro-lede muted" data-reveal style="--d:4">
-        Five years on Cisco’s Magnetic design system and the Meraki Dashboard, where I built data tables that stay at
-        60&nbsp;FPS with more than 100,000 rows. This year I also designed and shipped five products of my own.
+        Five years building frontend infrastructure other teams depend on: Cisco’s Magnetic design system, the component
+        library behind the Meraki Dashboard, and the Dashboard’s most used pages. This year I also designed and shipped five
+        products of my own, end to end.
       </p>
 
       <div class="intro-actions" data-reveal style="--d:5">
@@ -38,27 +41,16 @@ const accent = (p: (typeof projects)[number]) =>
         <a class="icon-btn" href="https://www.linkedin.com/in/felixandersson/" target="_blank" rel="noopener" aria-label="LinkedIn profile"><Icon name="linkedin" /></a>
       </div>
 
-      <nav class="intro-shelf" aria-label="Products" data-reveal style="--d:6">
-        <p class="t-label">Shipped in 2026</p>
-        <ul>
-          {
-            projects.map((p) => (
-              <li data-accent style={accent(p)}>
-                <a class={p.face} href={`#work/${p.id}`}>
-                  {p.wordmark ? (
-                    <>
-                      <b>{p.wordmark[0]}</b>
-                      {p.wordmark[1]}
-                    </>
-                  ) : (
-                    p.name
-                  )}
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-      </nav>
+      <ul class="strengths" aria-label="What I bring" data-reveal style="--d:6">
+        {
+          strengths.map((x) => (
+            <li>
+              <b>{x.title}</b>
+              <span>{x.body}</span>
+            </li>
+          ))
+        }
+      </ul>
     </div>
 
     <figure class="portrait" data-reveal style="--d:2">
@@ -79,19 +71,6 @@ const accent = (p: (typeof projects)[number]) =>
           <span>Montevideo, Uruguay</span>
           <span class="portrait-tz t-num">UTC−3</span>
         </figcaption>
-      </div>
-
-      <div class="float float--a" aria-hidden="true">
-        <b class="t-num">100k+</b>
-        <span>rows at 60 FPS<small>Meraki Dashboard tables</small></span>
-      </div>
-      <div class="float float--b" aria-hidden="true">
-        <span class="float-dots">{projects.map((p) => <i data-accent style={accent(p)} />)}</span>
-        <span>5 products<small>designed and built, 2026</small></span>
-      </div>
-      <div class="float float--c" aria-hidden="true">
-        <span class="float-mark"><Icon name="layers" /></span>
-        <span>Magnetic<small>design system, since 2021</small></span>
       </div>
     </figure>
   </div>
@@ -152,56 +131,40 @@ const accent = (p: (typeof projects)[number]) =>
   .intro-lede { max-width: 54ch; }
   .intro-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
-  .intro-shelf {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px 18px;
-    margin-top: clamp(4px, 2cqh, 20px);
-    padding-top: clamp(12px, 2cqh, 18px);
-    border-top: 1px solid var(--line);
+  .strengths {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 28px;
     width: 100%;
+    margin-top: clamp(2px, 1.4cqh, 14px);
+    padding-top: clamp(10px, 1.8cqh, 16px);
+    border-top: 1px solid var(--line);
   }
-  .intro-shelf ul { display: flex; flex-wrap: wrap; gap: 4px 18px; }
-  .intro-shelf a {
-    position: relative;
-    display: inline-block;
-    padding-block: 4px;
-    font-size: 1.0625rem;
-    color: var(--ink-2);
-    text-decoration: none;
-    transition: color 0.25s var(--ease-out);
-  }
-  .intro-shelf a.face-martian { font-size: 0.875rem; }
-  .intro-shelf a::after {
+  .strengths li { display: grid; gap: 1px; padding-block: 7px; }
+  .strengths b { font-size: 0.9375rem; font-weight: 720; font-stretch: 94%; letter-spacing: -0.01em; }
+  .strengths b::before {
     content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    display: inline-block;
+    width: 10px;
     height: 2px;
+    margin: 0 6px 4px 0;
     border-radius: 2px;
-    background: var(--accent);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.4s var(--ease-out);
+    background: var(--house);
   }
-  .intro-shelf a:hover { color: var(--ink); }
-  .intro-shelf a:hover::after { transform: scaleX(1); }
+  .strengths span { font-size: 0.875rem; line-height: 1.4; color: var(--ink-2); padding-left: 16px; }
 
   /* ---- Portrait ---- */
   .portrait {
     position: relative;
     justify-self: center;
-    width: min(100%, calc(min(84cqh, 760px) * 0.84375));
+    width: min(100%, calc(min(80cqh, 720px) * 0.8063));
     perspective: 1200px;
-    container: portrait / inline-size;
   }
   .portrait-card {
     --rx: 0deg;
     --ry: 0deg;
     position: relative;
-    aspect-ratio: 1350 / 1600;
+    aspect-ratio: 1024 / 1270;
     border-radius: 28px;
     overflow: hidden;
     background: var(--bg-2);
@@ -249,74 +212,7 @@ const accent = (p: (typeof projects)[number]) =>
   .portrait-cap :global(.icon) { width: 15px; height: 15px; }
   .portrait-tz { margin-left: auto; opacity: 0.8; }
 
-  .float {
-    position: absolute;
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px 10px 10px;
-    border-radius: 16px;
-    background: var(--surface-strong);
-    -webkit-backdrop-filter: blur(16px) saturate(1.5);
-    backdrop-filter: blur(16px) saturate(1.5);
-    box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px var(--line), var(--shadow);
-    font-size: 0.875rem;
-    font-weight: 700;
-    font-stretch: 94%;
-    line-height: 1.2;
-    white-space: nowrap;
-    animation: bob 7s var(--ease-io) infinite alternate;
-  }
-  .float small { display: block; font-size: 0.75rem; font-weight: 520; color: var(--ink-3); }
-  .float b {
-    display: grid;
-    place-items: center;
-    min-width: 50px;
-    height: 40px;
-    padding: 0 8px;
-    border-radius: 11px;
-    background: var(--ink);
-    color: var(--bg);
-    font-size: 0.9375rem;
-    font-weight: 800;
-    font-stretch: 100%;
-  }
-  /* Chips sit on the wall and the shirt, never over the face. */
-  .float--a { top: 11%; left: -14%; }
-  .float--b { top: 72%; right: -7%; animation-delay: -2.5s; }
-  .float--c { top: 50%; left: -11%; animation-delay: -5s; }
-  .float-dots { display: grid; grid-template-columns: repeat(3, 10px); gap: 4px; padding: 6px; border-radius: 11px; background: color-mix(in oklab, var(--ink) 6%, transparent); }
-  .float-dots i { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); }
-  .float-mark {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, var(--house-2), var(--house));
-    color: var(--on-house);
-  }
-  .float-mark :global(.icon) { width: 20px; height: 20px; }
-  @keyframes bob {
-    from { transform: translate3d(0, -5px, 0); }
-    to { transform: translate3d(0, 5px, 0); }
-  }
-
-  @container panel (max-width: 1100px) {
-    .float--a { left: -6%; }
-    .float--b { right: -5%; }
-    .float--c { left: -4%; }
-  }
-  @container portrait (max-width: 460px) {
-    .float { padding: 8px 12px 8px 8px; font-size: 0.8125rem; }
-    .float small { display: none; }
-    .float b, .float-mark { height: 32px; min-width: 32px; }
-    .float-mark { width: 32px; }
-    .float--c { display: none; }
-  }
   @media (prefers-reduced-motion: reduce) {
-    .float { animation: none; }
     .portrait-card { transform: none; }
   }
 
@@ -325,9 +221,7 @@ const accent = (p: (typeof projects)[number]) =>
     .intro { grid-template-columns: minmax(0, 1fr); align-content: start; height: auto; min-height: 100%; gap: 28px; }
     .intro-name { font-size: clamp(3rem, 17cqw, 5.5rem); }
     .portrait { width: min(100%, 420px); justify-self: start; }
-    .float--a { left: auto; right: 10px; top: 14px; }
-    .float--b { right: 10px; top: auto; bottom: 64px; }
-    .float--c { display: none; }
+    .strengths { grid-template-columns: minmax(0, 1fr); }
   }
 </style>
 

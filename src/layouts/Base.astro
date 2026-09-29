@@ -13,11 +13,9 @@ interface Props {
   panels: PanelLink[];
   /** Where the brand link and the dock's back action point. */
   home?: boolean;
-  /** Where the dock's next button leads from the last panel. */
-  end?: { label: string; href: string };
 }
 
-const { title, description, image = '/og.png', panels, home = false, end } = Astro.props;
+const { title, description, image = '/og.png', panels, home = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image, Astro.site);
 
@@ -74,10 +72,10 @@ const person = {
     <div class="ambient" aria-hidden="true"><div class="ambient-dots"></div></div>
     <a class="skip-link" href="#main">Skip to content</a>
     <Bar panels={panels} home={home} />
+    <Dock panels={panels} />
     <main id="main" class="stage" data-deck tabindex="-1">
       <slot />
     </main>
-    <Dock panels={panels} end={end} />
     <Viewer />
 
     <!-- Open on the panel the URL names before the first paint, so a deep link never flashes the intro. -->
@@ -88,7 +86,7 @@ const person = {
         const panels = [...stage.children].filter((p) => p.classList.contains('panel'));
         const id = decodeURIComponent(location.hash.slice(1)).split('/')[0];
         const i = Math.max(0, panels.findIndex((p) => p.id === id));
-        if (i > 0) stage.scrollLeft = panels[i].offsetLeft;
+        if (i > 0) stage.scrollTop = panels[i].offsetTop;
         panels[i]?.setAttribute('data-active', '');
         panels[i]?.setAttribute('data-seen', '');
         // If the scripts never arrive, show everything rather than waiting on reveals that won't run.

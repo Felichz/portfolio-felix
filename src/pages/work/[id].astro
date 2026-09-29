@@ -43,7 +43,7 @@ const panels: PanelLink[] = [
 ];
 ---
 
-<Base title={`${p.name}, case study · Felix Andersson`} description={p.tagline} panels={panels} end={{ label: `Next: ${next.name}`, href: `/work/${next.id}/` }}>
+<Base title={`${p.name}, case study · Felix Andersson`} description={p.tagline} panels={panels}>
   <!-- Overview -->
   <section id="overview" class="panel cs" data-label="Overview" tabindex="-1" data-accent style={accent} aria-labelledby="cs-name" data-cs={p.id}>
     <div class="panel-inner ov">
@@ -284,8 +284,7 @@ const panels: PanelLink[] = [
     inset: 12% 10%;
     z-index: -1;
     border-radius: 50%;
-    background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 40%, transparent), transparent);
-    filter: blur(50px);
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 30%, transparent), transparent);
   }
   .ov-stage :global(.ov-plate) { width: min(100cqw, calc((100cqh - 34px) * 1.6)); }
 

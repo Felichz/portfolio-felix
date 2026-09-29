@@ -1,23 +1,23 @@
 # Felix Andersson, portfolio
 
-Personal site of Felix Andersson, Senior Frontend Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, plus five products designed and built end to end in 2026. Built like a desktop app: one fixed window, a horizontal deck of panels.
+Personal site of Felix Andersson, Senior Frontend Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, plus five products designed and built end to end in 2026. Built like a desktop app: one fixed window, full-height sections that move one at a time.
 
 **[anderssonfelix.com](https://anderssonfelix.com)** · [Résumé (PDF)](public/felix-andersson-resume.pdf) · [LinkedIn](https://www.linkedin.com/in/felixandersson/) · [GitHub](https://github.com/Felichz)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/home-dark.webp">
-  <img alt="The intro panel: the name set large in a variable grotesque, the role with an italic aside, a short summary and actions on the left; a portrait card with frosted chips on the right; the dock with panel progress at the bottom." src="docs/screenshots/home-light.webp">
+  <img alt="The intro: the name set large in a variable grotesque, the role with an italic aside, a short summary, actions and four strengths on the left; a portrait on the right; section dots down the left edge." src="docs/screenshots/home-light.webp">
 </picture>
 
 ## What's on it
 
-The site works like a desktop app in a fixed window: a bar on top, a dock at the bottom, and a horizontal deck of full-window panels in between. The page never scrolls vertically; a panel scrolls inside itself only when the window is too small for it. Scroll, swipe, use the arrow keys, the tabs or the dock.
+The site works like a desktop app in a fixed window: a bar on top, a rail of section dots down the left edge, and full-height sections that move one at a time. A scroll gesture jumps to the next section; a section scrolls inside itself only when the window is too small for it. On phones the sections scroll naturally and the rail becomes a tab bar.
 
-- **Intro.** Name, role, the short version, and a portrait.
+- **Intro.** Name, role, the short version, what I bring, and a portrait.
 - **Work.** A showcase of five products. Each product's screen recording plays, holds on its last frame, and the next one slides in; the rail fills in the product's color as its turn runs. Pause it with the button, or by reading the product copy.
-- **Experience.** The CV: roles from 2020 to now on a timeline, with the detail of the selected role below. The Cisco evidence (tables with 100k+ rows at 60 FPS, the AI review tooling) lives inside the role it belongs to.
+- **Experience.** The CV: roles from 2020 to now on a continuous timeline, with the detail of the selected role below, including the AI review pipeline built for the component library team.
 - **About.** How I got here, the toolset, and contact.
-- **One case study per product** (`/work/katarch`, `/work/knowgraph`, ...), as five panels: Overview with the lead screenshot, its recording and numbered callouts; Story; Engineering; Screens; Specs and the next case study.
+- **One case study per product** (`/work/katarch`, `/work/knowgraph`, ...), as five sections: Overview with the lead screenshot, its recording and numbered callouts; Story; Engineering; Screens; Specs and the next case study.
 - **Two editions.** Warm stone and near-black, chosen before first paint from the saved choice or the system setting, toggled from the bar. Screenshots print in the opposite edition, so each product stands out from the page.
 
 <table>
@@ -25,14 +25,14 @@ The site works like a desktop app in a fixed window: a bar on top, a dock at the
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/work-dark.webp">
-        <img alt="The Work panel: a rail of five products with LifeUI active and its progress bar filling, and LifeUI's screenshot in a browser window with its highlights and links below." src="docs/screenshots/work-light.webp">
+        <img alt="The Work section: a rail of five products with LifeUI active and its progress bar filling, and LifeUI's screenshot in a browser window with its highlights and links below." src="docs/screenshots/work-light.webp">
       </picture>
       <br><sub>The showcase: auto-advancing, one product at a time.</sub>
     </td>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/experience-dark.webp">
-        <img alt="The Experience panel: a timeline of roles from 2020 to now with the Magnetic component library selected, its details, and the main-thread schematic." src="docs/screenshots/experience-light.webp">
+        <img alt="The Experience section: a continuous timeline of roles from 2020 to now with the Magnetic component library selected, its details, and the AI review pipeline." src="docs/screenshots/experience-light.webp">
       </picture>
       <br><sub>Experience as a timeline, with the selected role below.</sub>
     </td>
@@ -43,27 +43,28 @@ The site works like a desktop app in a fixed window: a bar on top, a dock at the
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/case-dark.webp">
         <img alt="KatArch case study overview: the product name in its own typeface, facts and actions on the left, the lead screenshot with numbered pins on the right." src="docs/screenshots/case-light.webp">
       </picture>
-      <br><sub>A case study's first panel.</sub>
+      <br><sub>A case study's first section.</sub>
     </td>
     <td width="50%" align="center">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/mobile-dark.webp">
         <img width="260" alt="The intro on a phone, with the tab bar at the bottom." src="docs/screenshots/mobile-light.webp">
       </picture>
-      <br><sub>On a phone: same deck, a tab bar, panels that scroll inside.</sub>
+      <br><sub>On a phone: sections scroll naturally, with a tab bar.</sub>
     </td>
   </tr>
 </table>
 
 ## Details that took some care
 
-- One navigation model for wheel, trackpad, touch, keys, tabs and links. A wheel gesture moves one panel, unless it started by scrolling something inside the panel.
-- Deep links (`/#experience`, `/#work/lifeui`) open on their panel and product before the first paint.
+- One navigation model for wheel, trackpad, touch, keys, tabs and links. A wheel gesture moves one section, unless it started by scrolling something inside the section.
+- Deep links (`/#experience`, `/#work/lifeui`) open on their section and product before the first paint.
 - The name is set one glyph at a time along Archivo's width axis: letters widen into place on arrival and swell toward the pointer.
-- The room light follows the content: each panel, and each product in the showcase, sets the colors of the ambient glow.
-- The showcase screenshot and product name morph into the case study header (cross-document view transitions). The theme toggle reveals the other edition in a circle from the button.
+- The room light follows the content: each section, and each product in the showcase, sets the colors of the ambient glow.
+- The showcase screenshot and product name morph into the case study header (cross-document view transitions).
+- Kept cheap to render: no backdrop blur, static ambient layers, and the theme switches in one frame with transitions suspended.
 - Everything sizes against the window with container units, and tightens on short screens.
-- Reduced motion: no autoplay, no drift, no tilt, instant panel moves.
+- Reduced motion: no autoplay, no tilt, instant section moves.
 - Static output, responsive AVIF/WebP images, recordings that load only when they play, self-hosted font subsets, no client framework.
 
 ## Stack
@@ -84,14 +85,14 @@ npm run preview  # serve dist/
 | Path | What |
 | --- | --- |
 | `src/data/projects.ts` | Every product: order, copy, stack, scale, accent colors, screenshots, callouts, gallery. |
-| `src/pages/index.astro` | Home panels: `Intro`, `Work` (the showcase), `Experience` (timeline, `MainThread`, `Pipeline`), `About`. |
-| `src/pages/work/[id].astro` | Case study template (five panels), generated from `projects.ts`. |
-| `src/layouts/Base.astro` | The app shell: head, pre-paint theme and deep-link scripts, `Bar`, the deck, `Dock`, image viewer. |
-| `src/scripts/deck.ts` | The horizontal deck: wheel, keys, links, hash, dock and ambient light. |
+| `src/pages/index.astro` | Home sections: `Intro`, `Work` (the showcase), `Experience` (timeline, `MainThread`, `Pipeline`), `About`. |
+| `src/pages/work/[id].astro` | Case study template (five sections), generated from `projects.ts`. |
+| `src/layouts/Base.astro` | The app shell: head, pre-paint theme and deep-link scripts, `Bar`, the section rail (`Dock`), the deck, image viewer. |
+| `src/scripts/deck.ts` | The vertical deck: wheel, keys, links, hash, section rail and ambient light. |
 | `src/scripts/fx.ts` | Pointer spotlight and tilt. |
 | `src/components/Plate.astro` | Theme-aware screenshot in a browser window, with the recording player. |
 | `src/styles/global.css` | Tokens for both editions, ambient layers, shell, surfaces, buttons, plates, pins. |
-| `src/assets/portrait/` | Portrait photos and the avatar crop. |
+| `src/assets/portrait/` | The portrait. |
 | `src/assets/shots/` | Product screenshots (WebP, 2x), as `name-light` / `name-dark`. |
 | `src/assets/motion/` | Screen recordings (H.264 MP4, 1920 wide), as `name-light` / `name-dark`. |
 | `docs/screenshots/` | The images in this README. |

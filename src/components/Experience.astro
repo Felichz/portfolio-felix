@@ -2,61 +2,59 @@
 import Icon from './Icon.astro';
 import MainThread from './MainThread.astro';
 import Pipeline from './Pipeline.astro';
-import { projects, type Project } from '../data/projects';
 
 type Month = [year: number, month: number];
 
 interface Role {
   id: string;
-  lane: 'client' | 'own';
   bar: string;
   title: string;
   org: string;
   via?: string;
   start: Month;
+  /** Last month in the role, inclusive. Omitted for the current role. */
   end?: Month;
   summary: string;
   points: string[];
   tags: string[];
   glance?: { k: string; v: string }[];
-  exhibit?: 'library' | 'products';
+  exhibit?: 'library';
 }
 
-// Chronological. Dates from the résumé.
+// Chronological and continuous: each bar runs until the next role starts.
 const roles: Role[] = [
   {
     id: 'device-magic',
-    lane: 'client',
     bar: 'Device Magic',
     title: 'Frontend Engineer',
     org: 'Device Magic',
     via: 'through Vairix',
     start: [2020, 12],
-    end: [2021, 5],
-    summary: 'Owned the whole web frontend after the senior developer left, and carried the product to its MVP launch.',
+    end: [2021, 7],
+    summary: 'My first product. I ended up owning the whole web frontend after the senior developer left, and took it to its MVP launch.',
     points: [
-      'A dynamic forms engine with unlimited nested blocks and real-time expression evaluation.',
-      'Large forms made orders of magnitude faster, by reworking the algorithms and the rendering.',
+      'A dynamic forms engine: unlimited nested sections, recursive state and real-time expression evaluation.',
+      'When the backend switched to an incompatible XML format, a client-side adapter that translated it on the fly instead of a rewrite.',
+      'Large forms made orders of magnitude faster by reworking the algorithms and the rendering.',
       'The UI for a webcam barcode scanner: a focused scan area with real-time feedback.',
     ],
-    tags: ['React', 'Forms engine', 'Performance'],
+    tags: ['React', 'State management', 'Performance', 'Ownership'],
     glance: [
-      { k: 'Outcome', v: 'MVP launch' },
-      { k: 'Built', v: 'Forms engine, expression evaluator, scanner UI' },
+      { k: 'Outcome', v: 'MVP launch, with the frontend in my hands' },
+      { k: 'Hardest part', v: 'Recursive forms that stay fast at any size' },
     ],
   },
   {
     id: 'magnetic',
-    lane: 'client',
-    bar: 'Magnetic',
+    bar: 'Magnetic design system',
     title: 'Frontend Engineer, Design System',
     org: 'Cisco, Magnetic design system',
     via: 'through Vairix',
     start: [2021, 8],
     end: [2022, 7],
-    summary: 'Joined Magnetic, the design system behind the Meraki Dashboard, in its early stages.',
+    summary: 'Joined Magnetic, Cisco’s design system, while it had its first components, and helped take it to its first production release.',
     points: [
-      'Reusable React components with accessibility and performance as the bar.',
+      'Reusable React components with accessibility and performance as the bar, not an afterthought.',
       'Detailed design specs turned into components, working directly with the design team.',
       'Testing and QA for the library’s first production release.',
     ],
@@ -68,68 +66,53 @@ const roles: Role[] = [
   },
   {
     id: 'meraki',
-    lane: 'client',
     bar: 'Meraki Dashboard',
     title: 'Frontend Engineer, Product Implementation',
     org: 'Cisco Meraki, Meraki Dashboard',
     via: 'through Vairix',
     start: [2022, 8],
-    end: [2023, 11],
+    end: [2023, 10],
     summary: 'Built the most used data pages of the Meraki Dashboard: Access Points, Switches and Clients.',
     points: [
-      'Data tables with filtering, sorting and export, for customers with 100k+ rows.',
-      'Planned and broke down critical features so several people could build in parallel.',
-      'Moved teams from legacy UI components to Magnetic without breaking what they had.',
+      'Tables with filtering, sorting and export, optimized for the largest customers’ datasets.',
+      'Planned and broke down critical features so several developers could build in parallel.',
+      'Moved teams from legacy UI components to Magnetic while keeping what they had working.',
     ],
-    tags: ['React', 'TypeScript', 'Data tables', 'Magnetic'],
+    tags: ['React', 'TypeScript', 'Data-heavy UI', 'Planning'],
     glance: [
       { k: 'Pages', v: 'Access Points, Switches, Clients' },
-      { k: 'Scale', v: 'Customers with 100k+ rows' },
+      { k: 'Also', v: 'Feature planning and ticket breakdown for the team' },
     ],
   },
   {
     id: 'library',
-    lane: 'client',
-    bar: 'Magnetic library',
+    bar: 'Magnetic component library',
     title: 'Frontend Product Engineer',
     org: 'Cisco, Magnetic component library',
     via: 'through Vairix',
     start: [2023, 11],
-    summary: 'I maintain the React and TypeScript component library that Meraki teams build on.',
+    summary:
+      'The proactive maintainer of the React and TypeScript library that Meraki teams build on. When leadership needs something, I take it from spec to release.',
     points: [
-      'Non-blocking filtering for tables with 100k+ rows: matches render as you type, at 60 FPS.',
-      'Complex data table features, built to detailed design specs.',
-      'Support for the hundreds of developers who adopt the library, and the team’s review standards.',
-      'The team’s AI review tooling, which runs on every push.',
+      'Complex data table features built to detailed design specs, the most demanding components in the library.',
+      'Support for the hundreds of developers who adopt the library, and the review standards that keep it stable.',
+      'OKR epics leadership needed, owned end to end.',
+      'The team’s AI engineering stack: an AGENTS.md, coding skills, and a pre-push review pipeline the team still runs.',
+      'Main-thread work where it matters, like filtering that keeps large tables responsive while you type.',
     ],
-    tags: ['React', 'TypeScript', 'Performance', 'AI tooling'],
+    tags: ['React', 'TypeScript', 'Design systems', 'Accessibility', 'AI tooling'],
     exhibit: 'library',
-  },
-  {
-    id: 'independent',
-    lane: 'own',
-    bar: 'Five products',
-    title: 'Designer and engineer, own products',
-    org: 'Independent',
-    start: [2026, 1],
-    summary: 'Five products designed and built end to end, each from a written brief with its own design system.',
-    points: [
-      'Product briefs, design systems and architecture decisions written down before the code.',
-      'Frontend, realtime servers, AI gateways and statistics, depending on the product.',
-      'Tests and CI where the product calls for them: 257 in LifeUI, 33 Playwright tests in KnowGraph.',
-    ],
-    tags: ['Product', 'Design', 'Frontend', 'Full stack when needed'],
-    exhibit: 'products',
   },
 ];
 
 const now = new Date();
 const nowM = now.getFullYear() * 12 + now.getMonth() + now.getDate() / 31;
 const m = ([y, mo]: Month) => y * 12 + (mo - 1);
-const axisStart = m([2020, 9]);
-const axisEnd = Math.max(m([2026, 12]), nowM + 1);
+const axisStart = m([2020, 11]);
+const axisEnd = nowM + 3;
 const at = (v: number) => ((v - axisStart) / (axisEnd - axisStart)) * 100;
 const years = [2021, 2022, 2023, 2024, 2025, 2026];
+const barEnd = (i: number) => (roles[i + 1] ? m(roles[i + 1]!.start) : nowM);
 
 const monthName = (mo: number) => new Date(2000, mo - 1, 1).toLocaleString('en-US', { month: 'short' });
 const when = (r: Role) => `${monthName(r.start[1])} ${r.start[0]} to ${r.end ? `${monthName(r.end[1])} ${r.end[0]}` : 'now'}`;
@@ -140,8 +123,6 @@ const span = (r: Role) => {
   return [y && `${y} yr${y > 1 ? 's' : ''}`, mo && `${mo} mo${mo > 1 ? 's' : ''}`].filter(Boolean).join(' ');
 };
 const current = roles.findIndex((r) => r.id === 'library');
-const accent = (p: Project) =>
-  `--a-light:${p.accent.light};--a-dark:${p.accent.dark};--on-light:${p.accent.onLight};--on-dark:${p.accent.onDark}`;
 ---
 
 <section id="experience" class="panel" data-label="Experience" tabindex="-1" aria-labelledby="exp-title" data-exp>
@@ -150,8 +131,8 @@ const accent = (p: Project) =>
       <div class="exp-title">
         <h2 id="exp-title" class="t-section">Experience</h2>
         <p class="t-lede muted">
-          Frontend engineer since 2020, contracted through Vairix. Most of it at Cisco: Magnetic, the design system behind the
-          Meraki Dashboard, and the Dashboard itself.
+          Five years through Vairix, most of them at Cisco as the maintainer Meraki teams count on: shipping components to spec,
+          supporting the developers who build on them, and building the tools the team needed before anyone asked.
         </p>
       </div>
       <a class="btn" href="/felix-andersson-resume.pdf" target="_blank" rel="noopener"><Icon name="download" />Résumé, PDF</a>
@@ -159,38 +140,27 @@ const accent = (p: Project) =>
 
     <div class="gantt glass" data-reveal style="--d:1">
       <div class="gantt-grid" aria-hidden="true">
-        <span class="gantt-year gantt-year--first" style="--at:0%">2020</span>
         {years.map((y) => <span class="gantt-year" style={`--at:${at(m([y, 1]))}%`}>{y}</span>)}
         <span class="gantt-now" style={`--at:${at(nowM)}%`}><b>Now</b></span>
       </div>
-      {
-        (['client', 'own'] as const).map((lane) => (
-          <div class="gantt-lane">
-            <p class="gantt-label t-label">{lane === 'client' ? 'Client work' : 'Own products'}</p>
-            <div class="gantt-row">
-              {roles.map((r, i) =>
-                r.lane !== lane ? null : (
-                  <button
-                    type="button"
-                    class:list={['bar', 'spot', `bar--${r.lane}`]}
-                    style={`--x:${at(m(r.start))}%;--w:${at(r.end ? m(r.end) + 1 : nowM) - at(m(r.start))}%`}
-                    data-pick={i}
-                    aria-pressed={i === current ? 'true' : 'false'}
-                    aria-controls={`role-${r.id}`}
-                    aria-label={`${r.org}, ${when(r)}`}
-                  >
-                    <span class="bar-name">{r.bar}</span>
-                    <span class="bar-years t-num">
-                      {r.start[0]}
-                      {r.end ? (r.end[0] !== r.start[0] ? `–${String(r.end[0]).slice(2)}` : '') : '–now'}
-                    </span>
-                  </button>
-                ),
-              )}
-            </div>
-          </div>
-        ))
-      }
+      <div class="gantt-row">
+        {
+          roles.map((r, i) => (
+            <button
+              type="button"
+              class="bar spot"
+              style={`--x:${at(m(r.start))}%;--w:${at(barEnd(i)) - at(m(r.start))}%`}
+              data-pick={i}
+              aria-pressed={i === current ? 'true' : 'false'}
+              aria-controls={`role-${r.id}`}
+              aria-label={`${r.org}, ${when(r)}`}
+            >
+              <span class="bar-name">{r.bar}</span>
+              <span class="bar-years t-num">{r.start[0]}–{r.end ? String(r.end[0]).slice(2) : 'now'}</span>
+            </button>
+          ))
+        }
+      </div>
     </div>
 
     <div class="roles" data-reveal style="--d:2">
@@ -232,27 +202,17 @@ const accent = (p: Project) =>
               {r.exhibit === 'library' ? (
                 <div class="ex" data-ex>
                   <div class="ex-tabs" role="tablist" aria-label="A closer look">
-                    <button type="button" role="tab" id="ex-tab-rows" aria-controls="ex-rows" aria-selected="true">
-                      100k rows at 60 FPS
+                    <button type="button" role="tab" id="ex-tab-review" aria-controls="ex-review" aria-selected="true">
+                      AI review pipeline
                     </button>
-                    <button type="button" role="tab" id="ex-tab-review" aria-controls="ex-review" aria-selected="false" tabindex="-1">
-                      AI review tooling
+                    <button type="button" role="tab" id="ex-tab-rows" aria-controls="ex-rows" aria-selected="false" tabindex="-1">
+                      Main-thread work
                     </button>
                   </div>
-                  <div class="ex-panel scroll-y" role="tabpanel" id="ex-rows" aria-labelledby="ex-tab-rows">
+                  <div class="ex-panel scroll-y" role="tabpanel" id="ex-review" aria-labelledby="ex-tab-review">
                     <p class="ex-lede">
-                      A filter that runs as one long task freezes typing and painting on every keystroke. I split it into short slices
-                      that yield to the browser and render matches the moment they exist.
-                    </p>
-                    <div class="ex-figure">
-                      <MainThread />
-                    </div>
-                    <p class="t-label">Schematic, not a measurement</p>
-                  </div>
-                  <div class="ex-panel scroll-y" role="tabpanel" id="ex-review" aria-labelledby="ex-tab-review" hidden>
-                    <p class="ex-lede">
-                      When AI adoption became a goal for every team, I spent two to three months on tooling that raised our review bar
-                      instead of letting quality slip. The team still runs it on every push.
+                      When leadership made AI adoption an OKR for every team, I used the transition to raise our quality bar instead
+                      of letting it slip: two to three months of tooling that the team still runs on every push.
                     </p>
                     <div class="ex-figure">
                       <Pipeline />
@@ -274,21 +234,17 @@ const accent = (p: Project) =>
                       </div>
                     </details>
                   </div>
-                </div>
-              ) : r.exhibit === 'products' ? (
-                <div class="glance">
-                  <p class="t-label">The five</p>
-                  <ul class="mini-products">
-                    {projects.map((p) => (
-                      <li data-accent style={accent(p)}>
-                        <a href={`#work/${p.id}`}>
-                          <span class={`mini-name ${p.face}`}>{p.wordmark ? p.wordmark.join('') : p.name}</span>
-                          <span class="mini-short">{p.short}</span>
-                          <Icon name="arrow-right" class="icon-right" />
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+                  <div class="ex-panel scroll-y" role="tabpanel" id="ex-rows" aria-labelledby="ex-tab-rows" hidden>
+                    <p class="ex-lede">
+                      One small example of the performance work. A table filter that ran as one long task froze typing on large
+                      datasets; split into short slices that yield to the browser, the table stays responsive and matches render as
+                      they arrive.
+                    </p>
+                    <div class="ex-figure">
+                      <MainThread />
+                    </div>
+                    <p class="t-label">Schematic, not a measurement</p>
+                  </div>
                 </div>
               ) : (
                 <dl class="glance">
@@ -324,7 +280,6 @@ const accent = (p: Project) =>
 
   /* ---- Gantt ---- */
   .gantt {
-    --label: clamp(96px, 11cqw, 150px);
     position: relative;
     display: grid;
     gap: 10px;
@@ -332,7 +287,7 @@ const accent = (p: Project) =>
   }
   .gantt-grid {
     position: absolute;
-    inset: 12px clamp(14px, 2cqw, 26px) 10px calc(clamp(14px, 2cqw, 26px) + var(--label));
+    inset: 12px clamp(14px, 2cqw, 26px) 10px;
     pointer-events: none;
   }
   .gantt-year {
@@ -372,8 +327,6 @@ const accent = (p: Project) =>
     text-transform: uppercase;
     box-shadow: 0 0 0 4px color-mix(in oklab, var(--house-2) 20%, transparent);
   }
-  .gantt-lane { display: grid; grid-template-columns: var(--label) minmax(0, 1fr); align-items: center; }
-  .gantt-label { padding-right: 12px; }
   .gantt-row { position: relative; height: clamp(40px, 6cqh, 52px); }
 
   .bar {
@@ -399,12 +352,7 @@ const accent = (p: Project) =>
   }
   .bar:hover { transform: translateY(-2px); color: var(--ink); box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px var(--ink), var(--shadow); }
   .bar-name { font-size: 0.8125rem; font-weight: 700; font-stretch: 88%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-years { font-size: 0.6875rem; font-weight: 600; opacity: 0.75; white-space: nowrap; }
-  .bar--own {
-    background:
-      repeating-linear-gradient(-45deg, transparent 0 7px, color-mix(in oklab, var(--ink) 5%, transparent) 7px 8px),
-      var(--surface-strong);
-  }
+  .bar-years { font-size: 0.6875rem; font-weight: 600; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bar[aria-pressed='true'] {
     color: var(--on-house);
     background: linear-gradient(135deg, var(--house-2), var(--house));
@@ -437,13 +385,12 @@ const accent = (p: Project) =>
   .role-points li::before {
     content: '';
     position: absolute;
-    left: 2px;
-    top: 0.6em;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--house-2);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--house-2) 18%, transparent);
+    left: 0;
+    top: 0.72em;
+    width: 9px;
+    height: 1.5px;
+    border-radius: 2px;
+    background: var(--ink-3);
   }
   .role-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .role-tags li {
@@ -461,24 +408,6 @@ const accent = (p: Project) =>
   .glance > div { display: grid; gap: 4px; padding-block: 14px; border-bottom: 1px solid var(--line); }
   .glance > div:last-child { border-bottom: 0; }
   .glance dd { font-size: clamp(1.0625rem, 0.9rem + 0.5vw, 1.375rem); font-weight: 700; font-stretch: 94%; letter-spacing: -0.015em; line-height: 1.25; }
-
-  .mini-products { display: grid; gap: 4px; margin-top: 8px; }
-  .mini-products a {
-    display: grid;
-    grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
-    align-items: baseline;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    text-decoration: none;
-    transition: background-color 0.25s var(--ease-out);
-  }
-  .mini-products a:hover { background: color-mix(in oklab, var(--accent) 10%, transparent); }
-  .mini-name { font-size: 1.125rem; line-height: 1.2; }
-  .mini-name.face-martian { font-size: 0.875rem; }
-  .mini-short { font-size: 0.8125rem; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .mini-products :global(.icon) { width: 14px; height: 14px; color: var(--accent); transition: transform 0.3s var(--ease-out); }
-  .mini-products a:hover :global(.icon) { transform: translateX(3px); }
 
   /* ---- Exhibits for the current role ---- */
   .ex { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; min-height: 0; }

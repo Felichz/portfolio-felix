@@ -209,13 +209,14 @@ const total = String(projects.length).padStart(2, '0');
     transition: color 0.4s;
   }
   .rail-item[aria-current='true'] .rail-short { color: var(--ink-2); }
+  /* The countdown runs down the item's left edge, clear of the text. */
   .rail-progress {
     position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 5px;
-    height: 2px;
-    border-radius: 2px;
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    width: 3px;
+    border-radius: 3px;
     background: color-mix(in oklab, var(--accent) 16%, transparent);
     opacity: 0;
     transition: opacity 0.4s;
@@ -225,8 +226,8 @@ const total = String(projects.length).padStart(2, '0');
     inset: 0;
     border-radius: inherit;
     background: var(--accent);
-    transform: scaleX(var(--p, 0));
-    transform-origin: left;
+    transform: scaleY(var(--p, 0));
+    transform-origin: top;
   }
   .rail-item[aria-current='true'] .rail-progress { opacity: 1; }
 
@@ -269,7 +270,6 @@ const total = String(projects.length).padStart(2, '0');
     justify-self: center;
     display: grid;
     gap: clamp(14px, 2.6cqh, 26px);
-    perspective: 1600px;
     width: min(100cqw, calc((100cqh - var(--info) - 58px) * 1.6));
     visibility: hidden;
     transition: visibility 0s linear 0.7s;
@@ -281,11 +281,11 @@ const total = String(projects.length).padStart(2, '0');
     display: block;
     border-radius: var(--radius);
     opacity: 0;
-    transform: translateX(var(--from, 5%)) scale(0.97) rotateY(calc(var(--from-deg, -4deg)));
+    transform: translateX(var(--from, 4%)) scale(0.98);
     transform-origin: 50% 60%;
     transition: opacity 0.6s var(--ease-out), transform 0.9s var(--ease-out);
   }
-  .slide[data-state='before'] { --from: -5%; --from-deg: 4deg; }
+  .slide[data-state='before'] { --from: -4%; }
   .slide[data-state='active'] .slide-media { opacity: 1; transform: none; transition-delay: 0.08s; }
   .slide[data-state='active'] .slide-media :global(.plate) { view-transition-name: var(--vt-shot); }
   /* The product's color glows behind its window, and pools on the floor under it. */
@@ -295,8 +295,7 @@ const total = String(projects.length).padStart(2, '0');
     inset: 8% 6% -6%;
     z-index: -1;
     border-radius: 40%;
-    background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 46%, transparent), transparent);
-    filter: blur(40px);
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 34%, transparent), transparent);
     opacity: 0.75;
   }
   .slide-media :global(.plate) { transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out); }
@@ -400,7 +399,8 @@ const total = String(projects.length).padStart(2, '0');
     .rail-num, .rail-short { display: none; }
     .rail-name { font-size: 1rem; }
     .rail-name.face-martian { font-size: 0.8125rem; }
-    .rail-progress { left: 16px; right: 16px; bottom: 3px; }
+    .rail-progress { left: 16px; right: 16px; top: auto; bottom: 3px; width: auto; height: 2px; }
+    .rail-progress i { transform: scaleX(var(--p, 0)); transform-origin: left; }
     .show { container-type: normal; }
     .slide { width: 100%; align-self: start; }
     .slide-info { grid-template-columns: minmax(0, 1fr); min-height: 0; }

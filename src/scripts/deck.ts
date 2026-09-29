@@ -1,13 +1,14 @@
 /**
- * The deck: a horizontal row of full-window panels.
- * Vertical wheel gestures page between panels unless something inside the panel can scroll first,
- * horizontal gestures and touch swipes scroll natively with snapping, and the keyboard, the bar
- * tabs, the dock and in-page links all move through the same `go()`.
+ * The deck: a vertical stack of full-window sections that moves one section at a time.
+ * On desktop, a wheel or trackpad gesture moves one section, unless something inside the section
+ * can still scroll that way (then that scrolls first). On phones the deck scrolls naturally with
+ * loose snapping. The keyboard, the bar tabs, the section rail and in-page links all move through
+ * the same `go()`.
  *
  * Events on document:
- * - `deck:change` { id, index } when a panel becomes the active one.
- * - `deck:sub` { id, sub } when a link asks for something inside a panel (`#work/katarch`).
- * - `deck:refresh` (listened for) re-reads the active panel's glow color.
+ * - `deck:change` { id, index } when a section becomes the active one.
+ * - `deck:sub` { id, sub } when a link asks for something inside a section (`#work/katarch`).
+ * - `deck:refresh` (listened for) re-reads the active section's glow color.
  */
 export function initDeck() {
   const stage = document.querySelector<HTMLElement>('[data-deck]');
@@ -18,17 +19,16 @@ export function initDeck() {
 
   const tabs = [...document.querySelectorAll<HTMLAnchorElement>('[data-tab]')];
   const strip = document.querySelector<HTMLElement>('[data-tabs]');
-  const ticks = [...document.querySelectorAll<HTMLElement>('.dock-tick')];
-  const num = document.querySelector<HTMLElement>('[data-dock-num]');
-  const label = document.querySelector<HTMLElement>('[data-dock-label]');
-  const prev = document.querySelector<HTMLButtonElement>('[data-deck-prev]');
-  const next = document.querySelector<HTMLButtonElement>('[data-deck-next]');
-  const nextLabel = document.querySelector<HTMLElement>('[data-dock-next]');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-  const labels = panels.map((p) => p.dataset.label ?? p.id);
+  const desktop = matchMedia('(min-width: 761px)');
 
-  const width = () => stage.clientWidth || 1;
-  const nearest = () => Math.max(0, Math.min(panels.length - 1, Math.round(stage.scrollLeft / width())));
+  // The active section is the last one whose top has passed the middle of the window.
+  const nearest = () => {
+    const mid = stage.scrollTop + stage.clientHeight / 2;
+    let i = 0;
+    panels.forEach((p, j) => p.offsetTop <= mid && (i = j));
+    return i;
+  };
   let index = -1;
   let target = nearest();
 
@@ -57,18 +57,8 @@ export function initDeck() {
     panels.forEach((p, j) => p.toggleAttribute('data-active', j === i));
     panel.setAttribute('data-seen', '');
     tabs.forEach((t) => (t.dataset.tab === panel.id ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current')));
-    ticks.forEach((t, j) => t.toggleAttribute('data-on', j <= i));
     pill();
-    if (num) num.textContent = String(i + 1).padStart(2, '0');
-    if (label) label.textContent = labels[i] ?? '';
-    if (prev) prev.disabled = i === 0;
-    // From the last panel, the next button leads on: back to the start, or to the next case study.
-    const atEnd = i === panels.length - 1;
-    const upNext = atEnd ? (next?.dataset.endLabel ?? 'Back to start') : (labels[i + 1] ?? '');
-    next?.setAttribute('aria-label', atEnd ? upNext : `Next: ${upNext}`);
-    next?.toggleAttribute('data-end', atEnd);
-    if (nextLabel) nextLabel.textContent = upNext;
-    // Keep the address in step, without adding a history entry per panel.
+    // Keep the address in step, without adding a history entry per section.
     const current = decodeURIComponent(location.hash.slice(1)).split('/')[0];
     if (current !== panel.id && !(i === 0 && !current)) {
       history.replaceState(history.state, '', i === 0 ? location.pathname + location.search : `#${panel.id}`);
@@ -81,31 +71,27 @@ export function initDeck() {
     const j = Math.max(0, Math.min(panels.length - 1, i));
     target = j;
     const smooth = opts.smooth !== false && !reduce.matches;
-    stage.scrollTo({ left: panels[j]!.offsetLeft, behavior: smooth ? 'smooth' : 'instant' });
+    stage.scrollTo({ top: panels[j]!.offsetTop, behavior: smooth ? 'smooth' : 'instant' });
     if (!smooth) setActive(j);
     if (opts.focus) panels[j]!.focus({ preventScroll: true });
   };
 
-  // Scroll: progress for the dock, and the active panel once it's more than halfway in.
+  // Scroll: the active section changes once the next one is past the middle.
   let raf = 0;
   let settle = 0;
   stage.addEventListener(
     'scroll',
     () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const max = stage.scrollWidth - stage.clientWidth;
-        root.style.setProperty('--deck-p', String(max > 0 ? stage.scrollLeft / max : 0));
-        setActive(nearest());
-      });
+      raf = requestAnimationFrame(() => setActive(nearest()));
       clearTimeout(settle);
       settle = window.setTimeout(() => (target = nearest()), 140);
     },
     { passive: true },
   );
 
-  // Vertical wheel pages the deck. One gesture moves one panel, and a gesture that started by
-  // scrolling something inside the panel never turns into a page flip halfway through.
+  // One gesture moves one section, and a gesture that started by scrolling something inside the
+  // section never turns into a section change halfway through.
   const canScroll = (el: HTMLElement, dy: number) => {
     if (el.scrollHeight <= el.clientHeight + 1) return false;
     const oy = getComputedStyle(el).overflowY;
@@ -119,7 +105,7 @@ export function initDeck() {
   stage.addEventListener(
     'wheel',
     (e) => {
-      if (e.ctrlKey) return;
+      if (e.ctrlKey || !desktop.matches) return;
       const now = performance.now();
       if (now - last > 200) {
         acc = 0;
@@ -127,7 +113,7 @@ export function initDeck() {
         inner = false;
       }
       last = now;
-      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       for (let el = e.target as HTMLElement | null; el && el !== stage; el = el.parentElement) {
         if (canScroll(el, e.deltaY)) {
           inner = true;
@@ -137,7 +123,7 @@ export function initDeck() {
       e.preventDefault();
       if (spent || inner) return;
       acc += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
-      if (Math.abs(acc) >= 28) {
+      if (Math.abs(acc) >= 24) {
         spent = true;
         go(target + Math.sign(acc));
       }
@@ -145,29 +131,31 @@ export function initDeck() {
     { passive: false },
   );
 
-  // Keyboard, unless focus is somewhere that owns the keys.
+  // Keyboard, unless focus is somewhere that owns the keys. A section that overflows scrolls first.
   addEventListener('keydown', (e) => {
     if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
     const t = e.target as HTMLElement;
+    if (e.key === ' ' && t.closest('a, button, summary')) return;
     if (t.closest('input, textarea, select, [contenteditable], [data-own-keys]') || document.querySelector('dialog[open]')) return;
-    const step: Record<string, number> = { ArrowRight: 1, PageDown: 1, ArrowLeft: -1, PageUp: -1 };
+    const step: Record<string, number> = { ArrowDown: 1, PageDown: 1, ' ': 1, ArrowUp: -1, PageUp: -1 };
     if (e.key in step) {
+      const dir = e.shiftKey && e.key === ' ' ? -1 : step[e.key]!;
+      const panel = panels[index];
+      if (desktop.matches && panel && canScroll(panel, dir)) {
+        e.preventDefault();
+        panel.scrollBy({ top: dir * panel.clientHeight * 0.6, behavior: reduce.matches ? 'instant' : 'smooth' });
+        return;
+      }
+      if (!desktop.matches) return;
       e.preventDefault();
-      go(target + step[e.key]!);
+      go(target + dir);
     } else if (e.key === 'Home' || e.key === 'End') {
       e.preventDefault();
       go(e.key === 'Home' ? 0 : panels.length - 1);
     }
   });
 
-  prev?.addEventListener('click', () => go(target - 1));
-  next?.addEventListener('click', () => {
-    if (index < panels.length - 1) return go(target + 1);
-    if (next.dataset.endHref) location.href = next.dataset.endHref;
-    else go(0);
-  });
-
-  // In-page links: `#panel` or `#panel/sub`, also written as `/#panel` on the home page.
+  // In-page links: `#section` or `#section/sub`, also written as `/#section` on the home page.
   const resolve = (hash: string) => {
     const [id = '', sub] = decodeURIComponent(hash.replace(/^#/, '')).split('/');
     return { i: panels.findIndex((p) => p.id === id), id, sub };
@@ -190,9 +178,9 @@ export function initDeck() {
     if (sub) document.dispatchEvent(new CustomEvent('deck:sub', { detail: { id, sub } }));
   });
 
-  // Stay on the same panel through resizes and rotation.
+  // Desktop sections are exactly one window tall: stay aligned through resizes.
   new ResizeObserver(() => {
-    stage.scrollTo({ left: panels[index]?.offsetLeft ?? 0, behavior: 'instant' });
+    if (desktop.matches) stage.scrollTo({ top: panels[index]?.offsetTop ?? 0, behavior: 'instant' });
     pill();
   }).observe(stage);
 

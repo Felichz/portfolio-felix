@@ -1,7 +1,5 @@
 ---
-import { Picture } from 'astro:assets';
 import Icon from './Icon.astro';
-import photo from '../assets/portrait/felix-avatar.webp';
 
 const toolset = [
   { group: 'Every day', items: 'React, TypeScript, CSS, design systems, accessibility, performance' },
@@ -63,12 +61,7 @@ const early = [
     </div>
 
     <aside id="contact" class="contact" aria-labelledby="contact-title" data-reveal style="--d:2">
-      <div class="contact-top">
-        <span class="contact-photo">
-          <Picture src={photo} alt="" formats={['avif', 'webp']} widths={[160, 240]} sizes="80px" />
-        </span>
-        <p class="contact-status"><span class="pulse" aria-hidden="true"></span>Open to remote senior frontend roles</p>
-      </div>
+      <p class="contact-status t-label">Open to remote senior frontend roles</p>
       <h2 id="contact-title" class="contact-title">
         Hiring for a senior frontend role? <span class="t-serif">I’d like to hear about it.</span>
       </h2>
@@ -143,17 +136,7 @@ const early = [
     overflow: hidden;
     --line-c: color-mix(in oklab, var(--bg) 16%, transparent);
   }
-  .contact-top { display: flex; align-items: center; gap: 14px; }
-  .contact-photo {
-    width: 64px;
-    height: 64px;
-    flex: none;
-    border-radius: 50%;
-    overflow: hidden;
-    box-shadow: 0 0 0 2px var(--ink), 0 0 0 3.5px color-mix(in oklab, var(--house-2) 80%, transparent);
-  }
-  .contact-photo :global(img) { width: 100%; height: 100%; object-fit: cover; }
-  .contact-status { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 620; opacity: 0.85; }
+  .contact-status { color: inherit; opacity: 0.7; }
   .contact-title {
     font-size: clamp(1.5rem, 1rem + 1.4vw, 2.25rem);
     line-height: 1.05;
