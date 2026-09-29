@@ -53,6 +53,7 @@ Visitors come with a job description in mind and compare several candidates in t
   - KatArch (`katarch`) https://katarch.vercel.app, github.com/Felichz/katarch
   - LifeUI (`life-ui`) https://life-ui-one.vercel.app, github.com/Felichz/life-ui
   - PlaySync (`rave2`) https://syncplay-avtu.onrender.com, github.com/Felichz/PlaySync
+- Portrait photos supplied by the author (2026-09-29), in `src/assets/portrait/`: used in the intro, the bar avatar and the contact card.
 - Early history (old portfolio `portfolio-old/`): Scratch from age 8 or 9, a flash-games site with 300k+ page views from other kids, top ten twice in Uruguay's national ANIMATE animation contest.
 - Absent and not to be fabricated: testimonials, client logos, Cisco screenshots or code, usage numbers for side projects, any metric not in the sources above. LoLImpact accuracy must use the shipped model file (62.8% to 74.9% by minute 20), not the older README figure.
 

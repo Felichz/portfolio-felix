@@ -1,63 +1,70 @@
 # Felix Andersson, portfolio
 
-Personal site of Felix Andersson, Senior Frontend Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, plus five products designed and built end to end in 2026.
+Personal site of Felix Andersson, Senior Frontend Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, plus five products designed and built end to end in 2026. Built like a desktop app: one fixed window, a horizontal deck of panels.
 
 **[anderssonfelix.com](https://anderssonfelix.com)** · [Résumé (PDF)](public/felix-andersson-resume.pdf) · [LinkedIn](https://www.linkedin.com/in/felixandersson/) · [GitHub](https://github.com/Felichz)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/home-dark.webp">
-  <img alt="Home page: the name Felix Andersson set large, the role and a short summary on the left, location, local time and availability on the right, and the start of the Selected work gallery below." src="docs/screenshots/home-light.webp">
+  <img alt="The intro panel: the name set large in a variable grotesque, the role with an italic aside, a short summary and actions on the left; a portrait card with frosted chips on the right; the dock with panel progress at the bottom." src="docs/screenshots/home-light.webp">
 </picture>
 
 ## What's on it
 
-- **A short home.** Name and proof in the first screen, then a horizontal shelf of five products, the Cisco chapter, and about plus contact. About four screens on desktop.
-- **One case study per product** (`/work/katarch`, `/work/knowgraph`, ...): the lead screenshot with numbered callouts that show a tooltip on hover or focus, the story, three engineering highlights, a gallery, the stack, and previous/next navigation. Left and right arrow keys move between case studies.
-- **Two editions.** Light and dark, chosen before first paint from the saved choice or the system setting, toggled from the nav. Screenshots print in the opposite edition, so each product stands out from the page: dark products on the light site, light products on the dark one. All five products have both themes.
-- **Screen recordings.** Every product's lead screenshot has a short recording of the same view, captured from the running app. On the shelf it plays while the pointer is over it (while it's on screen, on touch devices). On a case study it plays once when it scrolls into view, hides the callouts while it runs, and settles on its last frame, which is the still the callouts point at. Replay sits under the frame; reduced motion never autoplays.
+The site works like a desktop app in a fixed window: a bar on top, a dock at the bottom, and a horizontal deck of full-window panels in between. The page never scrolls vertically; a panel scrolls inside itself only when the window is too small for it. Scroll, swipe, use the arrow keys, the tabs or the dock.
+
+- **Intro.** Name, role, the short version, and a portrait.
+- **Work.** A showcase of five products. Each product's screen recording plays, holds on its last frame, and the next one slides in; the rail fills in the product's color as its turn runs. Pause it with the button, or by reading the product copy.
+- **Experience.** The CV: roles from 2020 to now on a timeline, with the detail of the selected role below. The Cisco evidence (tables with 100k+ rows at 60 FPS, the AI review tooling) lives inside the role it belongs to.
+- **About.** How I got here, the toolset, and contact.
+- **One case study per product** (`/work/katarch`, `/work/knowgraph`, ...), as five panels: Overview with the lead screenshot, its recording and numbered callouts; Story; Engineering; Screens; Specs and the next case study.
+- **Two editions.** Warm stone and near-black, chosen before first paint from the saved choice or the system setting, toggled from the bar. Screenshots print in the opposite edition, so each product stands out from the page.
 
 <table>
   <tr>
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/work-dark.webp">
-        <img alt="The Selected work shelf: product tabs set in each product's own typeface, arrows with a 01 / 05 position readout, and the KatArch slide with its screenshot, summary and case study link." src="docs/screenshots/work-light.webp">
+        <img alt="The Work panel: a rail of five products with LifeUI active and its progress bar filling, and LifeUI's screenshot in a browser window with its highlights and links below." src="docs/screenshots/work-light.webp">
       </picture>
-      <br><sub>The product shelf: scroll-snap, arrows, keyboard, mouse drag.</sub>
+      <br><sub>The showcase: auto-advancing, one product at a time.</sub>
     </td>
     <td width="50%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/case-dark.webp">
-        <img alt="KatArch case study: the lead screenshot of an architecture diagram with numbered pins, one of them showing its tooltip." src="docs/screenshots/case-light.webp">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/experience-dark.webp">
+        <img alt="The Experience panel: a timeline of roles from 2020 to now with the Magnetic component library selected, its details, and the main-thread schematic." src="docs/screenshots/experience-light.webp">
       </picture>
-      <br><sub>A case study, with a callout tooltip open.</sub>
+      <br><sub>Experience as a timeline, with the selected role below.</sub>
     </td>
   </tr>
   <tr>
     <td width="50%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/experience-dark.webp">
-        <img alt="The Cisco chapter: a main-thread schematic comparing one long filtering task with short slices, and the AI review pipeline diagram." src="docs/screenshots/experience-light.webp">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/case-dark.webp">
+        <img alt="KatArch case study overview: the product name in its own typeface, facts and actions on the left, the lead screenshot with numbered pins on the right." src="docs/screenshots/case-light.webp">
       </picture>
-      <br><sub>The Cisco chapter: main-thread schematic and the AI review pipeline.</sub>
+      <br><sub>A case study's first panel.</sub>
     </td>
     <td width="50%" align="center">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/mobile-dark.webp">
-        <img width="260" alt="The home page on a phone." src="docs/screenshots/mobile-light.webp">
+        <img width="260" alt="The intro on a phone, with the tab bar at the bottom." src="docs/screenshots/mobile-light.webp">
       </picture>
-      <br><sub>On a phone.</sub>
+      <br><sub>On a phone: same deck, a tab bar, panels that scroll inside.</sub>
     </td>
   </tr>
 </table>
 
 ## Details that took some care
 
-- The shelf screenshot and product name morph into the case study header (cross-document view transitions, off under reduced motion).
-- Screenshots render a light and a dark variant; only the one for the current edition is displayed, so the other is never downloaded. Recordings use `preload="none"` and load on first play.
-- Product names and type samples are set in each product's real typeface; the house face is Archivo, used across its width axis.
-- Montevideo local time in the header, so a remote team can see the overlap.
-- Static output, responsive AVIF/WebP images, self-hosted font subsets, no client framework on the home page.
+- One navigation model for wheel, trackpad, touch, keys, tabs and links. A wheel gesture moves one panel, unless it started by scrolling something inside the panel.
+- Deep links (`/#experience`, `/#work/lifeui`) open on their panel and product before the first paint.
+- The name is set one glyph at a time along Archivo's width axis: letters widen into place on arrival and swell toward the pointer.
+- The room light follows the content: each panel, and each product in the showcase, sets the colors of the ambient glow.
+- The showcase screenshot and product name morph into the case study header (cross-document view transitions). The theme toggle reveals the other edition in a circle from the button.
+- Everything sizes against the window with container units, and tightens on short screens.
+- Reduced motion: no autoplay, no drift, no tilt, instant panel moves.
+- Static output, responsive AVIF/WebP images, recordings that load only when they play, self-hosted font subsets, no client framework.
 
 ## Stack
 
@@ -77,11 +84,14 @@ npm run preview  # serve dist/
 | Path | What |
 | --- | --- |
 | `src/data/projects.ts` | Every product: order, copy, stack, scale, accent colors, screenshots, callouts, gallery. |
-| `src/pages/index.astro` | Home: `Hero`, `Work` (the shelf), `Experience` (timeline, `MainThread`, `Pipeline`), `Closing`. |
-| `src/pages/work/[id].astro` | Case study template, generated from `projects.ts`. |
-| `src/components/Plate.astro` | Framed, theme-aware screenshot, with the recording player. |
-| `src/styles/global.css` | Tokens for both themes, plates, pins and tooltips. |
-| `src/layouts/Base.astro` | Head, pre-paint theme script, nav and image viewer. |
+| `src/pages/index.astro` | Home panels: `Intro`, `Work` (the showcase), `Experience` (timeline, `MainThread`, `Pipeline`), `About`. |
+| `src/pages/work/[id].astro` | Case study template (five panels), generated from `projects.ts`. |
+| `src/layouts/Base.astro` | The app shell: head, pre-paint theme and deep-link scripts, `Bar`, the deck, `Dock`, image viewer. |
+| `src/scripts/deck.ts` | The horizontal deck: wheel, keys, links, hash, dock and ambient light. |
+| `src/scripts/fx.ts` | Pointer spotlight and tilt. |
+| `src/components/Plate.astro` | Theme-aware screenshot in a browser window, with the recording player. |
+| `src/styles/global.css` | Tokens for both editions, ambient layers, shell, surfaces, buttons, plates, pins. |
+| `src/assets/portrait/` | Portrait photos and the avatar crop. |
 | `src/assets/shots/` | Product screenshots (WebP, 2x), as `name-light` / `name-dark`. |
 | `src/assets/motion/` | Screen recordings (H.264 MP4, 1920 wide), as `name-light` / `name-dark`. |
 | `docs/screenshots/` | The images in this README. |

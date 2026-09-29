@@ -52,6 +52,8 @@ export interface Project {
   face: string;
   wordmark?: [string, string];
   year: string;
+  /** A few words for the showcase rail. */
+  short: string;
   tagline: string;
   /** One line of evidence for the gallery slide. */
   proof: string;
@@ -76,6 +78,7 @@ export interface Project {
 export const projects: Project[] = [
   {
     id: 'katarch',
+    short: 'An architecture course, replayed decision by decision',
     name: 'KatArch',
     face: 'face-inter',
     year: '2026',
@@ -133,6 +136,7 @@ export const projects: Project[] = [
   },
   {
     id: 'knowgraph',
+    short: 'Interview prep as a map of 142 concepts',
     name: 'KnowGraph',
     face: 'face-newsreader',
     year: '2026',
@@ -189,6 +193,7 @@ export const projects: Project[] = [
   },
   {
     id: 'playsync',
+    short: 'Synced YouTube watch parties, no accounts',
     name: 'PlaySync',
     face: 'face-bricolage',
     year: '2026',
@@ -242,6 +247,7 @@ export const projects: Project[] = [
   },
   {
     id: 'lifeui',
+    short: 'A HUD for real life, one activity at a time',
     name: 'LifeUI',
     face: 'face-inter',
     year: '2026',
@@ -295,6 +301,7 @@ export const projects: Project[] = [
   },
   {
     id: 'lolimpact',
+    short: 'League win probability, minute by minute',
     name: 'LoLImpact',
     face: 'face-martian',
     wordmark: ['LOL', 'IMPACT'],

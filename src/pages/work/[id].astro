@@ -3,6 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
 import Plate from '../../components/Plate.astro';
 import Icon from '../../components/Icon.astro';
+import type { PanelLink } from '../../components/Bar.astro';
 import { projects, type Project } from '../../data/projects';
 
 export const getStaticPaths = (() =>
@@ -24,306 +25,421 @@ interface Props {
 }
 
 const { project: p, prev, next, index } = Astro.props;
-const accent = `--a-light:${p.accent.light};--a-dark:${p.accent.dark};--on-light:${p.accent.onLight};--on-dark:${p.accent.onDark}`;
+const accentOf = (x: Project) =>
+  `--a-light:${x.accent.light};--a-dark:${x.accent.dark};--on-light:${x.accent.onLight};--on-dark:${x.accent.onDark}`;
+const accent = accentOf(p);
 const faceClass = (name: string) => `face-${name.toLowerCase().replace(/\s+/g, '-')}`;
+const host = (url: string) => new URL(url).host;
+const pad = (n: number) => String(n).padStart(2, '0');
+const desk = p.gallery.filter((s) => !s.phone);
+const phoneShots = p.gallery.filter((s) => s.phone);
+
+const panels: PanelLink[] = [
+  { id: 'overview', label: 'Overview', icon: 'eye' },
+  { id: 'story', label: 'Story', icon: 'text' },
+  { id: 'engineering', label: 'Engineering', icon: 'code' },
+  { id: 'screens', label: 'Screens', icon: 'image' },
+  { id: 'specs', label: 'Specs', icon: 'list' },
+];
 ---
 
-<Base title={`${p.name}, case study · Felix Andersson`} description={p.tagline}>
-  <article class="cs" data-accent style={accent} data-prev={`/work/${prev.id}/`} data-next={`/work/${next.id}/`}>
-    <header class="wrap cs-head">
-      <a class="cs-back arrow-link" href={`/#work`}><Icon name="arrow-left" class="icon-left" />All work</a>
-      <p class="t-label t-num cs-count"><span class="cs-index">{String(index + 1).padStart(2, '0')}</span> / {String(projects.length).padStart(2, '0')}</p>
-      <h1 class={`cs-name ${p.face}`} style={`view-transition-name:name-${p.id}`}>
-        {
-          p.wordmark ? (
-            <>
-              <b>{p.wordmark[0]}</b>
-              {p.wordmark[1]}
-            </>
-          ) : (
-            p.name
-          )
-        }
-      </h1>
-      <p class="t-lede cs-tagline">{p.tagline}</p>
-      <div class="cs-actions">
-        <a class="btn btn--solid" href={p.live} target="_blank" rel="noopener">Open the live app <Icon name="arrow-up-right" /></a>
-        <a class="btn" href={p.source} target="_blank" rel="noopener"><Icon name="github" />Source</a>
-      </div>
-      <dl class="cs-facts">
-        <div><dt class="t-label">Role</dt><dd>{p.role}</dd></div>
-        <div><dt class="t-label">Year</dt><dd class="t-num">{p.year}</dd></div>
-        <div><dt class="t-label">Interface</dt><dd>{p.language}, light and dark</dd></div>
-      </dl>
-    </header>
+<Base title={`${p.name}, case study · Felix Andersson`} description={p.tagline} panels={panels} end={{ label: `Next: ${next.name}`, href: `/work/${next.id}/` }}>
+  <!-- Overview -->
+  <section id="overview" class="panel cs" data-label="Overview" tabindex="-1" data-accent style={accent} aria-labelledby="cs-name" data-cs={p.id}>
+    <div class="panel-inner ov">
+      <header class="ov-info">
+        <div class="ov-top" data-reveal style="--d:0">
+          <a class="arrow-link" href={`/#work/${p.id}`}><Icon name="arrow-left" class="icon-left" />All work</a>
+          <p class="t-label t-num"><span class="ov-index">{pad(index + 1)}</span> / {pad(projects.length)}</p>
+        </div>
+        <h1 id="cs-name" class={`ov-name ${p.face}`} style={`view-transition-name:name-${p.id}`}>
+          {
+            p.wordmark ? (
+              <>
+                <b>{p.wordmark[0]}</b>
+                {p.wordmark[1]}
+              </>
+            ) : (
+              p.name
+            )
+          }
+        </h1>
+        <p class="ov-tagline" data-reveal style="--d:1">{p.tagline}</p>
+        <dl class="ov-facts" data-reveal style="--d:2">
+          <div><dt class="t-label">Role</dt><dd>{p.role}</dd></div>
+          <div><dt class="t-label">Year</dt><dd class="t-num">{p.year}</dd></div>
+          <div><dt class="t-label">Interface</dt><dd>{p.language}, light and dark</dd></div>
+        </dl>
+        <div class="ov-actions" data-reveal style="--d:3">
+          <a class="btn btn--accent" href={p.live} target="_blank" rel="noopener">Open the live app <Icon name="arrow-up-right" class="icon-up" /></a>
+          <a class="btn" href={p.source} target="_blank" rel="noopener"><Icon name="github" />Source</a>
+        </div>
+        {p.liveNote && <p class="ov-note" data-reveal style="--d:4">{p.liveNote}</p>}
+      </header>
 
-    <div class="wrap cs-stage">
-      <Plate shot={p.main} crop eager motion="lead" vt={`shot-${p.id}`} sizes="(min-width: 1440px) 1360px, 94vw" widths={[640, 960, 1360, 1800, 2400]}>
-        {
-          p.callouts.map((c, i) => (
-            <button
-              type="button"
-              class="pin pin--live"
-              style={`left:${c.x}%;top:${c.y}%;--i:${i}`}
-              data-pin={i + 1}
-              data-x={c.x < 28 ? 'start' : c.x > 72 ? 'end' : 'mid'}
-              data-y={c.y < 22 ? 'below' : 'above'}
-              aria-describedby={`tip-${p.id}-${i + 1}`}
-              aria-label={`Detail ${i + 1}`}
-            >
-              {i + 1}
-              <span class="pin-tip" role="tooltip" id={`tip-${p.id}-${i + 1}`}>
-                {c.text}
-              </span>
-            </button>
-          ))
-        }
-      </Plate>
+      <div class="ov-stage">
+        <Plate shot={p.main} chrome={host(p.live)} eager motion="lead" vt={`shot-${p.id}`} sizes="(min-width: 1400px) 1000px, (min-width: 761px) 66vw, 94vw" widths={[640, 1000, 1400, 2000]} class="ov-plate">
+          {
+            p.callouts.map((c, i) => (
+              <button
+                type="button"
+                class="pin pin--live"
+                style={`left:${c.x}%;top:${c.y}%;--i:${i}`}
+                data-pin={i + 1}
+                data-x={c.x < 28 ? 'start' : c.x > 72 ? 'end' : 'mid'}
+                data-y={c.y < 22 ? 'below' : 'above'}
+                aria-describedby={`tip-${p.id}-${i + 1}`}
+                aria-label={`Detail ${i + 1}`}
+              >
+                {i + 1}
+                <span class="pin-tip" role="tooltip" id={`tip-${p.id}-${i + 1}`}>
+                  {c.text}
+                </span>
+              </button>
+            ))
+          }
+        </Plate>
+      </div>
     </div>
+  </section>
 
-    <div class="wrap cs-body">
-      <div class="prose cs-story">
-        {p.story.map((para) => <p>{para}</p>)}
-        {p.liveNote && <p class="cs-note">{p.liveNote}</p>}
+  <!-- Story -->
+  <section id="story" class="panel" data-label="Story" tabindex="-1" data-accent style={accent} aria-labelledby="story-title">
+    <div class="panel-inner st">
+      <div class="st-copy" data-reveal style="--d:0">
+        <p class="t-label">The story</p>
+        <h2 id="story-title" class="visually-hidden">The story</h2>
+        <div class="st-prose">
+          {p.story.map((para, i) => <p class:list={[i === 0 && 'st-first']}>{para}</p>)}
+        </div>
       </div>
-      <ol class="cs-callouts" aria-label="Details in the screenshot">
+      <figure class="st-look glass" data-reveal style="--d:1">
+        <figcaption class="t-label">In the screenshot</figcaption>
+        <Plate shot={p.main} zoom={false} sizes="(min-width: 761px) 32vw, 90vw" widths={[480, 720, 960]} class="st-thumb">
+          {p.callouts.map((c, i) => <span class="pin" style={`left:${c.x}%;top:${c.y}%`} data-pin={i + 1} aria-hidden="true">{i + 1}</span>)}
+        </Plate>
+        <ol class="st-callouts">
+          {
+            p.callouts.map((c, i) => (
+              <li data-callout={i + 1}>
+                <span class="pin pin--static" aria-hidden="true">{i + 1}</span>
+                <span>{c.text}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Engineering -->
+  <section id="engineering" class="panel" data-label="Engineering" tabindex="-1" data-accent style={accent} aria-labelledby="eng-title">
+    <div class="panel-inner eng">
+      <header class="eng-head" data-reveal style="--d:0">
+        <p class="t-label">Engineering</p>
+        <h2 id="eng-title" class="t-section">Three things worth a closer look</h2>
+      </header>
+      <ol class="eng-list">
         {
-          p.callouts.map((c, i) => (
-            <li data-callout={i + 1}>
-              <span class="pin pin--static" aria-hidden="true">{i + 1}</span>
-              <span>{c.text}</span>
+          p.highlights.map((h, i) => (
+            <li class="eng-card glass spot" data-reveal style={`--d:${i + 1};--spot:var(--accent)`}>
+              <span class="eng-num t-num">{pad(i + 1)}</span>
+              <h3>{h.title}</h3>
+              <p>{h.body}</p>
             </li>
           ))
         }
       </ol>
+      <ul class="eng-stack" aria-label="Stack" data-reveal style="--d:4">
+        {p.stack.map((s) => <li>{s}</li>)}
+      </ul>
     </div>
+  </section>
 
-    <ul class="wrap cs-highlights">
-      {
-        p.highlights.map((h) => (
-          <li>
-            <h2>{h.title}</h2>
-            <p>{h.body}</p>
-          </li>
-        ))
-      }
-    </ul>
-
-    <section class="wrap cs-gallery" aria-label={`More screens from ${p.name}`}>
-      {
-        p.gallery.map((s) => (
-          <figure class:list={['cs-shot', s.phone && 'cs-shot--phone']}>
-            <Plate shot={s} motion="hover" sizes={s.phone ? '240px' : '(min-width: 1100px) 44vw, 92vw'} widths={[480, 800, 1200]} />
-            {s.caption && <figcaption class="t-label">{s.caption}</figcaption>}
-          </figure>
-        ))
-      }
-    </section>
-
-    <dl class="wrap cs-sheet">
-      <div class="cs-sheet-wide"><dt class="t-label">Stack</dt><dd>{p.stack.join(', ')}</dd></div>
-      <div><dt class="t-label">Scale</dt><dd><ul class="t-num">{p.scale.map((s) => <li>{s}</li>)}</ul></dd></div>
-      <div>
-        <dt class="t-label">Typefaces</dt>
-        <dd>
-          <ul class="cs-faces">
-            {p.typefaces.map((f) => (
-              <li>
-                <span class={`cs-aa ${faceClass(f)}`} aria-hidden="true">Aa</span>
-                <span class={faceClass(f)}>{f}</span>
-              </li>
-            ))}
-          </ul>
-        </dd>
+  <!-- Screens -->
+  <section id="screens" class="panel" data-label="Screens" tabindex="-1" data-accent style={accent} aria-labelledby="screens-title">
+    <div class="panel-inner scr">
+      <header class="scr-head" data-reveal style="--d:0">
+        <h2 id="screens-title" class="t-label">More screens from {p.name}</h2>
+        <p class="t-label scr-hint">Select a screen to enlarge it</p>
+      </header>
+      <div class="scr-body">
+        <div class="scr-desk" data-count={desk.length}>
+          {
+            desk.map((s, i) => (
+              <figure class="scr-shot" data-reveal style={`--d:${i + 1}`}>
+                <Plate shot={s} motion="hover" sizes="(min-width: 761px) 36vw, 92vw" widths={[480, 800, 1200]} />
+                {s.caption && <figcaption class="t-label">{s.caption}</figcaption>}
+              </figure>
+            ))
+          }
+        </div>
+        {
+          phoneShots.length > 0 && (
+            <div class="scr-phones">
+              {phoneShots.map((s, i) => (
+                <figure class="scr-shot scr-shot--phone" data-reveal style={`--d:${desk.length + i + 1}`}>
+                  <Plate shot={s} motion="hover" sizes="(min-width: 761px) 16vw, 60vw" />
+                  {s.caption && <figcaption class="t-label">{s.caption}</figcaption>}
+                </figure>
+              ))}
+            </div>
+          )
+        }
       </div>
-      <div>
-        <dt class="t-label">Palette</dt>
-        <dd class="cs-palette">
-          {p.palette.map((hex) => <span style={`background:${hex}`} title={hex} />)}
-        </dd>
-      </div>
-    </dl>
+    </div>
+  </section>
 
-    <nav class="wrap cs-pager" aria-label="More case studies">
-      <a class="pager-link" href={`/work/${prev.id}/`} rel="prev">
-        <span class="t-label"><Icon name="arrow-left" class="icon-left" /> Previous</span>
-        <span class={`pager-name ${prev.face}`}>{prev.name}</span>
-      </a>
-      <p class="pager-hint t-label">
-        <kbd><Icon name="chevron-left" /></kbd><kbd><Icon name="chevron-right" /></kbd> to browse
-      </p>
-      <a class="pager-link pager-link--next" href={`/work/${next.id}/`} rel="next">
-        <span class="t-label">Next <Icon name="arrow-right" class="icon-right" /></span>
-        <span class={`pager-name ${next.face}`}>{next.name}</span>
-      </a>
-    </nav>
-  </article>
+  <!-- Specs and what's next -->
+  <section id="specs" class="panel" data-label="Specs" tabindex="-1" data-accent style={accent} aria-labelledby="specs-title">
+    <div class="panel-inner sp">
+      <div class="sp-sheet">
+        <h2 id="specs-title" class="t-section" data-reveal style="--d:0">Build sheet</h2>
+        <dl class="sp-grid">
+          <div class="sp-cell glass sp-cell--wide" data-reveal style="--d:1">
+            <dt class="t-label">Stack</dt>
+            <dd>{p.stack.join(', ')}</dd>
+          </div>
+          <div class="sp-cell glass" data-reveal style="--d:2">
+            <dt class="t-label">Scale</dt>
+            <dd><ul class="t-num">{p.scale.map((s) => <li>{s}</li>)}</ul></dd>
+          </div>
+          <div class="sp-cell glass" data-reveal style="--d:3">
+            <dt class="t-label">Typefaces</dt>
+            <dd>
+              <ul class="sp-faces">
+                {p.typefaces.map((f) => (
+                  <li>
+                    <span class={`sp-aa ${faceClass(f)}`} aria-hidden="true">Aa</span>
+                    <span class={faceClass(f)}>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+          <div class="sp-cell glass sp-cell--wide" data-reveal style="--d:4">
+            <dt class="t-label">Palette</dt>
+            <dd class="sp-palette">
+              {p.palette.map((hex) => (
+                <span>
+                  <i style={`background:${hex}`} />
+                  <code>{hex}</code>
+                </span>
+              ))}
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <nav class="sp-next" aria-label="More case studies" data-reveal style="--d:2">
+        <a class="next-card glass spot" href={`/work/${next.id}/`} data-accent style={`${accentOf(next)};--spot:var(--accent)`} rel="next">
+          <span class="t-label">Next case study <Icon name="arrow-right" class="icon-right" /></span>
+          <span class={`next-name ${next.face}`}>{next.wordmark ? next.wordmark.join('') : next.name}</span>
+          <span class="next-short">{next.short}</span>
+          <Plate shot={next.main} zoom={false} sizes="(min-width: 761px) 30vw, 90vw" widths={[480, 720, 960]} class="next-thumb" />
+        </a>
+        <div class="sp-more">
+          <a class="arrow-link" href={`/work/${prev.id}/`} rel="prev"><Icon name="arrow-left" class="icon-left" />{prev.name}</a>
+          <a class="arrow-link" href={`/#work/${p.id}`}>All work</a>
+        </div>
+      </nav>
+    </div>
+  </section>
 </Base>
 
 <style>
-  .cs { padding-bottom: 40px; }
-  .cs-head {
+  /* ---- Overview ---- */
+  .ov {
     display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    grid-template-areas:
-      'back count'
-      'name name'
-      'tag actions'
-      'facts facts';
-    gap: 20px clamp(32px, 5vw, 80px);
-    align-items: end;
-    padding-top: clamp(28px, 3.4vw, 48px);
+    grid-template-columns: minmax(280px, 0.72fr) minmax(0, 2fr);
+    gap: clamp(20px, 3.4cqw, 56px);
+    align-items: center;
   }
-  .cs-back { grid-area: back; justify-self: start; }
-  .cs-count { grid-area: count; justify-self: end; }
-  .cs-index { color: var(--accent); }
-  .cs-name {
-    grid-area: name;
-    margin-top: clamp(12px, 2vw, 28px);
-    font-size: clamp(3rem, 1rem + 6.4vw, 5.75rem);
+  .ov-info { display: flex; flex-direction: column; gap: clamp(12px, 2.2cqh, 20px); min-width: 0; container: info / inline-size; }
+  .ov-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ov-index { color: var(--accent); }
+  /* The product name fills its column, whatever the face's proportions. */
+  .ov-name {
+    font-size: clamp(2.5rem, 20cqi, 6.5rem);
     line-height: 0.95;
     font-weight: inherit;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
   }
-  .cs-name.face-martian { font-weight: 400; letter-spacing: -0.02em; font-size: clamp(2.5rem, 0.8rem + 5.4vw, 5rem); }
-  .cs-name.face-martian b { font-weight: 700; }
-  .cs-name.face-inter { letter-spacing: -0.04em; }
-  .cs-tagline { grid-area: tag; max-width: 52ch; color: var(--ink-2); }
-  .cs-actions { grid-area: actions; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
-  .cs-facts {
-    grid-area: facts;
+  .ov-name.face-martian { font-weight: 400; letter-spacing: -0.02em; font-size: clamp(1.75rem, 14cqi, 4.5rem); }
+  .ov-name.face-martian b { font-weight: 700; }
+  .ov-name.face-inter { letter-spacing: -0.05em; }
+  .ov-tagline { font-size: clamp(1rem, 0.94rem + 0.3vw, 1.1875rem); line-height: 1.5; color: var(--ink-2); }
+  .ov-facts { display: grid; border-block: 1px solid var(--line); }
+  .ov-facts > div { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 10px; align-items: baseline; padding-block: 9px; }
+  .ov-facts > div + div { border-top: 1px solid var(--line); }
+  .ov-facts dd { font-size: 0.9375rem; font-weight: 580; }
+  .ov-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .ov-note { font-size: 0.8125rem; line-height: 1.45; color: var(--ink-3); }
+
+  .ov-stage { position: relative; display: grid; place-items: center; min-width: 0; height: 100%; container: stage / size; }
+  .ov-stage::before {
+    content: '';
+    position: absolute;
+    inset: 12% 10%;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 40%, transparent), transparent);
+    filter: blur(50px);
+  }
+  .ov-stage :global(.ov-plate) { width: min(100cqw, calc((100cqh - 34px) * 1.6)); }
+
+  /* ---- Story ---- */
+  .st {
     display: grid;
-    grid-template-columns: 2fr 1fr 1.4fr;
-    border-block: 1px solid var(--rule);
-    margin-top: 12px;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(20px, 4cqw, 72px);
+    align-items: center;
   }
-  .cs-facts > div { padding: 12px 16px 12px 0; display: grid; gap: 2px; }
-  .cs-facts > div + div { padding-left: 16px; border-left: 1px solid var(--rule); }
-  .cs-facts dd { font-weight: 560; font-size: 0.975rem; }
-
-  .cs-stage { margin-top: clamp(40px, 5vw, 72px); }
-
-  .cs-body {
-    display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    gap: 40px clamp(32px, 5vw, 80px);
-    margin-top: clamp(48px, 6vw, 88px);
-    align-items: start;
+  .st-copy { display: grid; gap: 18px; }
+  .st-prose { display: grid; gap: 1em; max-width: 60ch; font-size: clamp(1rem, 0.94rem + 0.3vw, 1.1875rem); line-height: 1.6; color: var(--ink-2); }
+  .st-first { font-size: 1.18em; line-height: 1.45; color: var(--ink); font-weight: 520; letter-spacing: -0.01em; }
+  .st-first { position: relative; padding-top: 22px; }
+  .st-first::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 48px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--accent);
   }
-  .cs-story { font-size: clamp(1.0625rem, 1rem + 0.2vw, 1.1875rem); }
-  .cs-note { font-size: 0.9375rem; color: var(--ink-2); padding-top: 12px; border-top: 1px solid var(--rule); }
-  .cs-callouts { display: grid; gap: 16px; padding-top: 4px; }
-  .cs-callouts li { display: flex; gap: 14px; align-items: flex-start; color: var(--ink-2); font-size: 0.975rem; transition: color 0.2s var(--ease-out); }
-  .cs-callouts li:hover { color: var(--ink); }
+  .st-look { display: grid; gap: 14px; padding: clamp(16px, 2cqw, 24px); max-height: 100%; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .st-look :global(.st-thumb) { box-shadow: 0 0 0 1px var(--line-2), var(--shadow); }
+  .st-callouts { display: grid; gap: 12px; }
+  .st-callouts li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.9375rem; line-height: 1.45; color: var(--ink-2); }
 
-  .cs-highlights {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin-top: clamp(56px, 7vw, 96px);
+  /* ---- Engineering ---- */
+  .eng { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: clamp(16px, 3cqh, 32px); align-content: center; }
+  .eng-head { display: grid; gap: 10px; }
+  .eng-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(12px, 1.6cqw, 22px); min-height: 0; align-self: center; }
+  .eng-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: clamp(18px, 2.4cqw, 32px);
+    min-height: min(100%, 360px);
+    overflow: hidden;
+    background:
+      radial-gradient(70% 55% at 100% 0%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%),
+      var(--surface);
   }
-  .cs-highlights li { padding: 20px clamp(16px, 2vw, 32px) 4px 0; border-top: 1px solid var(--ink); }
-  .cs-highlights li + li { padding-left: clamp(16px, 2vw, 32px); }
-  .cs-highlights h2 { font-size: 1.1875rem; line-height: 1.25; font-weight: 720; font-stretch: 94%; letter-spacing: -0.01em; margin-bottom: 10px; }
-  .cs-highlights p { color: var(--ink-2); font-size: 0.975rem; line-height: 1.55; }
+  .eng-num {
+    font-size: clamp(3rem, min(6cqw, 11cqh), 5.5rem);
+    line-height: 0.9;
+    font-weight: 820;
+    font-stretch: 118%;
+    letter-spacing: -0.05em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--accent);
+    margin-bottom: auto;
+  }
+  .eng-card h3 { font-size: clamp(1.125rem, 0.95rem + 0.6vw, 1.5rem); line-height: 1.15; letter-spacing: -0.02em; font-weight: 740; font-stretch: 94%; }
+  .eng-card p { font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); }
+  .eng-stack { display: flex; flex-wrap: wrap; gap: 6px; }
+  .eng-stack li {
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px var(--line);
+    font-size: 0.8125rem;
+    font-weight: 620;
+    font-stretch: 92%;
+  }
 
-  .cs-gallery {
+  /* ---- Screens: desktop captures on a grid, the phone as a full-height column beside them ---- */
+  .scr { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 16px; }
+  .scr-head { display: flex; justify-content: space-between; gap: 12px; }
+  .scr-body { display: flex; gap: clamp(16px, 2.4cqw, 36px); min-height: 0; container: shots / size; }
+  .scr-desk {
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: clamp(20px, 2.6vw, 36px);
-    margin-top: clamp(56px, 7vw, 96px);
-    align-items: flex-start;
+    align-content: center;
+    justify-content: center;
+    gap: 18px clamp(14px, 2cqw, 28px);
+    container: desk / size;
   }
-  .cs-shot { flex: 1 1 calc(50% - 36px); min-width: min(100%, 420px); display: grid; gap: 10px; }
-  .cs-shot--phone { flex: 0 0 clamp(170px, 18vw, 240px); min-width: 0; }
-
-  .cs-sheet {
+  .scr-shot { display: grid; gap: 10px; justify-items: start; min-width: 0; }
+  .scr-shot figcaption { padding-left: 2px; }
+  /* Each capture is as large as the room allows: one, two side by side, or a row of two over one. */
+  .scr-desk[data-count='1'] .scr-shot { width: min(100cqw, calc((100cqh - 36px) * 1.6)); }
+  .scr-desk[data-count='2'] .scr-shot { width: min(calc(50cqw - 14px), calc((100cqh - 36px) * 1.6)); }
+  .scr-desk[data-count='3'] .scr-shot,
+  .scr-desk[data-count='4'] .scr-shot { width: min(calc(50cqw - 14px), calc((50cqh - 46px) * 1.6)); }
+  .scr-shot :global(.plate) { width: 100%; }
+  .scr-phones { flex: none; display: flex; align-items: center; }
+  .scr-shot--phone { width: calc((100cqh - 36px) * 0.462); }
+  /* ---- Specs ---- */
+  .sp {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    margin-top: clamp(56px, 7vw, 96px);
-    border-block: 1px solid var(--rule);
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+    gap: clamp(20px, 3cqw, 48px);
+    align-items: center;
   }
-  .cs-sheet > div { padding: 16px 20px 18px 0; display: grid; gap: 8px; align-content: start; font-size: 0.9375rem; }
-  .cs-sheet > div + div { padding-left: 20px; border-left: 1px solid var(--rule); }
-  .cs-sheet li + li { margin-top: 2px; }
-  .cs-faces { display: grid; gap: 8px; }
-  .cs-faces li { display: flex; align-items: baseline; gap: 12px; font-size: 1.0625rem; }
-  .cs-aa { font-size: 2rem; line-height: 1; min-width: 1.35em; }
-  .cs-palette { display: flex; gap: 6px; flex-wrap: wrap; }
-  .cs-palette span { width: 22px; height: 22px; border-radius: 6px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 18%, transparent); }
+  .sp-sheet { display: grid; gap: clamp(14px, 2.6cqh, 26px); }
+  .sp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .sp-cell { display: grid; gap: 10px; align-content: start; padding: clamp(14px, 2cqw, 22px); border-radius: 18px; }
+  .sp-cell--wide { grid-column: 1 / -1; }
+  .sp-cell dd { font-size: 0.9375rem; line-height: 1.5; }
+  .sp-cell li + li { margin-top: 3px; }
+  .sp-faces { display: grid; gap: 8px; }
+  .sp-faces li { display: flex; align-items: baseline; gap: 12px; font-size: 1.0625rem; }
+  .sp-aa { font-size: 2.125rem; line-height: 1; min-width: 1.4em; }
+  .sp-palette { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sp-palette span { display: grid; gap: 6px; justify-items: start; }
+  .sp-palette i { width: 56px; height: 40px; border-radius: 10px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 16%, transparent), var(--shadow-sm); }
+  .sp-palette code { font: 600 0.6875rem/1 var(--mono); color: var(--ink-3); }
 
-  .cs-pager {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: start;
-    gap: 20px;
-    margin-top: clamp(64px, 8vw, 120px);
-    padding-top: 20px;
-    border-top: 1px solid var(--rule);
-  }
-  .pager-link { display: grid; gap: 6px; text-decoration: none; }
-  .pager-link .t-label { display: inline-flex; align-items: center; gap: 6px; }
-  .pager-link--next { justify-items: end; text-align: right; }
-  .pager-name { font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.75rem); line-height: 1; letter-spacing: -0.03em; transition: color 0.2s var(--ease-out); }
-  .pager-name.face-martian { font-size: clamp(1.375rem, 1rem + 1.4vw, 2.125rem); letter-spacing: 0; }
-  .pager-link:hover .pager-name { color: var(--ink-2); }
-  .pager-link :global(.icon) { width: 14px; height: 14px; transition: transform 0.3s var(--ease-out); }
-  .pager-link:hover :global(.icon-left) { transform: translateX(-3px); }
-  .pager-link:hover :global(.icon-right) { transform: translateX(3px); }
-  .pager-hint { display: flex; align-items: center; gap: 6px; }
-  kbd {
-    display: inline-grid;
-    place-items: center;
-    width: 22px;
-    height: 22px;
-    border: 1px solid var(--rule-2);
-    border-bottom-width: 2px;
-    border-radius: 5px;
-  }
-  kbd :global(.icon) { width: 12px; height: 12px; }
+  .sp-next { display: grid; gap: 14px; }
+  .next-card { display: grid; gap: 8px; padding: clamp(18px, 2.2cqw, 28px); text-decoration: none; overflow: hidden; transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out); }
+  .next-card:hover { transform: translateY(-3px); }
+  .next-card .t-label { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); }
+  .next-card .t-label :global(.icon) { width: 13px; height: 13px; transition: transform 0.3s var(--ease-out); }
+  .next-card:hover .t-label :global(.icon) { transform: translateX(3px); }
+  .next-name { font-size: clamp(2rem, 1.4rem + 1.8vw, 3.25rem); line-height: 1; letter-spacing: -0.035em; }
+  .next-name.face-martian { font-size: clamp(1.5rem, 1rem + 1.4vw, 2.25rem); letter-spacing: 0; }
+  .next-short { font-size: 0.9375rem; color: var(--ink-2); }
+  .next-card :global(.next-thumb) { margin-top: 14px; margin-bottom: calc(-1 * clamp(18px, 2.2cqw, 28px) - 30%); transform: rotate(-2deg) translateX(4%); transition: transform 0.7s var(--ease-out); }
+  .next-card:hover :global(.next-thumb) { transform: rotate(0) translateX(0) translateY(-8px); }
+  .next-card { max-height: min(70cqh, 560px); }
+  .sp-more { display: flex; justify-content: space-between; gap: 12px; padding-inline: 4px; }
 
-  @media (max-width: 1000px) {
-    .cs-head {
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-areas: 'back count' 'name name' 'tag tag' 'actions actions' 'facts facts';
-    }
-    .cs-actions { justify-content: flex-start; }
-    .cs-body { grid-template-columns: minmax(0, 1fr); }
-    .cs-sheet { grid-template-columns: 1fr 1fr; }
-    .cs-sheet-wide { grid-column: 1 / -1; }
-    .cs-sheet > div:nth-child(2) { padding-left: 0; border-left: 0; }
-    .cs-sheet > div:nth-child(n + 2) { border-top: 1px solid var(--rule); }
+  /* ---- Narrow windows ---- */
+  @container panel (max-width: 1000px) {
+    .ov, .st, .sp { grid-template-columns: minmax(0, 1fr); align-content: start; height: auto; min-height: 100%; }
+    .ov-stage { height: auto; container-type: normal; }
+    .ov-stage :global(.ov-plate) { width: 100%; }
+    .eng { height: auto; min-height: 100%; }
+    .eng-list { grid-template-columns: minmax(0, 1fr); }
+    .eng-num { font-size: 2.75rem; margin-bottom: 0; }
+    .st-look { max-height: none; overflow: visible; }
+    .scr { height: auto; }
+    .scr-body, .scr-desk { flex-direction: column; container-type: normal; }
+    .scr-desk .scr-shot, .scr-desk[data-count] .scr-shot { width: 100%; }
+    .scr-phones { justify-content: flex-start; }
+    .scr-shot--phone { width: min(64vw, 280px); }
+    .scr-hint { display: none; }
+    .next-card { max-height: none; }
+    .next-card :global(.next-thumb) { margin-bottom: 0; }
   }
-  @media (max-width: 700px) {
-    .cs-facts { grid-template-columns: minmax(0, 1fr); }
-    .cs-facts > div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--rule); }
-    .cs-highlights { grid-template-columns: minmax(0, 1fr); }
-    .cs-highlights li + li { padding-left: 0; }
-    .cs-sheet { grid-template-columns: minmax(0, 1fr); }
-    .cs-sheet > div { padding-left: 0 !important; border-left: 0 !important; }
-    .cs-shot--phone { flex-basis: 46%; }
-    .pager-hint { display: none; }
-    .cs-pager { grid-template-columns: 1fr 1fr; }
+  @container panel (max-width: 560px) {
+    .sp-grid { grid-template-columns: minmax(0, 1fr); }
   }
 </style>
 
 <script>
-  // Callout legend lights its pin, and a lit pin shows its tooltip.
-  document.querySelectorAll<HTMLElement>('.cs').forEach((cs) => {
-    const pins = cs.querySelectorAll<HTMLElement>('.cs-stage .pin');
-    cs.querySelectorAll<HTMLElement>('[data-callout]').forEach((item) => {
-      const pin = pins[Number(item.dataset.callout) - 1];
-      if (!pin) return;
-      item.addEventListener('pointerenter', () => pin.setAttribute('data-lit', ''));
-      item.addEventListener('pointerleave', () => pin.removeAttribute('data-lit'));
-    });
-
-    // Left and right arrows move between case studies, unless something else wants the keys.
-    addEventListener('keydown', (e) => {
-      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-      const t = e.target as HTMLElement;
-      if (t.closest('input, textarea, select, [contenteditable], dialog[open]') || document.querySelector('dialog[open]')) return;
-      if (e.key === 'ArrowLeft' && cs.dataset.prev) location.href = cs.dataset.prev;
-      if (e.key === 'ArrowRight' && cs.dataset.next) location.href = cs.dataset.next;
-    });
+  // Escape goes back to the showcase, on the product this case study is about.
+  const cs = document.querySelector<HTMLElement>('[data-cs]');
+  addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('dialog[open]') || !cs) return;
+    location.href = `/#work/${cs.dataset.cs}`;
   });
 </script>

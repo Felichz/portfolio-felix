@@ -5,56 +5,25 @@ import { projects, type Project } from '../data/projects';
 
 const accent = (p: Project) =>
   `--a-light:${p.accent.light};--a-dark:${p.accent.dark};--on-light:${p.accent.onLight};--on-dark:${p.accent.onDark}`;
+const host = (url: string) => new URL(url).host;
 const total = String(projects.length).padStart(2, '0');
 ---
 
-<section id="work" class="work" aria-labelledby="work-title" data-work>
-  <div class="wrap work-head">
-    <div class="work-title">
-      <h2 id="work-title" class="t-section">Selected work</h2>
-      <p class="muted">
-        Five products I designed and built end to end in 2026, each from a written brief and its own design system. Open any of
-        them for the full case study.
-      </p>
-    </div>
-    <div class="work-controls">
-      <ul class="work-tabs" aria-label="Jump to a product">
+<section id="work" class="panel" data-label="Work" tabindex="-1" aria-labelledby="work-title" data-accent style={accent(projects[0]!)} data-work>
+  <div class="panel-inner work">
+    <aside class="rail glass" data-reveal style="--d:0">
+      <header class="rail-head">
+        <h2 id="work-title" class="rail-title">Selected work</h2>
+        <p class="rail-sub muted">Five products I designed and built end to end in 2026, each from a written brief and its own design system.</p>
+      </header>
+
+      <ol class="rail-list" aria-label="Products">
         {
           projects.map((p, i) => (
             <li data-accent style={accent(p)}>
-              <button type="button" class={`work-tab ${p.face}`} data-go={i} aria-current={i === 0 ? 'true' : undefined}>
-                {p.wordmark ? (
-                  <span>
-                    <b>{p.wordmark[0]}</b>
-                    {p.wordmark[1]}
-                  </span>
-                ) : (
-                  p.name
-                )}
-              </button>
-            </li>
-          ))
-        }
-      </ul>
-      <div class="work-arrows">
-        <p class="work-pos t-label t-num" aria-live="polite"><span data-pos>01</span> / {total}</p>
-        <button class="icon-btn" type="button" data-prev aria-label="Previous product" disabled><Icon name="chevron-left" /></button>
-        <button class="icon-btn" type="button" data-next aria-label="Next product"><Icon name="chevron-right" /></button>
-      </div>
-    </div>
-  </div>
-
-  <div class="work-track" data-track tabindex="0" role="region" aria-label="Products. Use the arrow keys to move between them.">
-    <ol class="work-list">
-      {
-        projects.map((p, i) => (
-          <li class="slide" data-slide data-accent style={accent(p)} aria-label={`${i + 1} of ${projects.length}: ${p.name}`}>
-            <a class="slide-shot" href={`/work/${p.id}/`} tabindex="-1" aria-hidden="true">
-              <Plate shot={p.main} zoom={false} motion="hover" vt={`shot-${p.id}`} sizes="(min-width: 1200px) 740px, (min-width: 800px) 60vw, 88vw" widths={[480, 740, 1000, 1480]} />
-            </a>
-            <div class="slide-copy">
-              <h3 class={`slide-name ${p.face}`} style={`view-transition-name:name-${p.id}`}>
-                <a href={`/work/${p.id}/`}>
+              <button type="button" class="rail-item spot" data-go={i} aria-current={i === 0 ? 'true' : undefined} aria-controls="work-show">
+                <span class="rail-num t-num">{String(i + 1).padStart(2, '0')}</span>
+                <span class={`rail-name ${p.face}`}>
                   {p.wordmark ? (
                     <>
                       <b>{p.wordmark[0]}</b>
@@ -63,306 +32,549 @@ const total = String(projects.length).padStart(2, '0');
                   ) : (
                     p.name
                   )}
-                </a>
-              </h3>
-              <p class="slide-tagline">{p.tagline}</p>
-              <ul class="slide-points">
-                {p.highlights.map((h) => (
-                  <li>{h.title}</li>
-                ))}
-              </ul>
-              <p class="slide-proof t-label">
-                {p.proof}
-              </p>
-              <div class="slide-actions">
-                <a class="btn btn--solid" href={`/work/${p.id}/`}>
-                  Read the case study
-                  <Icon name="arrow-right" />
-                </a>
-                <a class="arrow-link" href={p.live} target="_blank" rel="noopener">
-                  Live <Icon name="arrow-up-right" />
-                </a>
-                <a class="arrow-link" href={p.source} target="_blank" rel="noopener">
-                  Source <Icon name="arrow-up-right" />
-                </a>
+                </span>
+                <span class="rail-short">{p.short}</span>
+                <span class="rail-progress" aria-hidden="true"><i /></span>
+              </button>
+            </li>
+          ))
+        }
+      </ol>
+
+      <footer class="rail-foot">
+        <button class="auto" type="button" data-auto aria-pressed="true">
+          <span class="auto-icon" aria-hidden="true"><Icon name="pause" class="auto-on" /><Icon name="play" class="auto-off" /></span>
+          <span class="auto-on">Auto-advancing</span>
+          <span class="auto-off">Auto-advance paused</span>
+        </button>
+        <p class="t-label t-num rail-pos" aria-hidden="true"><span data-pos>01</span> / {total}</p>
+      </footer>
+    </aside>
+
+    <div class="show" id="work-show" data-show aria-live="polite" data-reveal style="--d:1">
+      {
+        projects.map((p, i) => (
+          <article
+            class="slide"
+            data-slide
+            data-id={p.id}
+            data-accent
+            data-state={i === 0 ? 'active' : 'after'}
+            style={`${accent(p)};--vt-shot:shot-${p.id};--vt-name:name-${p.id}`}
+            aria-label={`${i + 1} of ${projects.length}: ${p.name}`}
+            aria-hidden={i === 0 ? undefined : 'true'}
+            inert={i === 0 ? undefined : true}
+          >
+            <a class="slide-media" href={`/work/${p.id}/`} tabindex="-1" aria-hidden="true">
+              <Plate
+                shot={p.main}
+                chrome={host(p.live)}
+                zoom={false}
+                motion="manual"
+                eager={i === 0}
+                sizes="(min-width: 1400px) 900px, (min-width: 761px) 62vw, 92vw"
+                widths={[560, 900, 1200, 1800]}
+              />
+            </a>
+            <div class="slide-info">
+              <div class="slide-head">
+                <h3 class={`slide-name ${p.face}`}>
+                  <a href={`/work/${p.id}/`}>
+                    {p.wordmark ? (
+                      <>
+                        <b>{p.wordmark[0]}</b>
+                        {p.wordmark[1]}
+                      </>
+                    ) : (
+                      p.name
+                    )}
+                  </a>
+                </h3>
+                <p class="slide-tagline">{p.tagline}</p>
+              </div>
+              <div class="slide-side">
+                <ul class="slide-points">
+                  {p.highlights.map((h) => (
+                    <li>{h.title}</li>
+                  ))}
+                </ul>
+                <div class="slide-actions">
+                  <a class="btn btn--solid btn--sm" href={`/work/${p.id}/`}>
+                    Case study
+                    <Icon name="arrow-right" class="icon-right" />
+                  </a>
+                  <a class="arrow-link" href={p.live} target="_blank" rel="noopener">
+                    Live <Icon name="arrow-up-right" />
+                  </a>
+                  <a class="arrow-link" href={p.source} target="_blank" rel="noopener">
+                    Source <Icon name="arrow-up-right" />
+                  </a>
+                </div>
               </div>
             </div>
-          </li>
+          </article>
         ))
       }
-    </ol>
+    </div>
   </div>
+
+  <!-- A deep link like #work/lifeui opens on that product before the first paint. -->
+  <script is:inline>
+    (() => {
+      const [panel, sub] = decodeURIComponent(location.hash.slice(1)).split('/');
+      if (panel !== 'work' || !sub) return;
+      const root = document.querySelector('[data-work]');
+      const slides = [...root.querySelectorAll('[data-slide]')];
+      const i = slides.findIndex((s) => s.dataset.id === sub);
+      if (i <= 0) return;
+      slides.forEach((s, j) => {
+        s.dataset.state = j === i ? 'active' : j < i ? 'before' : 'after';
+        s.toggleAttribute('inert', j !== i);
+        j === i ? s.removeAttribute('aria-hidden') : s.setAttribute('aria-hidden', 'true');
+      });
+      root.querySelectorAll('[data-go]').forEach((b, j) => (j === i ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
+      root.dataset.start = String(i);
+    })();
+  </script>
 </section>
 
 <style>
-  .work { padding-bottom: clamp(56px, 6vw, 96px); }
-
-  .work-head {
+  .work {
+    --rail: clamp(260px, 22cqw, 330px);
     display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: 20px clamp(32px, 5vw, 80px);
-    align-items: end;
-    padding-top: clamp(28px, 3vw, 44px);
-    border-top: 1px solid var(--rule);
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    gap: clamp(16px, 2.4cqw, 40px);
   }
-  .work-title { display: grid; gap: 14px; }
-  .work-title p { max-width: 48ch; }
-  .work-controls { display: flex; align-items: center; justify-content: flex-end; gap: 20px; min-width: 0; }
-  .work-tabs {
+
+  /* ---- Rail ---- */
+  .rail {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    min-height: 0;
+    padding: clamp(14px, 2.2cqh, 22px);
+  }
+  .rail-head { display: grid; gap: 8px; padding: 4px 6px clamp(10px, 1.8cqh, 18px); border-bottom: 1px solid var(--line); }
+  .rail-title { font-size: clamp(1.5rem, 1.1rem + 1vw, 2.125rem); line-height: 1; letter-spacing: -0.035em; font-weight: 790; font-stretch: 96%; }
+  .rail-sub { font-size: 0.8125rem; line-height: 1.45; }
+  .rail-list {
     display: flex;
-    gap: 2px;
-    overflow-x: auto;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+    padding-block: 10px;
+    overflow-y: auto;
     scrollbar-width: none;
-    min-width: 0;
   }
-  .work-tabs::-webkit-scrollbar { display: none; }
-  .work-tab {
+  .rail-list > li { flex: 1 1 0; max-height: 104px; min-height: 0; display: flex; }
+  .rail-item {
+    --spot: var(--accent);
     position: relative;
-    min-height: 44px;
-    padding: 6px 12px 10px;
+    display: grid;
+    align-content: center;
+    grid-template-columns: 2.1em minmax(0, 1fr);
+    grid-template-areas: 'num name' '. short';
+    align-items: baseline;
+    gap: 2px 6px;
+    width: 100%;
+    padding: clamp(8px, 1.4cqh, 13px) 12px clamp(10px, 1.6cqh, 15px);
     border: 0;
-    background: none;
+    border-radius: 14px;
+    background: transparent;
+    text-align: left;
     color: var(--ink-3);
-    font-size: 1.0625rem;
-    line-height: 1.2;
-    white-space: nowrap;
-    transition: color 0.3s var(--ease-out);
+    overflow: hidden;
+    transition: background-color 0.4s var(--ease-out), color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
   }
-  .work-tab.face-martian { font-size: 0.9375rem; letter-spacing: 0.02em; }
-  .work-tab.face-martian span { font-weight: 400; }
-  .work-tab.face-newsreader { font-size: 1.1875rem; }
-  .work-tab:hover { color: var(--ink); }
-  .work-tab[aria-current='true'] { color: var(--ink); }
-  .work-tab::after {
-    content: '';
+  .rail-item:hover { color: var(--ink-2); }
+  .rail-item[aria-current='true'] {
+    color: var(--ink);
+    background: var(--surface-strong);
+    box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px var(--line), var(--shadow-sm);
+  }
+  .rail-num { grid-area: num; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em; transition: color 0.4s; }
+  .rail-item[aria-current='true'] .rail-num { color: var(--accent); }
+  .rail-name { grid-area: name; font-size: clamp(1.125rem, 0.9rem + 0.6vw, 1.4rem); line-height: 1.15; letter-spacing: -0.02em; }
+  .rail-name.face-martian { font-size: 1rem; letter-spacing: 0; }
+  .rail-name.face-martian b { font-weight: 700; }
+  .rail-short {
+    grid-area: short;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    font-weight: 500;
+    color: var(--ink-3);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: color 0.4s;
+  }
+  .rail-item[aria-current='true'] .rail-short { color: var(--ink-2); }
+  .rail-progress {
     position: absolute;
     left: 12px;
     right: 12px;
-    bottom: 2px;
+    bottom: 5px;
     height: 2px;
     border-radius: 2px;
+    background: color-mix(in oklab, var(--accent) 16%, transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .rail-progress i {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
     background: var(--accent);
-    transform: scaleX(0);
+    transform: scaleX(var(--p, 0));
     transform-origin: left;
-    transition: transform 0.45s var(--ease-out);
   }
-  .work-tab[aria-current='true']::after { transform: scaleX(1); }
-  .work-arrows { display: flex; gap: 8px; flex: none; align-items: center; }
+  .rail-item[aria-current='true'] .rail-progress { opacity: 1; }
 
-  /* ---- The shelf ---- */
-  .work-track {
-    --inset: max(var(--gutter), calc((100vw - var(--wrap)) / 2));
-    margin-top: clamp(28px, 3vw, 44px);
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: var(--inset);
-    scrollbar-width: none;
-    cursor: grab;
-  }
-  .work-track::-webkit-scrollbar { display: none; }
-  .work-track[data-dragging] { cursor: grabbing; scroll-snap-type: none; user-select: none; }
-  .work-track:focus-visible { outline: none; }
-  .work-track:focus-visible .slide[data-active] .slide-shot .plate { outline: 2px solid var(--ink); outline-offset: 6px; }
-  .work-list {
+  .rail-foot {
     display: flex;
-    gap: clamp(28px, 4vw, 64px);
-    padding-inline: var(--inset);
-    width: max-content;
-  }
-  .slide {
-    position: relative;
-    width: min(1180px, calc(100vw - var(--inset) * 2 - 56px));
-    scroll-snap-align: start;
-    display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-    gap: clamp(28px, 3.4vw, 52px);
     align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 4px 0;
+    border-top: 1px solid var(--line);
   }
-  /* Neighbours fade toward the page, so dark screenshots don't turn muddy on white. */
-  .slide::after {
+  .auto {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 36px;
+    padding: 0 12px 0 4px;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: var(--ink-2);
+    font-size: 0.8125rem;
+    font-weight: 620;
+    font-stretch: 92%;
+    transition: color 0.2s, background-color 0.2s;
+  }
+  .auto:hover { color: var(--ink); background: color-mix(in oklab, var(--ink) 5%, transparent); }
+  .auto-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: var(--bg); }
+  .auto-icon :global(.icon) { width: 12px; height: 12px; stroke-width: 2.4; }
+  .auto[aria-pressed='true'] :global(.auto-off),
+  .auto[aria-pressed='false'] :global(.auto-on) { display: none; }
+  .rail-pos { color: var(--ink-3); }
+
+  /* ---- Showcase ---- */
+  .show { position: relative; display: grid; min-height: 0; container: show / size; }
+  .slide {
+    --info: clamp(150px, 24cqh, 200px);
+    grid-area: 1 / 1;
+    align-self: center;
+    justify-self: center;
+    display: grid;
+    gap: clamp(14px, 2.6cqh, 26px);
+    perspective: 1600px;
+    width: min(100cqw, calc((100cqh - var(--info) - 58px) * 1.6));
+    visibility: hidden;
+    transition: visibility 0s linear 0.7s;
+  }
+  .slide[data-state='active'] { visibility: visible; transition-delay: 0s; z-index: 1; }
+
+  .slide-media {
+    position: relative;
+    display: block;
+    border-radius: var(--radius);
+    opacity: 0;
+    transform: translateX(var(--from, 5%)) scale(0.97) rotateY(calc(var(--from-deg, -4deg)));
+    transform-origin: 50% 60%;
+    transition: opacity 0.6s var(--ease-out), transform 0.9s var(--ease-out);
+  }
+  .slide[data-state='before'] { --from: -5%; --from-deg: 4deg; }
+  .slide[data-state='active'] .slide-media { opacity: 1; transform: none; transition-delay: 0.08s; }
+  .slide[data-state='active'] .slide-media :global(.plate) { view-transition-name: var(--vt-shot); }
+  /* The product's color glows behind its window, and pools on the floor under it. */
+  .slide-media::before {
     content: '';
     position: absolute;
-    inset: -8px;
-    background: var(--paper);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.5s var(--ease-out);
+    inset: 8% 6% -6%;
+    z-index: -1;
+    border-radius: 40%;
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 46%, transparent), transparent);
+    filter: blur(40px);
+    opacity: 0.75;
   }
-  .slide:not([data-active])::after { opacity: 0.6; }
-  .slide:not([data-active]):hover::after { opacity: 0.35; }
-  .slide-shot { display: block; border-radius: var(--radius); }
-  .slide-shot .plate { transition: transform 0.5s var(--ease-out); }
-  .slide-shot:hover .plate { transform: translateY(-3px); }
-  .slide-shot :global(img) { -webkit-user-drag: none; }
+  .slide-media :global(.plate) { transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out); }
+  .slide-media:hover :global(.plate) { transform: translateY(-4px); }
 
-  .slide-copy { display: grid; gap: 16px; align-content: center; justify-items: start; }
-  .work-pos { align-self: center; margin-right: 6px; min-width: 4.5ch; }
+  .slide-info {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 16px clamp(20px, 3cqw, 44px);
+    min-height: var(--info);
+    align-content: start;
+  }
+  .slide-head, .slide-side { display: grid; gap: 10px; align-content: start; }
+  .slide-head > *, .slide-side > * {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s var(--ease-out), transform 0.7s var(--ease-out);
+  }
+  .slide[data-state='active'] :is(.slide-head, .slide-side) > * { opacity: 1; transform: none; }
+  .slide[data-state='active'] .slide-head > :nth-child(1) { transition-delay: 0.16s; }
+  .slide[data-state='active'] .slide-head > :nth-child(2) { transition-delay: 0.24s; }
+  .slide[data-state='active'] .slide-side > :nth-child(1) { transition-delay: 0.3s; }
+  .slide[data-state='active'] .slide-side > :nth-child(2) { transition-delay: 0.38s; }
+
   .slide-name {
-    font-size: clamp(2.25rem, 1.4rem + 2.4vw, 3.5rem);
+    font-size: clamp(2rem, min(4cqw, 7cqh), 3.5rem);
     line-height: 1;
     font-weight: inherit;
     letter-spacing: -0.035em;
   }
+  .slide[data-state='active'] .slide-name { view-transition-name: var(--vt-name); }
   .slide-name a { text-decoration: none; }
-  .slide-name.face-martian { font-size: clamp(1.875rem, 1.2rem + 2vw, 2.875rem); letter-spacing: -0.02em; font-weight: 400; }
+  .slide-name.face-martian { font-size: clamp(1.5rem, min(3cqw, 5.4cqh), 2.6rem); letter-spacing: -0.02em; font-weight: 400; }
   .slide-name.face-martian b { font-weight: 700; }
-  .slide-name.face-inter { letter-spacing: -0.04em; }
-  .slide-tagline { font-size: 1.0625rem; line-height: 1.5; color: var(--ink-2); max-width: 44ch; }
-  .slide-points { display: grid; gap: 6px; width: 100%; padding-block: 12px; border-block: 1px solid var(--rule); }
+  .slide-name.face-inter { letter-spacing: -0.045em; }
+  .slide-tagline { font-size: 0.975rem; line-height: 1.5; color: var(--ink-2); max-width: 48ch; }
+  .slide-points { display: grid; gap: 5px; }
   .slide-points li {
     position: relative;
-    padding-left: 18px;
-    font-weight: 560;
+    padding-left: 20px;
+    font-size: 0.9375rem;
+    font-weight: 580;
     font-stretch: 94%;
-    font-size: 0.975rem;
+    line-height: 1.35;
   }
   .slide-points li::before {
     content: '';
     position: absolute;
     left: 0;
-    top: 0.62em;
-    width: 8px;
-    height: 1px;
-    background: var(--accent);
+    top: 0.34em;
+    width: 11px;
+    height: 11px;
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--accent) 22%, transparent);
+    box-shadow: inset 0 0 0 1.5px var(--accent);
   }
-  .slide-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 4px; }
+  .slide-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 4px; }
 
-  @media (max-width: 1000px) {
-    .work-head { grid-template-columns: minmax(0, 1fr); }
-    .work-controls { justify-content: space-between; }
-  }
-  @media (max-width: 800px) {
-    .slide { grid-template-columns: minmax(0, 1fr); width: calc(100vw - var(--inset) * 2 - 28px); align-items: start; }
-    .work-list { gap: 20px; }
-    .work-arrows { display: none; }
-    .work-track { cursor: auto; }
-  }
   @media (prefers-reduced-motion: reduce) {
-    .slide::after, .slide-shot .plate, .work-tab::after { transition: none; }
+    .slide-media, .slide-head > *, .slide-side > * { transform: none !important; transition-property: opacity; transition-duration: 0.2s; }
+  }
+
+  /* Wide but short windows: the story sits beside the screenshot. */
+  @container show (min-aspect-ratio: 3 / 2) {
+    .slide {
+      --info: 0px;
+      grid-template-columns: minmax(0, 1fr) clamp(240px, 26cqw, 340px);
+      align-items: center;
+      width: min(100cqw, calc((100cqh - 40px) * 1.6 + clamp(240px, 26cqw, 340px) + 32px));
+    }
+    .slide-info { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+    .slide-name { font-size: clamp(2rem, min(3.4cqw, 8cqh), 3.75rem); }
+  }
+
+  /* Phones: product chips on top, one product at a time below, scrolling inside the panel. */
+  @container panel (max-width: 760px) {
+    .work { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; gap: 16px; height: auto; }
+    .rail { padding: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; grid-template-rows: auto auto; }
+    .rail-head { padding: 0 0 12px; border: 0; }
+    .rail-foot { display: none; }
+    .rail-list {
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 6px;
+      padding: 2px;
+      overflow-x: auto;
+      margin-inline: calc(var(--gutter) * -1);
+      padding-inline: var(--gutter);
+      scroll-padding-inline: var(--gutter);
+    }
+    .rail-list > li { flex: none; max-height: none; }
+    .rail-item {
+      grid-template-columns: auto;
+      grid-template-areas: 'name';
+      width: auto;
+      padding: 8px 14px 10px;
+      border-radius: 999px;
+      box-shadow: 0 0 0 1px var(--line);
+      white-space: nowrap;
+    }
+    .rail-num, .rail-short { display: none; }
+    .rail-name { font-size: 1rem; }
+    .rail-name.face-martian { font-size: 0.8125rem; }
+    .rail-progress { left: 16px; right: 16px; bottom: 3px; }
+    .show { container-type: normal; }
+    .slide { width: 100%; align-self: start; }
+    .slide-info { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+    .slide-name { font-size: 2.25rem; }
+    .slide-name.face-martian { font-size: 1.625rem; }
   }
 </style>
 
 <script>
   const root = document.querySelector<HTMLElement>('[data-work]');
-  const track = root?.querySelector<HTMLElement>('[data-track]');
-  if (root && track) {
-    const slides = [...track.querySelectorAll<HTMLElement>('[data-slide]')];
-    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-go]')];
-    const prev = root.querySelector<HTMLButtonElement>('[data-prev]')!;
+  if (root) {
+    const slides = [...root.querySelectorAll<HTMLElement>('[data-slide]')];
+    const items = [...root.querySelectorAll<HTMLButtonElement>('[data-go]')];
+    const show = root.querySelector<HTMLElement>('[data-show]')!;
+    const autoBtn = root.querySelector<HTMLButtonElement>('[data-auto]')!;
     const pos = root.querySelector<HTMLElement>('[data-pos]');
-    const next = root.querySelector<HTMLButtonElement>('[data-next]')!;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)');
-    let active = 0;
+    const HOLD = 3200; // time on the final still after a recording ends
+    const STILL = 8500; // time per product without a recording
 
-    const setActive = (i: number) => {
-      active = i;
-      slides.forEach((s, j) => (j === i ? s.setAttribute('data-active', '') : s.removeAttribute('data-active')));
-      tabs.forEach((t, j) => (j === i ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current')));
-      if (pos) pos.textContent = String(i + 1).padStart(2, '0');
-      prev.disabled = i === 0;
-      next.disabled = i === slides.length - 1;
-      // Keep the active tab visible by scrolling the tab strip only, never the page.
-      const tab = tabs[i];
-      const strip = tab?.closest('ul');
-      if (tab && strip) {
-        const li = tab.parentElement!;
-        const left = li.offsetLeft - strip.offsetLeft;
-        if (left < strip.scrollLeft || left + li.offsetWidth > strip.scrollLeft + strip.clientWidth) {
-          strip.scrollTo({ left: left - 8, behavior: reduce.matches ? 'auto' : 'smooth' });
-        }
-      }
-    };
-
-    const go = (i: number) => {
-      const target = slides[Math.max(0, Math.min(slides.length - 1, i))];
-      if (!target) return;
-      const inset = parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0;
-      track.scrollTo({ left: target.offsetLeft - inset, behavior: reduce.matches ? 'auto' : 'smooth' });
-    };
-
-    // The slide nearest the start edge is the active one.
-    const sync = () => {
-      const inset = parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0;
-      let best = 0;
-      let bestDist = Infinity;
-      slides.forEach((s, i) => {
-        const d = Math.abs(s.offsetLeft - inset - track.scrollLeft);
-        if (d < bestDist) (bestDist = d), (best = i);
-      });
-      if (best !== active || !slides[best]!.hasAttribute('data-active')) setActive(best);
-    };
+    let index = Number(root.dataset.start ?? 0);
+    let auto = !reduce.matches;
+    let hold = false;
+    let active = root.hasAttribute('data-active');
+    let elapsed = 0;
+    let total = STILL;
+    let last = performance.now();
     let raf = 0;
-    track.addEventListener('scroll', () => {
+
+    const plateOf = (i: number) => slides[i]?.querySelector<HTMLElement>('.plate') ?? null;
+    const clipOf = (i: number) =>
+      [...(plateOf(i)?.querySelectorAll<HTMLVideoElement>('.plate-motion video') ?? [])].find((v) => getComputedStyle(v).display !== 'none');
+
+    const rest = (i: number) => {
+      const plate = plateOf(i);
+      if (!plate) return;
+      if (plate.dataset.state) plate.dataset.state = 'idle';
+      const v = plate.querySelectorAll('video');
+      setTimeout(() => v.forEach((x) => (x.pause(), (x.currentTime = 0))), 500);
+    };
+
+    const roll = () => {
+      const plate = plateOf(index);
+      const v = clipOf(index);
+      total = STILL;
+      if (!plate || !v || reduce.matches || !active) return;
+      const setTotal = () => {
+        if (Number.isFinite(v.duration)) total = v.duration * 1000 + HOLD;
+      };
+      if (v.readyState >= 1) setTotal();
+      else v.addEventListener('loadedmetadata', setTotal, { once: true });
+      v.preload = 'auto';
+      v.currentTime = 0;
+      plate.dataset.state = 'loading';
+      v.addEventListener('playing', () => plate.dataset.state === 'loading' && (plate.dataset.state = 'playing'), { once: true });
+      v.onended = () => (plate.dataset.state = 'done');
+      v.play().catch(() => (plate.dataset.state = 'idle'));
+    };
+
+    const paint = () => {
+      items[index]?.style.setProperty('--p', String(Math.min(1, elapsed / total)));
+    };
+
+    const select = (i: number, from: 'auto' | 'user' = 'user') => {
+      const n = slides.length;
+      const j = ((i % n) + n) % n;
+      if (j === index && from === 'auto') return;
+      const prev = index;
+      index = j;
+      slides.forEach((s, k) => {
+        s.dataset.state = k === j ? 'active' : k < j ? 'before' : 'after';
+        s.toggleAttribute('inert', k !== j);
+        k === j ? s.removeAttribute('aria-hidden') : s.setAttribute('aria-hidden', 'true');
+      });
+      items.forEach((b, k) => {
+        k === j ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current');
+        b.style.setProperty('--p', '0');
+      });
+      if (pos) pos.textContent = String(j + 1).padStart(2, '0');
+      // The whole panel takes on the product's accent, and the room light follows.
+      const s = slides[j]!;
+      for (const k of ['--a-light', '--a-dark', '--on-light', '--on-dark']) root.style.setProperty(k, s.style.getPropertyValue(k));
+      document.dispatchEvent(new CustomEvent('deck:refresh'));
+      if (prev !== j) rest(prev);
+      elapsed = 0;
+      roll();
+      if (active) history.replaceState(history.state, '', `#work/${s.dataset.id}`);
+      // Keep the chosen chip in view on phones, scrolling only the strip.
+      const li = items[j]?.parentElement;
+      const strip = li?.parentElement;
+      if (li && strip && strip.scrollWidth > strip.clientWidth) {
+        strip.scrollTo({ left: li.offsetLeft - strip.clientWidth / 2 + li.offsetWidth / 2, behavior: reduce.matches ? 'instant' : 'smooth' });
+      }
+    };
+
+    const loop = (now: number) => {
+      const dt = Math.min(100, now - last);
+      last = now;
+      if (auto && active && !hold && !document.hidden) {
+        elapsed += dt;
+        if (elapsed >= total) select(index + 1, 'auto');
+      }
+      paint();
+      raf = requestAnimationFrame(loop);
+    };
+    const run = () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(sync);
-    }, { passive: true });
+      last = performance.now();
+      raf = requestAnimationFrame(loop);
+    };
 
-    prev.addEventListener('click', () => go(active - 1));
-    next.addEventListener('click', () => go(active + 1));
-    tabs.forEach((t) => t.addEventListener('click', () => go(Number(t.dataset.go))));
-    track.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight') (e.preventDefault(), go(active + 1));
-      if (e.key === 'ArrowLeft') (e.preventDefault(), go(active - 1));
-      if (e.key === 'Home') (e.preventDefault(), go(0));
-      if (e.key === 'End') (e.preventDefault(), go(slides.length - 1));
+    const setAuto = (on: boolean) => {
+      auto = on;
+      autoBtn.setAttribute('aria-pressed', String(on));
+      // Announce product changes only when the visitor is driving, never on every automatic turn.
+      show.setAttribute('aria-live', on ? 'off' : 'polite');
+    };
+
+    items.forEach((b, i) => b.addEventListener('click', () => select(i)));
+    // Up and down move through the list, like a menu.
+    root.querySelector('.rail-list')?.addEventListener('keydown', (e) => {
+      const ev = e as KeyboardEvent;
+      const step = ev.key === 'ArrowDown' ? 1 : ev.key === 'ArrowUp' ? -1 : 0;
+      if (!step) return;
+      ev.preventDefault();
+      const j = Math.max(0, Math.min(items.length - 1, index + step));
+      items[j]?.focus();
+      select(j);
     });
-    // Clicking a dimmed neighbour brings it forward instead of opening it.
-    slides.forEach((s, i) =>
-      s.addEventListener('click', (e) => {
-        if (i !== active && !(e.target as HTMLElement).closest('.slide-actions')) {
-          e.preventDefault();
-          go(i);
+    autoBtn.addEventListener('click', () => {
+      setAuto(!auto);
+      if (auto && elapsed >= total) select(index + 1, 'auto');
+    });
+
+    // Reading a product's text pauses the countdown; watching its recording doesn't need to.
+    show.addEventListener('pointerover', (e) => {
+      if (e.pointerType === 'mouse') hold = !!(e.target as HTMLElement).closest('.slide-info');
+    });
+    show.addEventListener('pointerleave', () => (hold = false));
+    show.addEventListener('focusin', () => (hold = true));
+    show.addEventListener('focusout', (e) => !show.contains(e.relatedTarget as Node) && (hold = false));
+
+    document.addEventListener('deck:change', (e) => {
+      const was = active;
+      active = (e as CustomEvent).detail.id === 'work';
+      if (active && !was) {
+        const plate = plateOf(index);
+        if (!plate?.dataset.state || plate.dataset.state === 'idle') {
+          elapsed = 0;
+          roll();
         }
-      }, true),
-    );
+        run();
+      } else if (!active && was) {
+        clipOf(index)?.pause();
+        cancelAnimationFrame(raf);
+      }
+    });
+    document.addEventListener('deck:sub', (e) => {
+      const { id, sub } = (e as CustomEvent).detail;
+      if (id !== 'work') return;
+      const j = slides.findIndex((s) => s.dataset.id === sub);
+      if (j >= 0) select(j);
+    });
+    // A theme switch shows the other edition's recording: start it over.
+    new MutationObserver(() => {
+      if (!active) return;
+      rest(index);
+      setTimeout(roll, 520);
+      elapsed = 0;
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-    // Drag to scroll with a mouse; touch and trackpads scroll natively.
-    let startX = 0;
-    let startLeft = 0;
-    let moved = false;
-    let dragging = false;
-    let startActive = 0;
-    track.addEventListener('pointerdown', (e) => {
-      if (e.pointerType !== 'mouse' || e.button !== 0) return;
-      dragging = true;
-      startActive = active;
-      moved = false;
-      startX = e.clientX;
-      startLeft = track.scrollLeft;
-    });
-    addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const dx = e.clientX - startX;
-      if (!moved && Math.abs(dx) > 6) {
-        moved = true;
-        track.setAttribute('data-dragging', '');
-      }
-      if (moved) track.scrollLeft = startLeft - dx;
-    });
-    addEventListener('pointerup', () => {
-      if (!dragging) return;
-      dragging = false;
-      if (moved) {
-        // Read the drag before snapping comes back on, or the browser snaps first.
-        const dir = track.scrollLeft - startLeft;
-        sync();
-        track.removeAttribute('data-dragging');
-        // A deliberate flick moves one product even if it didn't cross the halfway point.
-        go(active === startActive && Math.abs(dir) > 60 ? startActive + Math.sign(dir) : active);
-      }
-    });
-    // Links and images are natively draggable; that would cancel the pointer gesture.
-    track.addEventListener('dragstart', (e) => e.preventDefault());
-    // A drag must not also count as a click on the link underneath.
-    track.addEventListener('click', (e) => {
-      if (moved) {
-        e.preventDefault();
-        e.stopPropagation();
-        moved = false;
-      }
-    }, true);
-
-    setActive(0);
+    setAuto(auto);
+    index = -1;
+    select(Number(root.dataset.start ?? 0));
+    if (active) run();
   }
 </script>

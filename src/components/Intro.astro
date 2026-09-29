@@ -1,0 +1,361 @@
+---
+import { Picture } from 'astro:assets';
+import Icon from './Icon.astro';
+import portrait from '../assets/portrait/felix-portrait.webp';
+import { projects } from '../data/projects';
+
+const first = 'Felix';
+const last = 'Andersson';
+const accent = (p: (typeof projects)[number]) =>
+  `--a-light:${p.accent.light};--a-dark:${p.accent.dark};--on-light:${p.accent.onLight};--on-dark:${p.accent.onDark}`;
+---
+
+<section id="intro" class="panel" data-label="Intro" tabindex="-1" aria-labelledby="intro-name">
+  <div class="panel-inner intro">
+    <div class="intro-copy">
+      <p class="chip intro-status" data-reveal style="--d:0">
+        <span class="pulse" aria-hidden="true"></span>
+        Open to remote senior frontend roles
+      </p>
+
+      <h1 id="intro-name" class="intro-name" aria-label={`${first} ${last}`} data-name>
+        <span class="line" aria-hidden="true">{[...first].map((c, i) => <span class="ch" style={`--i:${i}`}>{c}</span>)}</span>
+        <span class="line" aria-hidden="true">{[...last].map((c, i) => <span class="ch" style={`--i:${i + first.length}`}>{c}</span>)}</span>
+      </h1>
+
+      <p class="intro-role" data-reveal style="--d:3">
+        Senior Frontend Engineer, <span class="t-serif">building interfaces people can trust.</span>
+      </p>
+      <p class="t-lede intro-lede muted" data-reveal style="--d:4">
+        Five years on Cisco’s Magnetic design system and the Meraki Dashboard, where I built data tables that stay at
+        60&nbsp;FPS with more than 100,000 rows. This year I also designed and shipped five products of my own.
+      </p>
+
+      <div class="intro-actions" data-reveal style="--d:5">
+        <a class="btn btn--solid" href="#work">See the work <Icon name="arrow-right" class="icon-right" /></a>
+        <a class="btn" href="mailto:andersson.fx@gmail.com"><Icon name="mail" />Email me</a>
+        <a class="icon-btn" href="https://github.com/Felichz" target="_blank" rel="noopener" aria-label="GitHub profile"><Icon name="github" /></a>
+        <a class="icon-btn" href="https://www.linkedin.com/in/felixandersson/" target="_blank" rel="noopener" aria-label="LinkedIn profile"><Icon name="linkedin" /></a>
+      </div>
+
+      <nav class="intro-shelf" aria-label="Products" data-reveal style="--d:6">
+        <p class="t-label">Shipped in 2026</p>
+        <ul>
+          {
+            projects.map((p) => (
+              <li data-accent style={accent(p)}>
+                <a class={p.face} href={`#work/${p.id}`}>
+                  {p.wordmark ? (
+                    <>
+                      <b>{p.wordmark[0]}</b>
+                      {p.wordmark[1]}
+                    </>
+                  ) : (
+                    p.name
+                  )}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </div>
+
+    <figure class="portrait" data-reveal style="--d:2">
+      <div class="portrait-card" data-tilt="7">
+        <Picture
+          src={portrait}
+          alt="Felix Andersson, smiling, in a striped linen shirt against a white wall."
+          formats={['avif', 'webp']}
+          widths={[360, 540, 720, 1000]}
+          sizes="(min-width: 761px) 34vw, 80vw"
+          loading="eager"
+          fetchpriority="high"
+          class="portrait-img"
+        />
+        <span class="portrait-sheen" aria-hidden="true"></span>
+        <figcaption class="portrait-cap">
+          <Icon name="pin" />
+          <span>Montevideo, Uruguay</span>
+          <span class="portrait-tz t-num">UTC−3</span>
+        </figcaption>
+      </div>
+
+      <div class="float float--a" aria-hidden="true">
+        <b class="t-num">100k+</b>
+        <span>rows at 60 FPS<small>Meraki Dashboard tables</small></span>
+      </div>
+      <div class="float float--b" aria-hidden="true">
+        <span class="float-dots">{projects.map((p) => <i data-accent style={accent(p)} />)}</span>
+        <span>5 products<small>designed and built, 2026</small></span>
+      </div>
+      <div class="float float--c" aria-hidden="true">
+        <span class="float-mark"><Icon name="layers" /></span>
+        <span>Magnetic<small>design system, since 2021</small></span>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: clamp(24px, 5cqw, 96px);
+    align-items: center;
+  }
+  .intro-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(12px, 2.4cqh, 24px);
+    min-width: 0;
+  }
+  .intro-status { color: var(--ink-2); }
+
+  /* The name, one variable letter at a time: each glyph widens into place on arrival,
+     and swells toward the pointer afterwards. */
+  .intro-name {
+    display: grid;
+    font-size: clamp(3.25rem, min(9.4cqw, 17cqh), 10rem);
+    line-height: 0.86;
+    font-weight: 820;
+    letter-spacing: -0.045em;
+    margin-block: clamp(4px, 1cqh, 12px);
+  }
+  .line { display: block; white-space: nowrap; }
+  .ch {
+    display: inline-block;
+    font-stretch: var(--w, 112%);
+    font-weight: var(--wt, 820);
+    transition: font-stretch 0.6s var(--ease-out), font-weight 0.6s var(--ease-out);
+  }
+  .line:last-child .ch:last-child { background: linear-gradient(180deg, var(--ink) 40%, color-mix(in oklab, var(--house) 70%, var(--ink))); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  :global(.js) .ch { opacity: 0; }
+  :global(.js) .panel[data-seen] .ch {
+    opacity: 1;
+    animation: letter-in 1.2s var(--ease-out) backwards;
+    animation-delay: calc(var(--i) * 45ms + 120ms);
+  }
+  @keyframes letter-in {
+    from { opacity: 0; font-stretch: 62%; font-weight: 300; transform: translateY(0.16em); }
+  }
+
+  .intro-role {
+    font-size: clamp(1.25rem, min(2.2cqw, 3.6cqh), 2rem);
+    line-height: 1.15;
+    font-weight: 700;
+    font-stretch: 94%;
+    letter-spacing: -0.02em;
+  }
+  .intro-role .t-serif { font-weight: 400; font-size: 1.08em; color: var(--ink-2); }
+  .intro-lede { max-width: 54ch; }
+  .intro-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+  .intro-shelf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 18px;
+    margin-top: clamp(4px, 2cqh, 20px);
+    padding-top: clamp(12px, 2cqh, 18px);
+    border-top: 1px solid var(--line);
+    width: 100%;
+  }
+  .intro-shelf ul { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+  .intro-shelf a {
+    position: relative;
+    display: inline-block;
+    padding-block: 4px;
+    font-size: 1.0625rem;
+    color: var(--ink-2);
+    text-decoration: none;
+    transition: color 0.25s var(--ease-out);
+  }
+  .intro-shelf a.face-martian { font-size: 0.875rem; }
+  .intro-shelf a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s var(--ease-out);
+  }
+  .intro-shelf a:hover { color: var(--ink); }
+  .intro-shelf a:hover::after { transform: scaleX(1); }
+
+  /* ---- Portrait ---- */
+  .portrait {
+    position: relative;
+    justify-self: center;
+    width: min(100%, calc(min(84cqh, 760px) * 0.84375));
+    perspective: 1200px;
+    container: portrait / inline-size;
+  }
+  .portrait-card {
+    --rx: 0deg;
+    --ry: 0deg;
+    position: relative;
+    aspect-ratio: 1350 / 1600;
+    border-radius: 28px;
+    overflow: hidden;
+    background: var(--bg-2);
+    box-shadow: inset 0 0 0 1px var(--line), 0 0 0 1px var(--line-2), var(--shadow-lg);
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transform-style: preserve-3d;
+    transition: transform 0.8s var(--ease-out);
+  }
+  .portrait-card[data-tilting] { transition: transform 0.15s linear; }
+  .portrait-card :global(.portrait-img),
+  .portrait-card :global(.portrait-img img) { width: 100%; height: 100%; object-fit: cover; }
+  :global(:root[data-theme='dark']) .portrait-card :global(img) { filter: brightness(0.9) contrast(1.04) saturate(0.95); }
+  .portrait-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 62%, rgb(10 10 12 / 0.5));
+    pointer-events: none;
+  }
+  .portrait-sheen {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: radial-gradient(60% 50% at var(--sx, 30%) var(--sy, 10%), rgb(255 255 255 / 0.28), transparent 70%);
+    mix-blend-mode: soft-light;
+    opacity: 0.8;
+    pointer-events: none;
+    transition: opacity 0.5s var(--ease-out);
+  }
+  .portrait-cap {
+    position: absolute;
+    z-index: 2;
+    left: 18px;
+    right: 18px;
+    bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 620;
+    font-stretch: 92%;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 0.35);
+  }
+  .portrait-cap :global(.icon) { width: 15px; height: 15px; }
+  .portrait-tz { margin-left: auto; opacity: 0.8; }
+
+  .float {
+    position: absolute;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px 10px 10px;
+    border-radius: 16px;
+    background: var(--surface-strong);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.5);
+    box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px var(--line), var(--shadow);
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-stretch: 94%;
+    line-height: 1.2;
+    white-space: nowrap;
+    animation: bob 7s var(--ease-io) infinite alternate;
+  }
+  .float small { display: block; font-size: 0.75rem; font-weight: 520; color: var(--ink-3); }
+  .float b {
+    display: grid;
+    place-items: center;
+    min-width: 50px;
+    height: 40px;
+    padding: 0 8px;
+    border-radius: 11px;
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 0.9375rem;
+    font-weight: 800;
+    font-stretch: 100%;
+  }
+  /* Chips sit on the wall and the shirt, never over the face. */
+  .float--a { top: 11%; left: -14%; }
+  .float--b { top: 72%; right: -7%; animation-delay: -2.5s; }
+  .float--c { top: 50%; left: -11%; animation-delay: -5s; }
+  .float-dots { display: grid; grid-template-columns: repeat(3, 10px); gap: 4px; padding: 6px; border-radius: 11px; background: color-mix(in oklab, var(--ink) 6%, transparent); }
+  .float-dots i { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); }
+  .float-mark {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--house-2), var(--house));
+    color: var(--on-house);
+  }
+  .float-mark :global(.icon) { width: 20px; height: 20px; }
+  @keyframes bob {
+    from { transform: translate3d(0, -5px, 0); }
+    to { transform: translate3d(0, 5px, 0); }
+  }
+
+  @container panel (max-width: 1100px) {
+    .float--a { left: -6%; }
+    .float--b { right: -5%; }
+    .float--c { left: -4%; }
+  }
+  @container portrait (max-width: 460px) {
+    .float { padding: 8px 12px 8px 8px; font-size: 0.8125rem; }
+    .float small { display: none; }
+    .float b, .float-mark { height: 32px; min-width: 32px; }
+    .float-mark { width: 32px; }
+    .float--c { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .float { animation: none; }
+    .portrait-card { transform: none; }
+  }
+
+  /* Phones and narrow windows: one column that scrolls inside the panel. */
+  @container panel (max-width: 760px) {
+    .intro { grid-template-columns: minmax(0, 1fr); align-content: start; height: auto; min-height: 100%; gap: 28px; }
+    .intro-name { font-size: clamp(3rem, 17cqw, 5.5rem); }
+    .portrait { width: min(100%, 420px); justify-self: start; }
+    .float--a { left: auto; right: 10px; top: 14px; }
+    .float--b { right: 10px; top: auto; bottom: 64px; }
+    .float--c { display: none; }
+  }
+</style>
+
+<script>
+  // The name swells toward the pointer, one letter at a time, along Archivo's width axis.
+  const name = document.querySelector<HTMLElement>('[data-name]');
+  const fine = matchMedia('(hover: hover) and (pointer: fine)');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  if (name) {
+    const chars = [...name.querySelectorAll<HTMLElement>('.ch')];
+    let raf = 0;
+    name.addEventListener('pointermove', (e) => {
+      if (!fine.matches || reduce.matches) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        for (const c of chars) {
+          const r = c.getBoundingClientRect();
+          const dx = (e.clientX - (r.left + r.width / 2)) / (r.width * 2.2);
+          const dy = (e.clientY - (r.top + r.height / 2)) / (r.height * 1.4);
+          const k = Math.exp(-(dx * dx + dy * dy));
+          c.style.setProperty('--w', `${112 + 13 * k}%`);
+          c.style.setProperty('--wt', `${820 + 80 * k}`);
+        }
+      });
+    });
+    name.addEventListener('pointerleave', () => {
+      cancelAnimationFrame(raf);
+      chars.forEach((c) => (c.style.removeProperty('--w'), c.style.removeProperty('--wt')));
+    });
+  }
+</script>

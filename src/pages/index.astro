@@ -1,17 +1,27 @@
 ---
 import Base from '../layouts/Base.astro';
-import Hero from '../components/Hero.astro';
+import Intro from '../components/Intro.astro';
 import Work from '../components/Work.astro';
 import Experience from '../components/Experience.astro';
-import Closing from '../components/Closing.astro';
+import About from '../components/About.astro';
+import type { PanelLink } from '../components/Bar.astro';
+
+const panels: PanelLink[] = [
+  { id: 'intro', label: 'Intro', icon: 'home' },
+  { id: 'work', label: 'Work', icon: 'grid' },
+  { id: 'experience', label: 'Experience', icon: 'briefcase' },
+  { id: 'about', label: 'About', icon: 'user' },
+];
 ---
 
 <Base
   title="Felix Andersson, Senior Frontend Engineer"
   description="Senior Frontend Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, plus five products designed and built end to end in 2026."
+  panels={panels}
+  home
 >
-  <Hero />
+  <Intro />
   <Work />
   <Experience />
-  <Closing />
+  <About />
 </Base>

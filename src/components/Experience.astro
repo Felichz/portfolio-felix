@@ -1,180 +1,518 @@
 ---
+import Icon from './Icon.astro';
 import MainThread from './MainThread.astro';
 import Pipeline from './Pipeline.astro';
+import { projects, type Project } from '../data/projects';
 
-// Chronological, left to right.
-const roles = [
+type Month = [year: number, month: number];
+
+interface Role {
+  id: string;
+  lane: 'client' | 'own';
+  bar: string;
+  title: string;
+  org: string;
+  via?: string;
+  start: Month;
+  end?: Month;
+  summary: string;
+  points: string[];
+  tags: string[];
+  glance?: { k: string; v: string }[];
+  exhibit?: 'library' | 'products';
+}
+
+// Chronological. Dates from the résumé.
+const roles: Role[] = [
   {
-    when: '2020 to 2021',
+    id: 'device-magic',
+    lane: 'client',
+    bar: 'Device Magic',
     title: 'Frontend Engineer',
     org: 'Device Magic',
-    body: 'Owned the whole web frontend after the senior developer left and carried it to the MVP launch: a dynamic forms engine with unlimited nested groups and real-time expressions, made orders of magnitude faster on large forms.',
+    via: 'through Vairix',
+    start: [2020, 12],
+    end: [2021, 5],
+    summary: 'Owned the whole web frontend after the senior developer left, and carried the product to its MVP launch.',
+    points: [
+      'A dynamic forms engine with unlimited nested blocks and real-time expression evaluation.',
+      'Large forms made orders of magnitude faster, by reworking the algorithms and the rendering.',
+      'The UI for a webcam barcode scanner: a focused scan area with real-time feedback.',
+    ],
+    tags: ['React', 'Forms engine', 'Performance'],
+    glance: [
+      { k: 'Outcome', v: 'MVP launch' },
+      { k: 'Built', v: 'Forms engine, expression evaluator, scanner UI' },
+    ],
   },
   {
-    when: '2021 to 2022',
-    title: 'Design system',
-    org: 'Cisco Magnetic',
-    body: 'Joined Magnetic in its early stages, building reusable React components with accessibility and performance as the bar, from detailed design specs to the first production release.',
+    id: 'magnetic',
+    lane: 'client',
+    bar: 'Magnetic',
+    title: 'Frontend Engineer, Design System',
+    org: 'Cisco, Magnetic design system',
+    via: 'through Vairix',
+    start: [2021, 8],
+    end: [2022, 7],
+    summary: 'Joined Magnetic, the design system behind the Meraki Dashboard, in its early stages.',
+    points: [
+      'Reusable React components with accessibility and performance as the bar.',
+      'Detailed design specs turned into components, working directly with the design team.',
+      'Testing and QA for the library’s first production release.',
+    ],
+    tags: ['React', 'TypeScript', 'Accessibility', 'Design systems'],
+    glance: [
+      { k: 'Outcome', v: 'Magnetic’s first production release' },
+      { k: 'Focus', v: 'Accessibility, performance, spec fidelity' },
+    ],
   },
   {
-    when: '2022 to 2023',
-    title: 'Meraki Dashboard',
-    org: 'Cisco Meraki',
-    body: 'Built the most used data pages (Access Points, Switches, Clients): tables with filtering, sorting and export for customers with 100k+ rows. Broke critical features down so several people could build in parallel.',
+    id: 'meraki',
+    lane: 'client',
+    bar: 'Meraki Dashboard',
+    title: 'Frontend Engineer, Product Implementation',
+    org: 'Cisco Meraki, Meraki Dashboard',
+    via: 'through Vairix',
+    start: [2022, 8],
+    end: [2023, 11],
+    summary: 'Built the most used data pages of the Meraki Dashboard: Access Points, Switches and Clients.',
+    points: [
+      'Data tables with filtering, sorting and export, for customers with 100k+ rows.',
+      'Planned and broke down critical features so several people could build in parallel.',
+      'Moved teams from legacy UI components to Magnetic without breaking what they had.',
+    ],
+    tags: ['React', 'TypeScript', 'Data tables', 'Magnetic'],
+    glance: [
+      { k: 'Pages', v: 'Access Points, Switches, Clients' },
+      { k: 'Scale', v: 'Customers with 100k+ rows' },
+    ],
   },
   {
-    when: '2023 to now',
-    title: 'Component library',
-    org: 'Cisco Magnetic',
-    body: 'I maintain the React and TypeScript library Meraki teams build on: data table features to detailed specs, support for hundreds of adopting developers, review standards and the team’s AI review tooling.',
+    id: 'library',
+    lane: 'client',
+    bar: 'Magnetic library',
+    title: 'Frontend Product Engineer',
+    org: 'Cisco, Magnetic component library',
+    via: 'through Vairix',
+    start: [2023, 11],
+    summary: 'I maintain the React and TypeScript component library that Meraki teams build on.',
+    points: [
+      'Non-blocking filtering for tables with 100k+ rows: matches render as you type, at 60 FPS.',
+      'Complex data table features, built to detailed design specs.',
+      'Support for the hundreds of developers who adopt the library, and the team’s review standards.',
+      'The team’s AI review tooling, which runs on every push.',
+    ],
+    tags: ['React', 'TypeScript', 'Performance', 'AI tooling'],
+    exhibit: 'library',
+  },
+  {
+    id: 'independent',
+    lane: 'own',
+    bar: 'Five products',
+    title: 'Designer and engineer, own products',
+    org: 'Independent',
+    start: [2026, 1],
+    summary: 'Five products designed and built end to end, each from a written brief with its own design system.',
+    points: [
+      'Product briefs, design systems and architecture decisions written down before the code.',
+      'Frontend, realtime servers, AI gateways and statistics, depending on the product.',
+      'Tests and CI where the product calls for them: 257 in LifeUI, 33 Playwright tests in KnowGraph.',
+    ],
+    tags: ['Product', 'Design', 'Frontend', 'Full stack when needed'],
+    exhibit: 'products',
   },
 ];
+
+const now = new Date();
+const nowM = now.getFullYear() * 12 + now.getMonth() + now.getDate() / 31;
+const m = ([y, mo]: Month) => y * 12 + (mo - 1);
+const axisStart = m([2020, 9]);
+const axisEnd = Math.max(m([2026, 12]), nowM + 1);
+const at = (v: number) => ((v - axisStart) / (axisEnd - axisStart)) * 100;
+const years = [2021, 2022, 2023, 2024, 2025, 2026];
+
+const monthName = (mo: number) => new Date(2000, mo - 1, 1).toLocaleString('en-US', { month: 'short' });
+const when = (r: Role) => `${monthName(r.start[1])} ${r.start[0]} to ${r.end ? `${monthName(r.end[1])} ${r.end[0]}` : 'now'}`;
+const span = (r: Role) => {
+  const months = Math.max(1, Math.round((r.end ? m(r.end) + 1 : nowM) - m(r.start)));
+  const y = Math.floor(months / 12);
+  const mo = months % 12;
+  return [y && `${y} yr${y > 1 ? 's' : ''}`, mo && `${mo} mo${mo > 1 ? 's' : ''}`].filter(Boolean).join(' ');
+};
+const current = roles.findIndex((r) => r.id === 'library');
+const accent = (p: Project) =>
+  `--a-light:${p.accent.light};--a-dark:${p.accent.dark};--on-light:${p.accent.onLight};--on-dark:${p.accent.onDark}`;
 ---
 
-<section id="experience" class="exp" aria-labelledby="exp-title">
-  <div class="wrap">
-    <header class="exp-head">
-      <h2 id="exp-title" class="t-section">Five years inside Cisco’s design system</h2>
-      <p class="t-lede muted">
-        Through Vairix, I’ve worked on Magnetic, the design system behind the Meraki Dashboard, since its first components. When
-        the thing you own is every team’s dependency, you care a lot about UX and technical quality.
-      </p>
+<section id="experience" class="panel" data-label="Experience" tabindex="-1" aria-labelledby="exp-title" data-exp>
+  <div class="panel-inner exp">
+    <header class="exp-head" data-reveal style="--d:0">
+      <div class="exp-title">
+        <h2 id="exp-title" class="t-section">Experience</h2>
+        <p class="t-lede muted">
+          Frontend engineer since 2020, contracted through Vairix. Most of it at Cisco: Magnetic, the design system behind the
+          Meraki Dashboard, and the Dashboard itself.
+        </p>
+      </div>
+      <a class="btn" href="/felix-andersson-resume.pdf" target="_blank" rel="noopener"><Icon name="download" />Résumé, PDF</a>
     </header>
 
-    <ol class="timeline">
+    <div class="gantt glass" data-reveal style="--d:1">
+      <div class="gantt-grid" aria-hidden="true">
+        <span class="gantt-year gantt-year--first" style="--at:0%">2020</span>
+        {years.map((y) => <span class="gantt-year" style={`--at:${at(m([y, 1]))}%`}>{y}</span>)}
+        <span class="gantt-now" style={`--at:${at(nowM)}%`}><b>Now</b></span>
+      </div>
       {
-        roles.map((r, i) => (
-          <li class:list={['stop', i === roles.length - 1 && 'stop--now']}>
-            <p class="t-label t-num">{r.when}</p>
-            <h3 class="stop-title">
-              {r.title}
-              <span class="stop-org">{r.org}</span>
-            </h3>
-            <p class="stop-body">{r.body}</p>
-          </li>
+        (['client', 'own'] as const).map((lane) => (
+          <div class="gantt-lane">
+            <p class="gantt-label t-label">{lane === 'client' ? 'Client work' : 'Own products'}</p>
+            <div class="gantt-row">
+              {roles.map((r, i) =>
+                r.lane !== lane ? null : (
+                  <button
+                    type="button"
+                    class:list={['bar', 'spot', `bar--${r.lane}`]}
+                    style={`--x:${at(m(r.start))}%;--w:${at(r.end ? m(r.end) + 1 : nowM) - at(m(r.start))}%`}
+                    data-pick={i}
+                    aria-pressed={i === current ? 'true' : 'false'}
+                    aria-controls={`role-${r.id}`}
+                    aria-label={`${r.org}, ${when(r)}`}
+                  >
+                    <span class="bar-name">{r.bar}</span>
+                    <span class="bar-years t-num">
+                      {r.start[0]}
+                      {r.end ? (r.end[0] !== r.start[0] ? `–${String(r.end[0]).slice(2)}` : '') : '–now'}
+                    </span>
+                  </button>
+                ),
+              )}
+            </div>
+          </div>
         ))
       }
-    </ol>
+    </div>
 
-    <div class="exhibits">
-      <article class="exhibit" id="rows">
-        <h3 class="t-sub">100,000 rows without freezing the page</h3>
-        <p class="exhibit-lede muted">
-          Big Meraki customers have tables with more than 100,000 rows. A filter that runs as one long task freezes typing and
-          painting on every keystroke. I split it into short slices that yield to the browser and render matches the moment
-          they exist, so the table stays at 60&nbsp;FPS while you type.
-        </p>
-        <div class="exhibit-plate">
-          <MainThread />
-        </div>
-        <p class="t-label">Schematic, not a measurement.</p>
-      </article>
+    <div class="roles" data-reveal style="--d:2">
+      {
+        roles.map((r, i) => (
+          <article
+            class="role"
+            id={`role-${r.id}`}
+            data-role
+            data-state={i === current ? 'active' : undefined}
+            aria-labelledby={`role-${r.id}-title`}
+          >
+            <div class="role-main scroll-y">
+              <p class="role-when">
+                <span class="t-num">{when(r)}</span>
+                <span class="role-span t-num">{span(r)}</span>
+              </p>
+              <h3 id={`role-${r.id}-title`} class="role-title">
+                {r.title}
+              </h3>
+              <p class="role-org">
+                {r.org}
+                {r.via && <span class="muted"> · {r.via}</span>}
+              </p>
+              <p class="role-summary">{r.summary}</p>
+              <ul class="role-points">
+                {r.points.map((p) => (
+                  <li>{p}</li>
+                ))}
+              </ul>
+              <ul class="role-tags">
+                {r.tags.map((t) => (
+                  <li>{t}</li>
+                ))}
+              </ul>
+            </div>
 
-      <article class="exhibit" id="ai-review">
-        <h3 class="t-sub">Raising the review bar when AI arrived</h3>
-        <p class="exhibit-lede muted">
-          When AI adoption became a top goal for every team, I spent two to three months building tooling that raised our review
-          bar instead of letting quality slip. The team still runs it on every push.
-        </p>
-        <div class="exhibit-plate">
-          <Pipeline />
-        </div>
-        <details class="story">
-          <summary>How I built it</summary>
-          <div class="story-body prose muted">
-            <p>
-              Breaking changes had been a pain for years. One nobody noticed could silently break types, tests and behavior in
-              consumer apps, and some had forced hotfixes and reverts to unblock releases. Before writing the scanner I mined the
-              repo history (every hotfix PR, every revert, every incident), worked out the root causes, and designed it to catch
-              each case I found.
-            </p>
-            <p>
-              For code review I pulled thousands of our GitLab review comments, used LLMs to find the ones that caught real bugs
-              or improved maintainability, and distilled the top 100+ into calibration examples for five specialized reviewers.
-              Alongside it went an AGENTS.md for the repo and five coding skills with explicit boundaries, from implementation
-              guardrails to deprecation patterns.
-            </p>
-            <p>The team lead said it was exactly what the team needed, and key to opening the repo to outside contributions.</p>
-          </div>
-        </details>
-      </article>
+            <aside class="role-card glass" aria-label="A closer look">
+              {r.exhibit === 'library' ? (
+                <div class="ex" data-ex>
+                  <div class="ex-tabs" role="tablist" aria-label="A closer look">
+                    <button type="button" role="tab" id="ex-tab-rows" aria-controls="ex-rows" aria-selected="true">
+                      100k rows at 60 FPS
+                    </button>
+                    <button type="button" role="tab" id="ex-tab-review" aria-controls="ex-review" aria-selected="false" tabindex="-1">
+                      AI review tooling
+                    </button>
+                  </div>
+                  <div class="ex-panel scroll-y" role="tabpanel" id="ex-rows" aria-labelledby="ex-tab-rows">
+                    <p class="ex-lede">
+                      A filter that runs as one long task freezes typing and painting on every keystroke. I split it into short slices
+                      that yield to the browser and render matches the moment they exist.
+                    </p>
+                    <div class="ex-figure">
+                      <MainThread />
+                    </div>
+                    <p class="t-label">Schematic, not a measurement</p>
+                  </div>
+                  <div class="ex-panel scroll-y" role="tabpanel" id="ex-review" aria-labelledby="ex-tab-review" hidden>
+                    <p class="ex-lede">
+                      When AI adoption became a goal for every team, I spent two to three months on tooling that raised our review bar
+                      instead of letting quality slip. The team still runs it on every push.
+                    </p>
+                    <div class="ex-figure">
+                      <Pipeline />
+                    </div>
+                    <details class="story">
+                      <summary>How I built it</summary>
+                      <div class="story-body muted">
+                        <p>
+                          Breaking changes had been a pain for years. One nobody noticed could silently break types, tests and behavior
+                          in consumer apps. Before writing the scanner I mined the repo history (every hotfix PR, every revert, every
+                          incident), worked out the root causes, and designed it to catch each case I found.
+                        </p>
+                        <p>
+                          For code review I pulled thousands of our GitLab review comments, used LLMs to find the ones that caught real
+                          bugs or improved maintainability, and distilled the top 100+ into calibration examples for five specialized
+                          reviewers. Alongside went an AGENTS.md for the repo and five coding skills with explicit boundaries.
+                        </p>
+                        <p>The team lead said it was exactly what the team needed, and key to opening the repo to outside contributions.</p>
+                      </div>
+                    </details>
+                  </div>
+                </div>
+              ) : r.exhibit === 'products' ? (
+                <div class="glance">
+                  <p class="t-label">The five</p>
+                  <ul class="mini-products">
+                    {projects.map((p) => (
+                      <li data-accent style={accent(p)}>
+                        <a href={`#work/${p.id}`}>
+                          <span class={`mini-name ${p.face}`}>{p.wordmark ? p.wordmark.join('') : p.name}</span>
+                          <span class="mini-short">{p.short}</span>
+                          <Icon name="arrow-right" class="icon-right" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <dl class="glance">
+                  {r.glance?.map((g) => (
+                    <div>
+                      <dt class="t-label">{g.k}</dt>
+                      <dd>{g.v}</dd>
+                    </div>
+                  ))}
+                  <div>
+                    <dt class="t-label">Time on it</dt>
+                    <dd class="t-num">{span(r)}</dd>
+                  </div>
+                </dl>
+              )}
+            </aside>
+          </article>
+        ))
+      }
     </div>
   </div>
 </section>
 
 <style>
-  .exp { padding-block: var(--section-y); border-top: 1px solid var(--rule); }
-  .exp-head {
+  .exp {
     display: grid;
-    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
-    gap: 24px clamp(32px, 5vw, 80px);
-    align-items: end;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: clamp(14px, 2.6cqh, 28px);
   }
-  .exp-head p { max-width: 50ch; }
+  .exp-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+  .exp-title { display: grid; gap: 10px; }
+  .exp-title p { max-width: 78ch; }
 
-  /* ---- Horizontal timeline ---- */
-  .timeline {
+  /* ---- Gantt ---- */
+  .gantt {
+    --label: clamp(96px, 11cqw, 150px);
     position: relative;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: clamp(20px, 2.6vw, 40px);
-    margin-top: clamp(48px, 5vw, 72px);
-    padding-top: 26px;
+    gap: 10px;
+    padding: 36px clamp(14px, 2cqw, 26px) clamp(14px, 2cqh, 20px);
   }
-  .timeline::before {
-    content: '';
+  .gantt-grid {
     position: absolute;
-    left: 0;
-    right: 0;
-    top: 5px;
-    height: 1px;
-    background: linear-gradient(90deg, var(--rule-2), var(--ink) 92%);
+    inset: 12px clamp(14px, 2cqw, 26px) 10px calc(clamp(14px, 2cqw, 26px) + var(--label));
+    pointer-events: none;
   }
-  .stop { position: relative; display: grid; gap: 8px; align-content: start; }
-  .stop::before {
-    content: '';
+  .gantt-year {
     position: absolute;
-    top: -26px;
+    top: 0;
+    bottom: 0;
+    left: var(--at);
+    padding-left: 7px;
+    border-left: 1px dashed var(--line-2);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .gantt-year--first { border-left-color: transparent; padding-left: 0; }
+  .gantt-now {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--at);
+    width: 0;
+    border-left: 1.5px solid var(--house-2);
+  }
+  .gantt-now b {
+    position: absolute;
+    top: -2px;
     left: 0;
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    background: var(--paper);
-    border: 1px solid var(--rule-2);
+    transform: translateX(-50%);
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--house-2);
+    color: var(--on-house);
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--house-2) 20%, transparent);
   }
-  .stop--now::before {
-    background: var(--ink);
-    border-color: var(--ink);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ink) 12%, transparent);
-  }
-  .stop-title { font-size: 1.1875rem; line-height: 1.2; font-weight: 720; font-stretch: 94%; letter-spacing: -0.01em; }
-  .stop-org { display: block; margin-top: 3px; font-size: 0.875rem; font-weight: 520; color: var(--ink-2); }
-  .stop-body { font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); }
+  .gantt-lane { display: grid; grid-template-columns: var(--label) minmax(0, 1fr); align-items: center; }
+  .gantt-label { padding-right: 12px; }
+  .gantt-row { position: relative; height: clamp(40px, 6cqh, 52px); }
 
-  /* ---- Exhibits ---- */
-  .exhibits {
+  .bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--x);
+    width: calc(var(--w) - 4px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    min-width: 0;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--surface-strong);
+    box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px var(--line-2);
+    color: var(--ink-2);
+    text-align: left;
+    overflow: hidden;
+    transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out), color 0.35s, background-color 0.35s;
+  }
+  .bar:hover { transform: translateY(-2px); color: var(--ink); box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px var(--ink), var(--shadow); }
+  .bar-name { font-size: 0.8125rem; font-weight: 700; font-stretch: 88%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-years { font-size: 0.6875rem; font-weight: 600; opacity: 0.75; white-space: nowrap; }
+  .bar--own {
+    background:
+      repeating-linear-gradient(-45deg, transparent 0 7px, color-mix(in oklab, var(--ink) 5%, transparent) 7px 8px),
+      var(--surface-strong);
+  }
+  .bar[aria-pressed='true'] {
+    color: var(--on-house);
+    background: linear-gradient(135deg, var(--house-2), var(--house));
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 0 0 1px var(--house), 0 12px 28px -12px var(--house-2);
+  }
+  .bar[aria-pressed='true'] .bar-years { opacity: 0.9; }
+
+  /* ---- Role details ---- */
+  .roles { display: grid; min-height: 0; }
+  .role {
+    grid-area: 1 / 1;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(28px, 4vw, 64px);
-    margin-top: clamp(64px, 7vw, 104px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+    gap: clamp(16px, 3cqw, 48px);
+    min-height: 0;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.45s var(--ease-out), transform 0.6s var(--ease-out), visibility 0s linear 0.45s;
   }
-  .exhibit { display: grid; gap: 16px; align-content: start; }
-  .exhibit-lede { max-width: 56ch; }
-  .exhibit-plate {
-    padding: clamp(18px, 2.4vw, 32px);
-    border-radius: 14px;
-    background: var(--raised);
-    box-shadow: 0 0 0 1px var(--rule);
+  .role[data-state='active'] { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+  .role-main { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 4px 8px 4px 2px; }
+  .role-when { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 650; color: var(--ink-2); }
+  .role-span { padding: 2px 8px; border-radius: 999px; background: color-mix(in oklab, var(--house) 12%, transparent); color: var(--house); font-size: 0.75rem; }
+  .role-title { font-size: clamp(1.375rem, 1rem + 1vw, 2rem); line-height: 1.08; letter-spacing: -0.03em; font-weight: 760; font-stretch: 94%; }
+  .role-org { font-size: 0.975rem; font-weight: 620; }
+  .role-summary { font-size: 1rem; color: var(--ink-2); max-width: 58ch; }
+  .role-points { display: grid; gap: 7px; margin-top: 2px; }
+  .role-points li { position: relative; padding-left: 18px; font-size: 0.9375rem; line-height: 1.45; max-width: 62ch; }
+  .role-points li::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 0.6em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--house-2);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--house-2) 18%, transparent);
+  }
+  .role-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .role-tags li {
+    padding: 3px 10px;
+    border-radius: 999px;
+    box-shadow: 0 0 0 1px var(--line-2);
+    font-size: 0.75rem;
+    font-weight: 620;
+    font-stretch: 92%;
+    color: var(--ink-2);
   }
 
-  .story { border-top: 1px solid var(--rule); }
+  .role-card { display: grid; min-height: 0; padding: clamp(14px, 2cqh, 22px); }
+  .glance { display: grid; align-content: center; gap: 0; }
+  .glance > div { display: grid; gap: 4px; padding-block: 14px; border-bottom: 1px solid var(--line); }
+  .glance > div:last-child { border-bottom: 0; }
+  .glance dd { font-size: clamp(1.0625rem, 0.9rem + 0.5vw, 1.375rem); font-weight: 700; font-stretch: 94%; letter-spacing: -0.015em; line-height: 1.25; }
+
+  .mini-products { display: grid; gap: 4px; margin-top: 8px; }
+  .mini-products a {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background-color 0.25s var(--ease-out);
+  }
+  .mini-products a:hover { background: color-mix(in oklab, var(--accent) 10%, transparent); }
+  .mini-name { font-size: 1.125rem; line-height: 1.2; }
+  .mini-name.face-martian { font-size: 0.875rem; }
+  .mini-short { font-size: 0.8125rem; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mini-products :global(.icon) { width: 14px; height: 14px; color: var(--accent); transition: transform 0.3s var(--ease-out); }
+  .mini-products a:hover :global(.icon) { transform: translateX(3px); }
+
+  /* ---- Exhibits for the current role ---- */
+  .ex { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; min-height: 0; }
+  .ex-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in oklab, var(--ink) 5%, transparent); justify-self: start; }
+  .ex-tabs button {
+    min-height: 32px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: var(--ink-2);
+    font-size: 0.8125rem;
+    font-weight: 650;
+    font-stretch: 92%;
+    transition: color 0.2s, background-color 0.3s var(--ease-out), box-shadow 0.3s;
+  }
+  .ex-tabs button:hover { color: var(--ink); }
+  .ex-tabs button[aria-selected='true'] { background: var(--surface-strong); color: var(--ink); box-shadow: 0 0 0 1px var(--line), var(--shadow-sm); }
+  .ex-panel { display: grid; align-content: start; gap: 14px; min-height: 0; padding-right: 6px; }
+  .ex-panel[hidden] { display: none; }
+  .ex-lede { font-size: 0.9375rem; color: var(--ink-2); max-width: 60ch; }
+  .ex-figure { padding: clamp(12px, 1.6cqw, 20px); border-radius: 14px; background: color-mix(in oklab, var(--surface-solid) 70%, transparent); box-shadow: 0 0 0 1px var(--line); }
+  .ex-figure :global(.pipe) { font-size: 0.875rem; }
+  .ex-figure :global(.mt) { max-height: max(180px, 30cqh); }
+
+  .story { border-top: 1px solid var(--line); }
   .story summary {
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 44px;
-    font-weight: 620;
+    min-height: 40px;
+    font-weight: 650;
     font-stretch: 92%;
+    font-size: 0.9375rem;
     cursor: pointer;
     list-style: none;
   }
@@ -189,26 +527,81 @@ const roles = [
     transition: transform 0.3s var(--ease-out);
   }
   .story[open] summary::after { transform: translateY(1px) rotate(-135deg); }
-  /* Smooth open where the browser supports animating details content. */
   .story::details-content {
     block-size: 0;
     overflow: clip;
     transition: block-size 0.4s var(--ease-out), content-visibility 0.4s allow-discrete;
   }
   .story[open]::details-content { block-size: auto; }
-  .story-body { padding-bottom: 8px; font-size: 0.975rem; }
+  .story-body { display: grid; gap: 0.8em; padding-bottom: 8px; font-size: 0.9375rem; }
 
-  @media (max-width: 1000px) {
-    .exp-head, .exhibits { grid-template-columns: minmax(0, 1fr); }
-    .timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
-    .timeline::before { display: none; }
-    .stop { padding-top: 22px; border-top: 1px solid var(--rule); }
-    .stop::before { top: -6px; }
-  }
-  @media (max-width: 560px) {
-    .timeline { grid-template-columns: minmax(0, 1fr); }
-  }
   @media (prefers-reduced-motion: reduce) {
+    .role { transform: none; }
     .story::details-content { transition: none; }
   }
+
+  @container panel (max-width: 1000px) {
+    .role { grid-template-columns: minmax(0, 1fr); overflow-y: auto; align-content: start; }
+    .role-main { overflow: visible; }
+  }
+
+  /* Short windows: title and lede share a row, and the timeline tightens. */
+  @container panel (max-height: 680px) and (min-width: 761px) {
+    .exp-title { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 28px; }
+    .exp-title p { font-size: 0.9375rem; }
+    .gantt { padding-top: 30px; gap: 6px; }
+    .role-main { gap: 7px; }
+    .role-points li { font-size: 0.875rem; }
+  }
+
+  /* Phones: no Gantt; every role in order, scrolling inside the panel. */
+  @container panel (max-width: 760px) {
+    .exp { display: flex; flex-direction: column; height: auto; }
+    .exp-head { flex-direction: column; align-items: flex-start; }
+    .gantt { display: none; }
+    .roles { display: flex; flex-direction: column-reverse; gap: 36px; }
+    .role { visibility: visible; opacity: 1; transform: none; overflow: visible; }
+    .role-main { padding: 0; }
+    .role-card { overflow: visible; }
+    .ex-panel { overflow: visible; }
+  }
 </style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-exp]');
+  if (root) {
+    const bars = [...root.querySelectorAll<HTMLButtonElement>('[data-pick]')];
+    const roles = [...root.querySelectorAll<HTMLElement>('[data-role]')];
+    bars.forEach((b) =>
+      b.addEventListener('click', () => {
+        const i = Number(b.dataset.pick);
+        bars.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        roles.forEach((r, j) => (j === i ? r.setAttribute('data-state', 'active') : r.removeAttribute('data-state')));
+      }),
+    );
+
+    // Tabs for the closer look: click, or arrow keys while a tab has focus.
+    root.querySelectorAll<HTMLElement>('[data-ex]').forEach((ex) => {
+      const tabs = [...ex.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+      const pick = (t: HTMLButtonElement) => {
+        tabs.forEach((x) => {
+          const on = x === t;
+          x.setAttribute('aria-selected', String(on));
+          x.tabIndex = on ? 0 : -1;
+          const panel = ex.querySelector<HTMLElement>(`#${x.getAttribute('aria-controls')}`);
+          if (panel) panel.hidden = !on;
+        });
+      };
+      tabs.forEach((t, i) => {
+        t.addEventListener('click', () => pick(t));
+        t.addEventListener('keydown', (e) => {
+          if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+          e.preventDefault();
+          const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]!;
+          next.focus();
+          pick(next);
+        });
+      });
+    });
+  }
+</script>

@@ -1,0 +1,254 @@
+---
+import { Picture } from 'astro:assets';
+import Icon from './Icon.astro';
+import photo from '../assets/portrait/felix-avatar.webp';
+
+const toolset = [
+  { group: 'Every day', items: 'React, TypeScript, CSS, design systems, accessibility, performance' },
+  { group: 'Also shipped with', items: 'Astro, Svelte 5, Vite, Radix UI, Tailwind, Motion, SVG data visualization' },
+  { group: 'Testing', items: 'Jest, Testing Library, Playwright, Cypress, axe-core' },
+  { group: 'Server side', items: 'Node, WebSockets, Python and FastAPI, React on Ruby on Rails backends' },
+  { group: 'AI in the loop', items: 'Claude Code, Codex, Cursor, agent skills and review pipelines, streaming LLM output' },
+];
+
+const early = [
+  { big: '8–9', unit: 'years old', text: 'when I found Scratch and fell in love with it' },
+  { big: '300k+', unit: 'page views', text: 'on my flash games site, from other kids' },
+  { big: '2×', unit: 'top ten', text: 'in ANIMATE, Uruguay’s national animation contest' },
+];
+---
+
+<section id="about" class="panel" data-label="About" tabindex="-1" aria-labelledby="about-title">
+  <div class="panel-inner about">
+    <div class="about-story" data-reveal style="--d:0">
+      <h2 id="about-title" class="t-section">How I got here</h2>
+      <div class="prose about-copy">
+        <p class="t-lede">
+          I found Scratch at 8 or 9. Before high school I ran a website of flash games packaged for the offline laptops kids used at
+          school. Later I made the national top ten of ANIMATE, Uruguay’s animation contest, two years in a row.
+        </p>
+        <p class="muted">
+          I still care most about the same thing: <span class="t-serif">interfaces people can trust.</span> Complex UIs and
+          performance work are what I enjoy most. Agents are part of how I build now; I own the product thinking, design direction,
+          architecture and review.
+        </p>
+      </div>
+      <ul class="early">
+        {
+          early.map((e, i) => (
+            <li class="early-item spot" data-reveal style={`--d:${i + 2}`}>
+              <p class="early-big t-num">
+                {e.big}
+                <small>{e.unit}</small>
+              </p>
+              <p class="early-text">{e.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <div class="toolset glass" data-reveal style="--d:1">
+      <p class="t-label">Toolset</p>
+      <dl>
+        {
+          toolset.map((t) => (
+            <div>
+              <dt>{t.group}</dt>
+              <dd>{t.items}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+
+    <aside id="contact" class="contact" aria-labelledby="contact-title" data-reveal style="--d:2">
+      <div class="contact-top">
+        <span class="contact-photo">
+          <Picture src={photo} alt="" formats={['avif', 'webp']} widths={[160, 240]} sizes="80px" />
+        </span>
+        <p class="contact-status"><span class="pulse" aria-hidden="true"></span>Open to remote senior frontend roles</p>
+      </div>
+      <h2 id="contact-title" class="contact-title">
+        Hiring for a senior frontend role? <span class="t-serif">I’d like to hear about it.</span>
+      </h2>
+      <div class="contact-mail">
+        <a class="contact-address" href="mailto:andersson.fx@gmail.com">andersson.fx@gmail.com</a>
+        <button class="contact-copy" type="button" data-copy="andersson.fx@gmail.com">
+          <Icon name="copy" />
+          <span data-copy-label>Copy</span>
+        </button>
+      </div>
+      <ul class="contact-links">
+        <li><a href="https://www.linkedin.com/in/felixandersson/" target="_blank" rel="noopener"><Icon name="linkedin" />LinkedIn <Icon name="arrow-up-right" class="go" /></a></li>
+        <li><a href="https://github.com/Felichz" target="_blank" rel="noopener"><Icon name="github" />GitHub <Icon name="arrow-up-right" class="go" /></a></li>
+        <li><a href="/felix-andersson-resume.pdf" target="_blank" rel="noopener"><Icon name="file" />Résumé, PDF <Icon name="arrow-up-right" class="go" /></a></li>
+      </ul>
+      <p class="colophon">
+        Set in Archivo across its widths, with Newsreader italics; each product name is set in that product’s own typeface. Built
+        with Astro and TypeScript. © 2026 Felix Andersson.
+      </p>
+    </aside>
+  </div>
+</section>
+
+<style>
+  .about {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr) minmax(0, 1fr);
+    gap: clamp(16px, 2.4cqw, 36px);
+    align-items: center;
+  }
+  .about-story { display: flex; flex-direction: column; gap: clamp(14px, 2.6cqh, 26px); min-width: 0; justify-content: center; }
+  .about-copy .t-lede { color: var(--ink); }
+  .about-copy .t-serif { color: var(--ink); font-size: 1.08em; }
+
+  .early { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .early-item {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: inset 0 1px 0 var(--hi), 0 0 0 1px var(--line);
+    overflow: hidden;
+  }
+  .early-big { display: grid; font-size: clamp(1.75rem, 1.2rem + 1.4vw, 2.5rem); line-height: 0.95; font-weight: 820; font-stretch: 110%; letter-spacing: -0.04em; }
+  .early-big small { margin-top: 4px; font-size: 0.75rem; font-weight: 650; font-stretch: 90%; letter-spacing: 0.02em; color: var(--house); }
+  .early-text { font-size: 0.8125rem; line-height: 1.4; color: var(--ink-2); }
+
+  .toolset { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: clamp(18px, 2.4cqw, 28px); }
+  .toolset dl { display: grid; }
+  .toolset dl > div { display: grid; gap: 3px; padding-block: clamp(9px, 1.6cqh, 14px); border-bottom: 1px solid var(--line); }
+  .toolset dl > div:last-child { border-bottom: 0; }
+  .toolset dt { font-size: 0.8125rem; font-weight: 720; font-stretch: 92%; }
+  .toolset dd { font-size: 0.9375rem; color: var(--ink-2); line-height: 1.45; }
+
+  /* The contact card is printed in the other edition, with the house light pooling in its corner. */
+  .contact {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(14px, 2.4cqh, 22px);
+    padding: clamp(20px, 2.6cqw, 32px);
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(90% 60% at 100% 0%, color-mix(in oklab, var(--house-2) 40%, transparent), transparent 70%),
+      radial-gradient(70% 50% at 0% 100%, color-mix(in oklab, var(--glow-2) 22%, transparent), transparent 70%),
+      var(--ink);
+    color: var(--bg);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), var(--shadow-lg);
+    overflow: hidden;
+    --line-c: color-mix(in oklab, var(--bg) 16%, transparent);
+  }
+  .contact-top { display: flex; align-items: center; gap: 14px; }
+  .contact-photo {
+    width: 64px;
+    height: 64px;
+    flex: none;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 0 0 2px var(--ink), 0 0 0 3.5px color-mix(in oklab, var(--house-2) 80%, transparent);
+  }
+  .contact-photo :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .contact-status { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 620; opacity: 0.85; }
+  .contact-title {
+    font-size: clamp(1.5rem, 1rem + 1.4vw, 2.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-weight: 780;
+    font-stretch: 94%;
+  }
+  .contact-title .t-serif { display: block; font-weight: 400; opacity: 0.8; margin-top: 4px; letter-spacing: -0.02em; }
+  .contact-mail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+    padding-block: clamp(12px, 2cqh, 18px);
+    border-block: 1px solid var(--line-c);
+  }
+  .contact-address {
+    font-size: clamp(1.0625rem, 0.9rem + 0.6vw, 1.375rem);
+    font-weight: 720;
+    letter-spacing: -0.015em;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0% 1.5px no-repeat;
+    padding-bottom: 3px;
+    transition: background-size 0.45s var(--ease-out);
+  }
+  .contact-address:hover { background-size: 100% 1.5px; }
+  .contact-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--bg) 12%, transparent);
+    color: inherit;
+    font-size: 0.8125rem;
+    font-weight: 650;
+    box-shadow: inset 0 0 0 1px var(--line-c);
+    transition: background-color 0.25s;
+  }
+  .contact-copy:hover { background: color-mix(in oklab, var(--bg) 20%, transparent); }
+  .contact-copy :global(.icon) { width: 14px; height: 14px; }
+  .contact-links { display: grid; gap: 2px; }
+  .contact-links a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 0 10px;
+    margin-inline: -10px;
+    border-radius: 10px;
+    font-weight: 620;
+    font-stretch: 94%;
+    text-decoration: none;
+    transition: background-color 0.25s;
+  }
+  .contact-links a:hover { background: color-mix(in oklab, var(--bg) 8%, transparent); }
+  .contact-links :global(.icon) { width: 17px; height: 17px; opacity: 0.8; }
+  .contact-links :global(.go) { width: 14px; height: 14px; margin-left: auto; transition: transform 0.3s var(--ease-out); }
+  .contact-links a:hover :global(.go) { transform: translate(2px, -2px); }
+  .contact :focus-visible { outline-color: var(--bg); }
+  .colophon { margin-top: 6px; font-size: 0.75rem; line-height: 1.5; opacity: 0.55; }
+
+  @container panel (max-height: 680px) and (min-width: 1181px) {
+    .toolset dd { font-size: 0.875rem; }
+    .toolset dl > div { padding-block: 7px; }
+    .about-copy .t-lede { font-size: 1.0625rem; }
+  }
+  @container panel (max-width: 1180px) {
+    .about { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: auto auto; align-content: start; height: auto; min-height: 100%; }
+    .about-story { grid-column: 1 / -1; }
+  }
+  @container panel (max-width: 760px) {
+    .about { grid-template-columns: minmax(0, 1fr); }
+    .early { grid-template-columns: minmax(0, 1fr); }
+    .early-item { grid-template-columns: 7.5rem minmax(0, 1fr); align-items: center; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+    const label = btn.querySelector<HTMLElement>('[data-copy-label]');
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy ?? '');
+        if (label) label.textContent = 'Copied';
+      } catch {
+        // No clipboard access: select the address so a copy shortcut works.
+        const address = document.querySelector('.contact-address');
+        if (address) getSelection()?.selectAllChildren(address);
+        if (label) label.textContent = 'Selected';
+      }
+      setTimeout(() => label && (label.textContent = 'Copy'), 2000);
+    });
+  });
+</script>

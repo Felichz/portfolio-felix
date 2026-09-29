@@ -1,0 +1,183 @@
+---
+import Icon from './Icon.astro';
+import type { PanelLink } from './Bar.astro';
+
+interface Props {
+  panels: PanelLink[];
+  /** Where the next button leads from the last panel. Without it, back to the first panel. */
+  end?: { label: string; href: string };
+}
+
+const { panels, end } = Astro.props;
+const total = String(panels.length).padStart(2, '0');
+---
+
+<footer class="dock" data-dock>
+  <div class="dock-pos" aria-hidden="true">
+    <span class="dock-num t-num" data-dock-num>01</span>
+    <span class="dock-total t-num">/ {total}</span>
+    <span class="dock-label" data-dock-label>{panels[0]?.label}</span>
+  </div>
+
+  <div class="dock-track" aria-hidden="true">
+    <span class="dock-fill"></span>
+    {panels.map((p, i) => <a href={`#${p.id}`} tabindex="-1" class="dock-tick" style={`--at:${panels.length > 1 ? i / (panels.length - 1) : 0}`} title={p.label} />)}
+  </div>
+
+  <div class="dock-nav">
+    <p class="dock-hint" aria-hidden="true">
+      <Icon name="mouse" />
+      <span>Scroll, swipe or</span>
+      <kbd><Icon name="chevron-left" /></kbd><kbd><Icon name="chevron-right" /></kbd>
+    </p>
+    <button class="icon-btn icon-btn--sm" type="button" data-deck-prev aria-label="Previous panel" disabled><Icon name="arrow-left" /></button>
+    <button class="btn btn--sm dock-next" type="button" data-deck-next data-end-label={end?.label ?? 'Back to start'} data-end-href={end?.href} aria-label={panels[1] ? `Next: ${panels[1].label}` : 'Next panel'}>
+      <span data-dock-next>{panels[1]?.label ?? ''}</span>
+      <Icon name="arrow-right" class="icon-right" />
+    </button>
+  </div>
+
+  <nav class="dock-tabs" aria-label="Sections">
+    {
+      panels.map((p, i) => (
+        <a href={`#${p.id}`} data-tab={p.id} aria-current={i === 0 ? 'true' : undefined}>
+          <Icon name={p.icon} />
+          <span>{p.label}</span>
+        </a>
+      ))
+    }
+  </nav>
+</footer>
+
+<style>
+  .dock {
+    position: relative;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: minmax(150px, auto) minmax(120px, 1fr) auto;
+    align-items: center;
+    gap: clamp(16px, 3vw, 48px);
+    padding: 0 var(--gutter);
+    view-transition-name: dock;
+  }
+  .dock::before {
+    content: '';
+    position: absolute;
+    left: var(--gutter);
+    right: var(--gutter);
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--line-2) 20%, var(--line-2) 80%, transparent);
+  }
+
+  .dock-pos { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .dock-num { font-size: 1.125rem; font-weight: 780; font-stretch: 100%; letter-spacing: -0.02em; }
+  .dock-total { font-size: 0.8125rem; font-weight: 600; color: var(--ink-3); }
+  .dock-label {
+    margin-left: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-stretch: 92%;
+    color: var(--ink-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Progress through the deck, tracked from the horizontal scroll. */
+  .dock-track {
+    position: relative;
+    height: 16px;
+    margin-inline: 8px;
+  }
+  .dock-track::before,
+  .dock-fill {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 2px;
+    background: var(--line-2);
+  }
+  .dock-fill {
+    right: auto;
+    width: calc(var(--deck-p, 0) * 100%);
+    background: linear-gradient(90deg, color-mix(in oklab, var(--glow) 60%, var(--ink)), var(--ink));
+  }
+  .dock-tick {
+    position: absolute;
+    top: 50%;
+    left: calc(var(--at) * 100%);
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--bg);
+    box-shadow: 0 0 0 1.5px var(--line-2);
+    transition: box-shadow 0.3s var(--ease-out), transform 0.3s var(--ease-out), background-color 0.3s;
+  }
+  .dock-tick:hover { transform: scale(1.3); box-shadow: 0 0 0 1.5px var(--ink); }
+  .dock-tick[data-on] { background: var(--ink); box-shadow: 0 0 0 1.5px var(--ink), 0 0 0 5px color-mix(in oklab, var(--glow) 30%, transparent); }
+
+  .dock-nav { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+  .dock-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 8px;
+    font-size: 0.75rem;
+    font-weight: 560;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .dock-hint > :global(.icon) { width: 14px; height: 14px; }
+  .dock-next { min-width: 0; }
+  .dock-next span { max-width: 22ch; overflow: hidden; text-overflow: ellipsis; }
+
+  .dock-tabs { display: none; }
+
+  @media (max-width: 1240px) {
+    .dock-hint { display: none; }
+  }
+  @media (max-width: 760px) {
+    .dock { display: block; padding: 0 8px env(safe-area-inset-bottom); }
+    .dock::before { left: 0; right: 0; }
+    .dock-pos, .dock-track, .dock-nav { display: none; }
+    .dock-tabs { display: flex; height: 100%; align-items: stretch; }
+    .dock-tabs a {
+      position: relative;
+      flex: 1 1 0;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 3px;
+      min-width: 0;
+      font-size: 0.6875rem;
+      font-weight: 620;
+      font-stretch: 90%;
+      color: var(--ink-3);
+      text-decoration: none;
+      transition: color 0.3s var(--ease-out);
+    }
+    .dock-tabs a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dock-tabs :global(.icon) { width: 20px; height: 20px; transition: transform 0.35s var(--ease-out); }
+    .dock-tabs a[aria-current='true'] { color: var(--ink); }
+    .dock-tabs a[aria-current='true'] :global(.icon) { transform: translateY(-1px); }
+    .dock-tabs a::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 30%;
+      right: 30%;
+      height: 2px;
+      border-radius: 0 0 2px 2px;
+      background: var(--ink);
+      transform: scaleX(0);
+      transition: transform 0.4s var(--ease-out);
+    }
+    .dock-tabs a[aria-current='true']::before { transform: scaleX(1); }
+  }
+</style>
