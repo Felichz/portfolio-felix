@@ -70,7 +70,7 @@ const person = {
   </head>
   <body>
     <div class="ambient" aria-hidden="true"><div class="ambient-dots"></div></div>
-    <div class="cursor-light" aria-hidden="true"><div class="ambient-light" data-light></div><canvas class="ambient-field" data-field></canvas></div>
+    <div class="cursor-light" aria-hidden="true"><canvas class="fluid" data-fluid></canvas><div class="ambient-light" data-light></div><canvas class="ambient-field" data-field></canvas></div>
     <a class="skip-link" href="#main">Skip to content</a>
     <Bar panels={panels} home={home} />
     <Dock panels={panels} />
@@ -101,8 +101,10 @@ const person = {
   import { initDeck } from '../scripts/deck';
   import { initFx } from '../scripts/fx';
   import { initField } from '../scripts/field';
+  import { initFluid } from '../scripts/fluid';
 
   initDeck();
   initFx();
-  initField();
+  // The ink where WebGL2 can run it, the dot field everywhere else.
+  if (!initFluid()) initField();
 </script>

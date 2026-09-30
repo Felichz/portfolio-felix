@@ -266,6 +266,20 @@ a:hover { text-decoration-thickness: 2px; }
   border-radius: 50%;
   background: radial-gradient(closest-side, var(--glow), transparent);
 }
+/* The cursor ink (src/scripts/fluid.ts): a canvas at half the window's resolution, stretched to fill
+   it. It leaves the compositor whenever there is no ink to show. With the ink running, the dot field
+   and its light step aside. */
+.fluid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+}
+.fluid.on { visibility: visible; }
+.has-fluid .ambient-light,
+.has-fluid .ambient-field,
+.has-fluid .ambient-dots { display: none; }
 .ambient-dots {
   position: absolute;
   inset: 0;
