@@ -15,7 +15,7 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 
 - **Intro.** Name, role, the short version, what I bring, and a portrait.
 - **Work.** A showcase of five products. Each product's screen recording plays, holds on its last frame, and the next one slides in; the rail fills in the product's color as its turn runs. Pause it with the button, or by reading the product copy.
-- **Experience.** The CV: roles from 2020 to now on a continuous timeline, with the detail of the selected role below, including the AI review pipeline built for the component library team.
+- **Experience.** The CV: roles from 2020 to now on a continuous timeline, with the detail of the selected role below and a few concrete examples in prose.
 - **About.** How I got here, the toolset, and contact.
 - **One case study per product** (`/work/katarch`, `/work/knowgraph`, ...), as five sections: Overview with the lead screenshot, its recording and numbered callouts; Story; Engineering; Screens; Specs and the next case study.
 - **Two editions.** Warm stone and near-black, chosen before first paint from the saved choice or the system setting, toggled from the bar. Screenshots print in the opposite edition, so each product stands out from the page.
@@ -32,7 +32,7 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/experience-dark.webp">
-        <img alt="The Experience section: a continuous timeline of roles from 2020 to now with the Magnetic component library selected, its details, and the AI review pipeline." src="docs/screenshots/experience-light.webp">
+        <img alt="The Experience section: a continuous timeline of roles from 2020 to now with the Magnetic component library selected, its details, and a card of examples." src="docs/screenshots/experience-light.webp">
       </picture>
       <br><sub>Experience as a timeline, with the selected role below.</sub>
     </td>
@@ -62,7 +62,7 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 - The name is set one glyph at a time along Archivo's width axis: letters widen into place on arrival and swell toward the pointer.
 - The room light follows the content: each section, and each product in the showcase, sets the colors of the ambient glow.
 - The showcase screenshot and product name morph into the case study header (cross-document view transitions).
-- Kept cheap to render: no backdrop blur, static ambient layers, and the theme switches in one frame with transitions suspended.
+- Kept cheap to render: no backdrop blur, static ambient layers. The theme toggle reveals the other edition in a circle from the button, from a single snapshot with transitions suspended.
 - Everything sizes against the window with container units, and tightens on short screens.
 - Reduced motion: no autoplay, no tilt, instant section moves.
 - Static output, responsive AVIF/WebP images, recordings that load only when they play, self-hosted font subsets, no client framework.
@@ -85,7 +85,8 @@ npm run preview  # serve dist/
 | Path | What |
 | --- | --- |
 | `src/data/projects.ts` | Every product: order, copy, stack, scale, accent colors, screenshots, callouts, gallery. |
-| `src/pages/index.astro` | Home sections: `Intro`, `Work` (the showcase), `Experience` (timeline, `MainThread`, `Pipeline`), `About`. |
+| `src/pages/index.astro` | Home sections: `Intro`, `Work` (the showcase), `Experience` (the timeline), `About`. |
+| `src/data/career.ts` | Time in frontend, computed at build time. |
 | `src/pages/work/[id].astro` | Case study template (five sections), generated from `projects.ts`. |
 | `src/layouts/Base.astro` | The app shell: head, pre-paint theme and deep-link scripts, `Bar`, the section rail (`Dock`), the deck, image viewer. |
 | `src/scripts/deck.ts` | The vertical deck: wheel, keys, links, hash, section rail and ambient light. |

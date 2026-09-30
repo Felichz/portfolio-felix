@@ -82,12 +82,13 @@ The site behaves like a desktop app in a fixed window. A bar on top, a rail of s
 
 The room has light. A warm ambient glow drifts behind everything, over a faint dot grid and a film grain. Each panel names the colors the light drifts to: the house jade on the intro, the active product's accent on the work showcase and on a case study. Surfaces are frosted: translucent, blurred, a hairline ring and a lit top edge. Nothing is flat, and nothing shouts.
 
-Experience and projects are kept apart on purpose. Work is the portfolio: five products, shown as products. Experience is the CV: roles on a continuous timeline, with the detail of each role below. The positioning is a senior IC who owns problems end to end; no single metric carries it (the 100k-row filtering is one example, in a secondary tab).
+Experience and projects are kept apart on purpose. Work is the portfolio: five products, shown as products. Experience is the CV: roles on a continuous timeline, with the detail of each role below. The positioning is a senior IC who owns problems end to end; no single metric carries it (the 100k-row filtering is one example among several).
 
 ## Layout
 
 - `html.app` is a grid: the bar across the top (`--bar-h`), the section rail in a left column (`--rail-w`), the deck beside it. Height is `100dvh`; `overflow: hidden` on the document.
 - `.stage` is the deck: vertical scroll with mandatory snap and `scroll-snap-stop: always`. Each `.panel` is one window tall, a size container (`container: panel / size`), and scrolls inside only if its content overflows. Panels pad their right side by the rail width, so content stays centered in the window.
+- Every desktop section fits the window with no scroll (checked at 1280×720, 1366×768, 1536×730, 1440×900, 1920×911 and 1920×1080).
 - Content sizes itself against the window with container units (`cqw`, `cqh`): the showcase plate is `min(100cqw, (100cqh - info) * 1.6)`, the case study lead plate is `min(100cqw, (100cqh - chrome) * 1.6)`, the portrait is `80cqh` tall at most.
 - Short windows tighten (container `max-height` queries); wide-and-short showcase windows move the product copy beside the screenshot (`min-aspect-ratio: 3 / 2`).
 - Phones: the rail becomes a bottom tab bar, and the deck scrolls naturally with loose snapping; each section is at least one screen tall and grows with its content.
@@ -96,14 +97,14 @@ Experience and projects are kept apart on purpose. Work is the portfolio: five p
 
 One `go()` in `src/scripts/deck.ts` drives everything:
 
-- Desktop wheel and trackpad: one gesture moves one section. If the pointer is over something that can still scroll in that direction, that scrolls instead, and a gesture that started scrolling inside never changes section halfway.
+- Desktop wheel and trackpad: one gesture moves one section. If the pointer is over something that can still scroll in that direction, that scrolls instead. After scrolling something inside a section, reaching its edge never changes section right away: the wheel has to rest for 0.9s first, so inner and section scrolling never compete.
 - Keys: down and up arrows, Page Down and Page Up, Space, Home and End. A section that overflows scrolls first. Anything marked `data-own-keys`, form fields and open dialogs keep their keys.
 - Bar tabs, the rail's dots (labels show on hover and focus), and any `#section` or `#section/sub` link. The address follows the active section with `replaceState`; a deep link opens on its section before first paint. Escape on a case study goes back to the showcase on that product.
 - No arrow buttons or keyboard hints on screen: the dots are the only navigation chrome.
 
 ## Colors
 
-- **Editions.** Warm stone (`#f2f1ed`) with near-black ink, and near-black (`#0a0a0c`) with off-white ink. Chosen before first paint from the saved choice or the system setting. The toggle switches in one frame, with every transition suspended for that frame.
+- **Editions.** Warm stone (`#f2f1ed`) with near-black ink, and near-black (`#0a0a0c`) with off-white ink. Chosen before first paint from the saved choice or the system setting. The toggle reveals the new edition in a circle from the button (one view-transition snapshot), with every element transition suspended meanwhile; off under reduced motion.
 - **House jade** (`--house`, `--house-2`): the active role on the timeline, "now", strength markers, focus rings, selection. Used sparingly. No status dots.
 - **Product accents** come from `projects.ts` and are set per element with `data-accent`. They color pins, the showcase rail, highlight ticks, the case study's primary button, and the ambient light.
 - **Opposite-edition captures.** Screenshots and recordings print in the opposite edition from the site (dark products on the light site, light on the dark). The browser chrome around them follows the capture, not the site.
@@ -119,7 +120,7 @@ One `go()` in `src/scripts/deck.ts` drives everything:
 
 - `.glass`: a mostly opaque surface, hairline ring, inner top highlight, layered soft shadow. Cards, the showcase rail, the timeline, the toolset. No backdrop blur anywhere: it made scrolling and theme switches slow.
 - `.spot`: a soft light that follows the pointer across a card, tinted with `--spot` (the product accent on product cards).
-- `.chip`: pill with the same lit edge; used for availability and the clock.
+- `.chip`: pill with the same lit edge; used for the clock.
 - Plates: a product window with browser chrome (three dots, the first in the product accent, a lock and the live domain). Phones get a bezel instead.
 - The contact card is printed in the other edition, with the house light pooling in its corner.
 
@@ -127,16 +128,16 @@ One `go()` in `src/scripts/deck.ts` drives everything:
 
 - **Bar**: an FA mark and name, a segmented tab strip with a sliding pill, the Montevideo clock, the theme toggle, the résumé.
 - **Section rail** (`Dock.astro`): a vertical line with one dot per section down the left edge; the current dot is filled, labels appear on hover and focus. On phones: the tab bar.
-- **Intro**: availability chip, the variable name, role with the serif aside, lede, actions, four strengths (design systems, complex UI, ownership, AI-native tooling); the portrait, cropped close, tilts toward the pointer with a sheen. Nothing overlaps the photo.
-- **Showcase** (signature): a rail of five products and a stage. The active product's recording plays once, holds on its final frame (which matches the still), then the next product slides in. The rail item fills with the product accent as its turn runs. Reading the product copy or focusing inside pauses the countdown; the button turns auto-advance off; reduced motion starts with it off. Automatic turns are not announced; turns the visitor drives are.
-- **Timeline**: a Gantt of roles from 2020 to now in one continuous lane (each bar runs until the next role starts), a "now" marker, bars that pick the role shown below. The current role's closer look has tabs: the AI review pipeline first, the main-thread schematic second.
+- **Intro**: the variable name, role with the serif aside, lede, actions, four strengths (design systems, complex UI, ownership, AI-native tooling); the portrait, cropped close, tilts toward the pointer with a sheen; its caption gives the location and time in frontend (computed at build, rounded honestly: "Nearly 6 years"). Nothing overlaps the photo.
+- **Showcase** (signature): a rail of five products and a stage. The active product's recording plays once, holds on its final frame (which matches the still), then the next product slides in. The active rail item fills from left to right with a wash of the product accent as its turn runs. Reading the product copy or focusing inside pauses the countdown; the button turns auto-advance off; reduced motion starts with it off. Automatic turns are not announced; turns the visitor drives are.
+- **Timeline**: a Gantt of roles from 2020 to now in one continuous lane (each bar runs until the next role starts), a "now" marker, bars that pick the role shown below. The current role adds a card of examples in prose (the AI engineering stack, responsive tables on large datasets, what the team lead said). No diagrams: no single example should read as the whole job.
 - **Case study**: Overview (name, tagline, facts, actions, lead plate with pins and its recording), Story (the story beside the annotated screenshot and its legend), Engineering (three numbered cards and the stack), Screens (desktop captures on a grid, the phone as a full-height column), Specs (build sheet and the next case study).
 
 ## Motion
 
 - Section contents reveal once, staggered, the first time a section is active.
 - The ambient light changes color over 0.9s through registered custom properties, transitioned on the ambient layer only so nothing else restyles.
-- Every animation has a reduced-motion path: no tilt, no letter swell, no autoplay, instant section moves.
+- Every animation has a reduced-motion path: no tilt, no letter swell, no autoplay, no theme reveal, instant section moves.
 
 ## Do's and Don'ts
 

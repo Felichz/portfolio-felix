@@ -193,9 +193,23 @@ const { panels, home } = Astro.props;
       } catch {}
       label();
     };
-    // Switch in one frame: transitions are suspended so hundreds of elements don't all animate at once.
+    // The new edition spreads out in a circle from the toggle, where the browser supports it.
+    // Transitions stay suspended meanwhile, so the page is snapshotted once instead of animating piece by piece.
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
     root.setAttribute('data-theme-switching', '');
-    apply();
-    requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-theme-switching')));
+    const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-theme-switching')));
+    if (!doc.startViewTransition || reduce) {
+      apply();
+      return done();
+    }
+    const r = btn.getBoundingClientRect();
+    root.style.setProperty('--vt-x', `${r.left + r.width / 2}px`);
+    root.style.setProperty('--vt-y', `${r.top + r.height / 2}px`);
+    root.dataset.vt = 'theme';
+    doc.startViewTransition(apply).finished.finally(() => {
+      delete root.dataset.vt;
+      done();
+    });
   });
 </script>

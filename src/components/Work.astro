@@ -183,6 +183,7 @@ const total = String(projects.length).padStart(2, '0');
     text-align: left;
     color: var(--ink-3);
     overflow: hidden;
+    isolation: isolate;
     transition: background-color 0.4s var(--ease-out), color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
   }
   .rail-item:hover { color: var(--ink-2); }
@@ -209,25 +210,23 @@ const total = String(projects.length).padStart(2, '0');
     transition: color 0.4s;
   }
   .rail-item[aria-current='true'] .rail-short { color: var(--ink-2); }
-  /* The countdown runs down the item's left edge, clear of the text. */
+  /* The countdown fills the whole item from left to right, behind the text, in the product's
+     color, with a brighter leading edge. */
   .rail-progress {
     position: absolute;
-    left: 0;
-    top: 12px;
-    bottom: 12px;
-    width: 3px;
-    border-radius: 3px;
-    background: color-mix(in oklab, var(--accent) 16%, transparent);
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    overflow: hidden;
     opacity: 0;
     transition: opacity 0.4s;
   }
   .rail-progress i {
     position: absolute;
     inset: 0;
-    border-radius: inherit;
-    background: var(--accent);
-    transform: scaleY(var(--p, 0));
-    transform-origin: top;
+    right: calc((1 - var(--p, 0)) * 100%);
+    background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 3%, transparent), color-mix(in oklab, var(--accent) 17%, transparent));
+    box-shadow: inset -2px 0 0 color-mix(in oklab, var(--accent) 50%, transparent);
   }
   .rail-item[aria-current='true'] .rail-progress { opacity: 1; }
 
@@ -399,8 +398,6 @@ const total = String(projects.length).padStart(2, '0');
     .rail-num, .rail-short { display: none; }
     .rail-name { font-size: 1rem; }
     .rail-name.face-martian { font-size: 0.8125rem; }
-    .rail-progress { left: 16px; right: 16px; top: auto; bottom: 3px; width: auto; height: 2px; }
-    .rail-progress i { transform: scaleX(var(--p, 0)); transform-origin: left; }
     .show { container-type: normal; }
     .slide { width: 100%; align-self: start; }
     .slide-info { grid-template-columns: minmax(0, 1fr); min-height: 0; }

@@ -122,6 +122,15 @@
 /* Cross-document view transitions: the showcase screenshot grows into its case study. */
 @view-transition { navigation: auto; }
 ::view-transition-group(*) { animation-duration: 0.5s; animation-timing-function: var(--ease-out); }
+/* Theme switch: the new edition spreads out in a circle from the toggle. One snapshot of the page,
+   animated on the compositor; nothing else transitions while it runs. */
+:root[data-vt='theme']::view-transition-old(root) { animation: none; }
+:root[data-vt='theme']::view-transition-new(root) { animation: theme-reveal 0.6s var(--ease-io); }
+:root[data-vt='theme'] * { view-transition-name: none !important; }
+@keyframes theme-reveal {
+  from { clip-path: circle(0 at var(--vt-x, 100%) var(--vt-y, 0)); }
+  to { clip-path: circle(150vmax at var(--vt-x, 100%) var(--vt-y, 0)); }
+}
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }

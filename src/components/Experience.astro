@@ -1,7 +1,6 @@
 ---
 import Icon from './Icon.astro';
-import MainThread from './MainThread.astro';
-import Pipeline from './Pipeline.astro';
+import { experience } from '../data/career';
 
 type Month = [year: number, month: number];
 
@@ -18,7 +17,8 @@ interface Role {
   points: string[];
   tags: string[];
   glance?: { k: string; v: string }[];
-  exhibit?: 'library';
+  /** A few concrete examples, told in prose. */
+  examples?: { title: string; body: string }[];
 }
 
 // Chronological and continuous: each bar runs until the next role starts.
@@ -96,12 +96,24 @@ const roles: Role[] = [
     points: [
       'Complex data table features built to detailed design specs, the most demanding components in the library.',
       'Support for the hundreds of developers who adopt the library, and the review standards that keep it stable.',
-      'OKR epics leadership needed, owned end to end.',
-      'The team’s AI engineering stack: an AGENTS.md, coding skills, and a pre-push review pipeline the team still runs.',
-      'Main-thread work where it matters, like filtering that keeps large tables responsive while you type.',
+      'OKR epics leadership needed, owned from problem to release.',
+      'Tools and ideas for the team beyond the tickets, like the AI stack below.',
     ],
     tags: ['React', 'TypeScript', 'Design systems', 'Accessibility', 'AI tooling'],
-    exhibit: 'library',
+    examples: [
+      {
+        title: 'The team’s AI engineering stack',
+        body: 'When leadership made AI adoption an OKR for every team, I used it to raise our quality bar instead of letting it slip. In two to three months: an AGENTS.md, coding skills with explicit boundaries, and a pre-push hook that runs a breaking-change scanner (designed from every hotfix and revert in the repo’s history) and a review orchestrator with five specialized reviewers, calibrated on 100+ comments distilled from thousands. The team still runs it on every push.',
+      },
+      {
+        title: 'Responsive tables on large datasets',
+        body: 'A table filter that froze typing on big customers’ data, split into short slices that yield to the browser, so matches render as they arrive.',
+      },
+      {
+        title: 'What the team lead said',
+        body: 'That it was exactly what the team needed, and key to opening the repo to outside contributions.',
+      },
+    ],
   },
 ];
 
@@ -122,6 +134,7 @@ const span = (r: Role) => {
   const mo = months % 12;
   return [y && `${y} yr${y > 1 ? 's' : ''}`, mo && `${mo} mo${mo > 1 ? 's' : ''}`].filter(Boolean).join(' ');
 };
+const exp = experience();
 const current = roles.findIndex((r) => r.id === 'library');
 ---
 
@@ -131,7 +144,7 @@ const current = roles.findIndex((r) => r.id === 'library');
       <div class="exp-title">
         <h2 id="exp-title" class="t-section">Experience</h2>
         <p class="t-lede muted">
-          Five years through Vairix, most of them at Cisco as the maintainer Meraki teams count on: shipping components to spec,
+          {exp.phrase} through Vairix, most of them at Cisco as the maintainer Meraki teams count on: shipping components to spec,
           supporting the developers who build on them, and building the tools the team needed before anyone asked.
         </p>
       </div>
@@ -199,52 +212,14 @@ const current = roles.findIndex((r) => r.id === 'library');
             </div>
 
             <aside class="role-card glass" aria-label="A closer look">
-              {r.exhibit === 'library' ? (
-                <div class="ex" data-ex>
-                  <div class="ex-tabs" role="tablist" aria-label="A closer look">
-                    <button type="button" role="tab" id="ex-tab-review" aria-controls="ex-review" aria-selected="true">
-                      AI review pipeline
-                    </button>
-                    <button type="button" role="tab" id="ex-tab-rows" aria-controls="ex-rows" aria-selected="false" tabindex="-1">
-                      Main-thread work
-                    </button>
-                  </div>
-                  <div class="ex-panel scroll-y" role="tabpanel" id="ex-review" aria-labelledby="ex-tab-review">
-                    <p class="ex-lede">
-                      When leadership made AI adoption an OKR for every team, I used the transition to raise our quality bar instead
-                      of letting it slip: two to three months of tooling that the team still runs on every push.
+              {r.examples ? (
+                <div class="examples scroll-y">
+                  <p class="t-label">A few examples</p>
+                  {r.examples.map((x) => (
+                    <p class="example">
+                      <b>{x.title}.</b> {x.body}
                     </p>
-                    <div class="ex-figure">
-                      <Pipeline />
-                    </div>
-                    <details class="story">
-                      <summary>How I built it</summary>
-                      <div class="story-body muted">
-                        <p>
-                          Breaking changes had been a pain for years. One nobody noticed could silently break types, tests and behavior
-                          in consumer apps. Before writing the scanner I mined the repo history (every hotfix PR, every revert, every
-                          incident), worked out the root causes, and designed it to catch each case I found.
-                        </p>
-                        <p>
-                          For code review I pulled thousands of our GitLab review comments, used LLMs to find the ones that caught real
-                          bugs or improved maintainability, and distilled the top 100+ into calibration examples for five specialized
-                          reviewers. Alongside went an AGENTS.md for the repo and five coding skills with explicit boundaries.
-                        </p>
-                        <p>The team lead said it was exactly what the team needed, and key to opening the repo to outside contributions.</p>
-                      </div>
-                    </details>
-                  </div>
-                  <div class="ex-panel scroll-y" role="tabpanel" id="ex-rows" aria-labelledby="ex-tab-rows" hidden>
-                    <p class="ex-lede">
-                      One small example of the performance work. A table filter that ran as one long task froze typing on large
-                      datasets; split into short slices that yield to the browser, the table stays responsive and matches render as
-                      they arrive.
-                    </p>
-                    <div class="ex-figure">
-                      <MainThread />
-                    </div>
-                    <p class="t-label">Schematic, not a measurement</p>
-                  </div>
+                  ))}
                 </div>
               ) : (
                 <dl class="glance">
@@ -272,7 +247,7 @@ const current = roles.findIndex((r) => r.id === 'library');
   .exp {
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr);
-    gap: clamp(14px, 2.6cqh, 28px);
+    gap: clamp(12px, 2.2cqh, 26px);
   }
   .exp-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
   .exp-title { display: grid; gap: 10px; }
@@ -370,10 +345,13 @@ const current = roles.findIndex((r) => r.id === 'library');
     min-height: 0;
     visibility: hidden;
     opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.45s var(--ease-out), transform 0.6s var(--ease-out), visibility 0s linear 0.45s;
+    transition: opacity 0.45s var(--ease-out), visibility 0s linear 0.45s;
   }
-  .role[data-state='active'] { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+  /* The incoming role rises in; hidden roles carry no offset, so they never stretch the section. */
+  .role[data-state='active'] { visibility: visible; opacity: 1; transition-delay: 0s; animation: role-in 0.6s var(--ease-out); }
+  @keyframes role-in {
+    from { transform: translateY(10px); }
+  }
   .role-main { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 4px 8px 4px 2px; }
   .role-when { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 650; color: var(--ink-2); }
   .role-span { padding: 2px 8px; border-radius: 999px; background: color-mix(in oklab, var(--house) 12%, transparent); color: var(--house); font-size: 0.75rem; }
@@ -409,64 +387,15 @@ const current = roles.findIndex((r) => r.id === 'library');
   .glance > div:last-child { border-bottom: 0; }
   .glance dd { font-size: clamp(1.0625rem, 0.9rem + 0.5vw, 1.375rem); font-weight: 700; font-stretch: 94%; letter-spacing: -0.015em; line-height: 1.25; }
 
-  /* ---- Exhibits for the current role ---- */
-  .ex { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; min-height: 0; }
-  .ex-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in oklab, var(--ink) 5%, transparent); justify-self: start; }
-  .ex-tabs button {
-    min-height: 32px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: 999px;
-    background: none;
-    color: var(--ink-2);
-    font-size: 0.8125rem;
-    font-weight: 650;
-    font-stretch: 92%;
-    transition: color 0.2s, background-color 0.3s var(--ease-out), box-shadow 0.3s;
-  }
-  .ex-tabs button:hover { color: var(--ink); }
-  .ex-tabs button[aria-selected='true'] { background: var(--surface-strong); color: var(--ink); box-shadow: 0 0 0 1px var(--line), var(--shadow-sm); }
-  .ex-panel { display: grid; align-content: start; gap: 14px; min-height: 0; padding-right: 6px; }
-  .ex-panel[hidden] { display: none; }
-  .ex-lede { font-size: 0.9375rem; color: var(--ink-2); max-width: 60ch; }
-  .ex-figure { padding: clamp(12px, 1.6cqw, 20px); border-radius: 14px; background: color-mix(in oklab, var(--surface-solid) 70%, transparent); box-shadow: 0 0 0 1px var(--line); }
-  .ex-figure :global(.pipe) { font-size: 0.875rem; }
-  .ex-figure :global(.mt) { max-height: max(180px, 30cqh); }
-
-  .story { border-top: 1px solid var(--line); }
-  .story summary {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 40px;
-    font-weight: 650;
-    font-stretch: 92%;
-    font-size: 0.9375rem;
-    cursor: pointer;
-    list-style: none;
-  }
-  .story summary::-webkit-details-marker { display: none; }
-  .story summary::after {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: translateY(-2px) rotate(45deg);
-    transition: transform 0.3s var(--ease-out);
-  }
-  .story[open] summary::after { transform: translateY(1px) rotate(-135deg); }
-  .story::details-content {
-    block-size: 0;
-    overflow: clip;
-    transition: block-size 0.4s var(--ease-out), content-visibility 0.4s allow-discrete;
-  }
-  .story[open]::details-content { block-size: auto; }
-  .story-body { display: grid; gap: 0.8em; padding-bottom: 8px; font-size: 0.9375rem; }
+  /* ---- Examples for the current role: prose, not diagrams ---- */
+  .examples { display: grid; align-content: center; gap: 14px; min-height: 0; padding-right: 6px; }
+  .example { font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); max-width: 64ch; }
+  .example b { color: var(--ink); font-weight: 700; font-stretch: 94%; }
+  .example:last-child { padding-top: 12px; border-top: 1px solid var(--line); font-family: var(--serif); font-style: italic; font-size: 1.0625rem; }
+  .example:last-child b { font-family: var(--font); font-style: normal; font-size: 0.875rem; }
 
   @media (prefers-reduced-motion: reduce) {
-    .role { transform: none; }
-    .story::details-content { transition: none; }
+    .role[data-state='active'] { animation: none; }
   }
 
   @container panel (max-width: 1000px) {
@@ -492,7 +421,7 @@ const current = roles.findIndex((r) => r.id === 'library');
     .role { visibility: visible; opacity: 1; transform: none; overflow: visible; }
     .role-main { padding: 0; }
     .role-card { overflow: visible; }
-    .ex-panel { overflow: visible; }
+    .examples { overflow: visible; }
   }
 </style>
 
@@ -509,28 +438,5 @@ const current = roles.findIndex((r) => r.id === 'library');
       }),
     );
 
-    // Tabs for the closer look: click, or arrow keys while a tab has focus.
-    root.querySelectorAll<HTMLElement>('[data-ex]').forEach((ex) => {
-      const tabs = [...ex.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
-      const pick = (t: HTMLButtonElement) => {
-        tabs.forEach((x) => {
-          const on = x === t;
-          x.setAttribute('aria-selected', String(on));
-          x.tabIndex = on ? 0 : -1;
-          const panel = ex.querySelector<HTMLElement>(`#${x.getAttribute('aria-controls')}`);
-          if (panel) panel.hidden = !on;
-        });
-      };
-      tabs.forEach((t, i) => {
-        t.addEventListener('click', () => pick(t));
-        t.addEventListener('keydown', (e) => {
-          if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-          e.preventDefault();
-          const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]!;
-          next.focus();
-          pick(next);
-        });
-      });
-    });
   }
 </script>

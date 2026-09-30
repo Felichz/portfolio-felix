@@ -102,6 +102,10 @@ export function initDeck() {
   let acc = 0;
   let spent = false;
   let inner = false;
+  // When something inside a section was just scrolled, reaching its edge never changes section
+  // right away: the wheel has to rest for a moment first. Inner and section scrolling never compete.
+  const INNER_REST = 900;
+  let innerAt = -Infinity;
   stage.addEventListener(
     'wheel',
     (e) => {
@@ -117,11 +121,16 @@ export function initDeck() {
       for (let el = e.target as HTMLElement | null; el && el !== stage; el = el.parentElement) {
         if (canScroll(el, e.deltaY)) {
           inner = true;
+          innerAt = now;
           return;
         }
       }
       e.preventDefault();
       if (spent || inner) return;
+      if (now - innerAt < INNER_REST) {
+        innerAt = now;
+        return;
+      }
       acc += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
       if (Math.abs(acc) >= 24) {
         spent = true;

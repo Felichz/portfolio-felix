@@ -2,9 +2,11 @@
 import { Picture } from 'astro:assets';
 import Icon from './Icon.astro';
 import portrait from '../assets/portrait/felix-portrait.webp';
+import { experience } from '../data/career';
 
 const first = 'Felix';
 const last = 'Andersson';
+const exp = experience();
 
 // What a hiring team gets, each line backed by the Experience and Work sections.
 const strengths = [
@@ -18,8 +20,6 @@ const strengths = [
 <section id="intro" class="panel" data-label="Intro" tabindex="-1" aria-labelledby="intro-name">
   <div class="panel-inner intro">
     <div class="intro-copy">
-      <p class="chip intro-status" data-reveal style="--d:0">Open to remote senior frontend roles</p>
-
       <h1 id="intro-name" class="intro-name" aria-label={`${first} ${last}`} data-name>
         <span class="line" aria-hidden="true">{[...first].map((c, i) => <span class="ch" style={`--i:${i}`}>{c}</span>)}</span>
         <span class="line" aria-hidden="true">{[...last].map((c, i) => <span class="ch" style={`--i:${i + first.length}`}>{c}</span>)}</span>
@@ -29,7 +29,7 @@ const strengths = [
         Senior Frontend Engineer, <span class="t-serif">building interfaces people can trust.</span>
       </p>
       <p class="t-lede intro-lede muted" data-reveal style="--d:4">
-        Five years building frontend infrastructure other teams depend on: Cisco’s Magnetic design system, the component
+        {exp.phrase} building frontend infrastructure other teams depend on: Cisco’s Magnetic design system, the component
         library behind the Meraki Dashboard, and the Dashboard’s most used pages. This year I also designed and shipped five
         products of my own, end to end.
       </p>
@@ -69,7 +69,7 @@ const strengths = [
         <figcaption class="portrait-cap">
           <Icon name="pin" />
           <span>Montevideo, Uruguay</span>
-          <span class="portrait-tz t-num">UTC−3</span>
+          <span class="portrait-tz">{exp.label} in frontend</span>
         </figcaption>
       </div>
     </figure>
@@ -87,16 +87,15 @@ const strengths = [
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: clamp(12px, 2.4cqh, 24px);
+    gap: clamp(10px, 2.2cqh, 24px);
     min-width: 0;
   }
-  .intro-status { color: var(--ink-2); }
 
   /* The name, one variable letter at a time: each glyph widens into place on arrival,
      and swells toward the pointer afterwards. */
   .intro-name {
     display: grid;
-    font-size: clamp(3.25rem, min(9.4cqw, 17cqh), 10rem);
+    font-size: clamp(3rem, min(9.4cqw, 15.5cqh), 10rem);
     line-height: 0.86;
     font-weight: 820;
     letter-spacing: -0.045em;
@@ -121,14 +120,14 @@ const strengths = [
   }
 
   .intro-role {
-    font-size: clamp(1.25rem, min(2.2cqw, 3.6cqh), 2rem);
+    font-size: clamp(1.125rem, min(2.2cqw, 3.4cqh), 2rem);
     line-height: 1.15;
     font-weight: 700;
     font-stretch: 94%;
     letter-spacing: -0.02em;
   }
   .intro-role .t-serif { font-weight: 400; font-size: 1.08em; color: var(--ink-2); }
-  .intro-lede { max-width: 54ch; }
+  .intro-lede { max-width: 54ch; font-size: clamp(0.9375rem, min(1.35cqw, 2.5cqh), 1.25rem); }
   .intro-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
   .strengths {
@@ -136,11 +135,11 @@ const strengths = [
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 2px 28px;
     width: 100%;
-    margin-top: clamp(2px, 1.4cqh, 14px);
-    padding-top: clamp(10px, 1.8cqh, 16px);
+    margin-top: clamp(0px, 1cqh, 12px);
+    padding-top: clamp(6px, 1.4cqh, 14px);
     border-top: 1px solid var(--line);
   }
-  .strengths li { display: grid; gap: 1px; padding-block: 7px; }
+  .strengths li { display: grid; gap: 1px; padding-block: clamp(3px, 0.8cqh, 7px); }
   .strengths b { font-size: 0.9375rem; font-weight: 720; font-stretch: 94%; letter-spacing: -0.01em; }
   .strengths b::before {
     content: '';
@@ -151,7 +150,7 @@ const strengths = [
     border-radius: 2px;
     background: var(--house);
   }
-  .strengths span { font-size: 0.875rem; line-height: 1.4; color: var(--ink-2); padding-left: 16px; }
+  .strengths span { font-size: clamp(0.8125rem, 1.9cqh, 0.875rem); line-height: 1.4; color: var(--ink-2); padding-left: 16px; }
 
   /* ---- Portrait ---- */
   .portrait {
@@ -210,7 +209,7 @@ const strengths = [
     text-shadow: 0 1px 8px rgb(0 0 0 / 0.35);
   }
   .portrait-cap :global(.icon) { width: 15px; height: 15px; }
-  .portrait-tz { margin-left: auto; opacity: 0.8; }
+  .portrait-tz { margin-left: auto; opacity: 0.9; }
 
   @media (prefers-reduced-motion: reduce) {
     .portrait-card { transform: none; }

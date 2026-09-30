@@ -10,8 +10,8 @@ const toolset = [
 ];
 
 const early = [
-  { big: '8–9', unit: 'years old', text: 'when I found Scratch and fell in love with it' },
-  { big: '300k+', unit: 'page views', text: 'on my flash games site, from other kids' },
+  { big: '8–9', unit: 'years old', text: 'when I found Scratch, MIT’s programming language for kids' },
+  { big: '300k+', unit: 'page views', text: 'on my site of offline flash games, from other kids' },
   { big: '2×', unit: 'top ten', text: 'in ANIMATE, Uruguay’s national animation contest' },
 ];
 ---
@@ -22,8 +22,10 @@ const early = [
       <h2 id="about-title" class="t-section">How I got here</h2>
       <div class="prose about-copy">
         <p class="t-lede">
-          I found Scratch at 8 or 9. Before high school I ran a website of flash games packaged for the offline laptops kids used at
-          school. Later I made the national top ten of ANIMATE, Uruguay’s animation contest, two years in a row.
+          At 8 or 9 I found Scratch, MIT’s visual programming language for kids, and fell in love with it. Before high school I
+          ran a website of flash games packaged to play offline, so kids could download them onto their school laptops and keep
+          playing at home without internet. Later I made the national top ten of ANIMATE, Uruguay’s animation contest, two
+          years in a row.
         </p>
         <p class="muted">
           I still care most about the same thing: <span class="t-serif">interfaces people can trust.</span> Complex UIs and
@@ -202,12 +204,12 @@ const early = [
   .contact :focus-visible { outline-color: var(--bg); }
   .colophon { margin-top: 6px; font-size: 0.75rem; line-height: 1.5; opacity: 0.55; }
 
-  @container panel (max-height: 680px) and (min-width: 1181px) {
+  @container panel (max-height: 680px) and (min-width: 961px) {
     .toolset dd { font-size: 0.875rem; }
     .toolset dl > div { padding-block: 7px; }
     .about-copy .t-lede { font-size: 1.0625rem; }
   }
-  @container panel (max-width: 1180px) {
+  @container panel (max-width: 960px) {
     .about { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: auto auto; align-content: start; height: auto; min-height: 100%; }
     .about-story { grid-column: 1 / -1; }
   }
