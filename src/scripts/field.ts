@@ -5,14 +5,19 @@
  *
  * Near text, the dots step back: they fade and stop bulging, so they never compete with reading.
  *
- * Cheap by construction: one canvas behind everything, only the dots within reach are drawn, and the
- * loop runs only while the light is moving or fading, then stops. Off on touch screens and under
- * reduced motion.
+ * Cheap by construction:
+ * - The light is a CSS gradient and the dots a small canvas around the pointer, both moved with
+ *   transforms. A frame redraws only that area; the full-window canvas this replaced made the
+ *   whole screen recomposite on every frame.
+ * - Hit-testing for text runs a few times a second, not every frame.
+ * - The loop runs only while the light is moving or fading, then stops. Off on touch screens and
+ *   under reduced motion.
  */
 export function initField() {
   const canvas = document.querySelector<HTMLCanvasElement>('[data-field]');
+  const light = document.querySelector<HTMLElement>('[data-light]');
   const ctx = canvas?.getContext('2d');
-  if (!canvas || !ctx) return;
+  if (!canvas || !light || !ctx) return;
 
   const fine = matchMedia('(hover: hover) and (pointer: fine)');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
@@ -22,11 +27,11 @@ export function initField() {
   const STEP = 22;
   const OFFSET = 11;
   const REACH = 170; // dots within this distance react
-  const LIGHT = 340; // radius of the soft light
+  const HALF = REACH + 16; // the canvas covers the reach plus the lens push and dot radius
+  const SIZE = HALF * 2;
+  const SAMPLE_MS = 90; // how often to check for text near the pointer
 
   let dpr = 1;
-  let w = 0;
-  let h = 0;
   let color = '#13a07c';
   let dark = false;
   // Where the pointer is, where the light is (eased toward it), and how visible it is.
@@ -37,16 +42,15 @@ export function initField() {
   // 1 when the pointer is on or near text: the dots fade out of the way.
   let quiet = 0;
   let wantQuiet = 0;
-  // Hit-testing happens at most once per frame, not on every pointer event.
   let sample = false;
+  let sampledAt = 0;
   let raf = 0;
 
   const resize = () => {
     dpr = Math.min(devicePixelRatio || 1, 2);
-    w = innerWidth;
-    h = innerHeight;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
+    canvas.width = Math.round(SIZE * dpr);
+    canvas.height = Math.round(SIZE * dpr);
+    canvas.style.width = canvas.style.height = `${SIZE}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     kick();
   };
@@ -73,19 +77,27 @@ export function initField() {
       return !!el && el !== canvas && !!el.closest(TEXT);
     });
 
+  // Style writes only when a value changes: each one costs the page a style and layer update.
+  const last = new Map<HTMLElement, Record<string, string>>();
+  const set = (el: HTMLElement, prop: 'opacity' | 'translate', value: string) => {
+    const seen = last.get(el) ?? {};
+    if (seen[prop] === value) return;
+    seen[prop] = value;
+    last.set(el, seen);
+    el.style[prop] = value;
+  };
+
   const draw = () => {
-    ctx.clearRect(0, 0, w, h);
+    // The light itself: a wide, faint pool of the room color.
+    set(light, 'opacity', (on * (dark ? 0.16 : 0.2) * (1 - 0.35 * quiet)).toFixed(3));
+    set(light, 'translate', `${Math.round(pos.x)}px ${Math.round(pos.y)}px`);
+    set(canvas, 'opacity', on < 0.01 ? '0' : '1');
     if (on < 0.01) return;
 
-    // The light itself: a wide, faint pool of the room color.
-    const g = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, LIGHT);
-    ctx.globalAlpha = on * (dark ? 0.16 : 0.2) * (1 - 0.35 * quiet);
-    g.addColorStop(0, color);
-    g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g;
-    ctx.fillRect(pos.x - LIGHT, pos.y - LIGHT, LIGHT * 2, LIGHT * 2);
-
-    // The dots it reaches.
+    // The dots it reaches, drawn into a canvas that sits on whole pixels around the pointer.
+    const origin = { x: Math.round(pos.x) - HALF, y: Math.round(pos.y) - HALF };
+    set(canvas, 'translate', `${origin.x}px ${origin.y}px`);
+    ctx.clearRect(0, 0, SIZE, SIZE);
     ctx.fillStyle = color;
     const x0 = Math.floor((pos.x - REACH - OFFSET) / STEP);
     const x1 = Math.ceil((pos.x + REACH - OFFSET) / STEP);
@@ -105,16 +117,17 @@ export function initField() {
         const push = (kk * 7 * (1 - quiet)) / (d || 1);
         ctx.globalAlpha = on * (0.12 + 0.75 * kk) * (1 - 0.85 * quiet);
         ctx.beginPath();
-        ctx.arc(cx + dx * push, cy + dy * push, 0.9 + 1.7 * kk, 0, Math.PI * 2);
+        ctx.arc(cx + dx * push - origin.x, cy + dy * push - origin.y, 0.9 + 1.7 * kk, 0, Math.PI * 2);
         ctx.fill();
       }
     }
     ctx.globalAlpha = 1;
   };
 
-  const tick = () => {
-    if (sample) {
+  const tick = (now: number) => {
+    if (sample && now - sampledAt >= SAMPLE_MS) {
       sample = false;
+      sampledAt = now;
       wantQuiet = nearText(target.x, target.y) ? 1 : 0;
     }
     pos.x += (target.x - pos.x) * 0.16;
@@ -122,7 +135,12 @@ export function initField() {
     on += (want - on) * 0.12;
     quiet += (wantQuiet - quiet) * 0.14;
     draw();
-    const moving = Math.abs(target.x - pos.x) > 0.3 || Math.abs(target.y - pos.y) > 0.3 || Math.abs(want - on) > 0.01 || Math.abs(wantQuiet - quiet) > 0.01;
+    const moving =
+      sample ||
+      Math.abs(target.x - pos.x) > 0.3 ||
+      Math.abs(target.y - pos.y) > 0.3 ||
+      Math.abs(want - on) > 0.01 ||
+      Math.abs(wantQuiet - quiet) > 0.01;
     raf = moving ? requestAnimationFrame(tick) : 0;
   };
   function kick() {

@@ -238,11 +238,33 @@ a:hover { text-decoration-thickness: 2px; }
   opacity: var(--grain);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
+/* The cursor light (src/scripts/field.ts): a soft pool and a small canvas of dots around the pointer,
+   both moved with transforms, so a frame only touches that area. They sit outside .ambient so the
+   static layers there never repaint. */
+.cursor-light {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+  /* The pool follows the room's color change like .ambient does. */
+  transition: --glow 0.9s var(--ease-io);
+}
+.ambient-light,
 .ambient-field {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  will-change: translate, opacity;
+}
+.ambient-light {
+  width: 680px;
+  height: 680px;
+  margin: -340px 0 0 -340px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--glow), transparent);
 }
 .ambient-dots {
   position: absolute;

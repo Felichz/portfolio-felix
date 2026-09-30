@@ -69,7 +69,8 @@ const person = {
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
   </head>
   <body>
-    <div class="ambient" aria-hidden="true"><div class="ambient-dots"></div><canvas class="ambient-field" data-field></canvas></div>
+    <div class="ambient" aria-hidden="true"><div class="ambient-dots"></div></div>
+    <div class="cursor-light" aria-hidden="true"><div class="ambient-light" data-light></div><canvas class="ambient-field" data-field></canvas></div>
     <a class="skip-link" href="#main">Skip to content</a>
     <Bar panels={panels} home={home} />
     <Dock panels={panels} />

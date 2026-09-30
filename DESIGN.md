@@ -128,8 +128,8 @@ One `go()` in `src/scripts/deck.ts` drives everything:
 
 All off on touch screens and under reduced motion; none of it runs when the pointer is still.
 
-- **Cursor light** (`src/scripts/field.ts`): a soft pool of the room's glow color follows the pointer across the page background and brings up the dot grid under it. Nearby dots grow, brighten and bulge outward as if under a lens. One canvas behind everything, only the dots within reach are drawn, and the loop stops once the light settles. Content surfaces are opaque, so it lives in the gaps; and on or within about 44px of text, the dots fade to near nothing and stop bulging, so they never compete with reading (sampled once per frame with `elementFromPoint`).
-- **Magnetic buttons**: buttons lean up to 6px toward the pointer (the `translate` property, so hover transforms still apply).
+- **Cursor light** (`src/scripts/field.ts`): a soft pool of the room's glow color follows the pointer across the page background and brings up the dot grid under it. Nearby dots grow, brighten and bulge outward as if under a lens. The pool is a CSS gradient and the dots a small canvas around the pointer, both moved with `translate` in their own fixed layer outside `.ambient`, so a frame redraws only that area (a full-window canvas made the whole screen recomposite every frame and held the page to about a third of its frame rate). The loop stops once the light settles. Content surfaces are opaque, so it lives in the gaps; and on or within about 44px of text, the dots fade to near nothing and stop bulging, so they never compete with reading (sampled every 90ms with `elementFromPoint`).
+- **Magnetic buttons**: buttons lean up to 3px toward the pointer (the `translate` property, so hover transforms still apply).
 - **Tilt**: the portrait and the showcase window lean toward the pointer with a sheen that follows it.
 - **Timeline scrubber**: a hairline follows the pointer across the Experience timeline and names the month and the role ("Jan 2023 · Meraki Dashboard").
 - The name swells toward the pointer along Archivo's width axis; cards carry a soft spotlight.
