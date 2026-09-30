@@ -3,6 +3,8 @@
  * dot grid under it: nearby dots grow, brighten in the room's glow color, and bulge away from the
  * pointer as if under a lens.
  *
+ * Near text, the dots step back: they fade and stop bulging, so they never compete with reading.
+ *
  * Cheap by construction: one canvas behind everything, only the dots within reach are drawn, and the
  * loop runs only while the light is moving or fading, then stops. Off on touch screens and under
  * reduced motion.
@@ -32,6 +34,11 @@ export function initField() {
   const pos = { x: -1e4, y: -1e4 };
   let on = 0;
   let want = 0;
+  // 1 when the pointer is on or near text: the dots fade out of the way.
+  let quiet = 0;
+  let wantQuiet = 0;
+  // Hit-testing happens at most once per frame, not on every pointer event.
+  let sample = false;
   let raf = 0;
 
   const resize = () => {
@@ -50,13 +57,29 @@ export function initField() {
     kick();
   };
 
+  // Text under the pointer or within reach of it, sampled at the pointer and around it.
+  const TEXT = 'p, h1, h2, h3, h4, li, dt, dd, figcaption, blockquote, label, time, a, button, summary, .chip';
+  const NEAR = 44;
+  const around = [
+    [0, 0],
+    [NEAR, 0],
+    [-NEAR, 0],
+    [0, NEAR],
+    [0, -NEAR],
+  ];
+  const nearText = (x: number, y: number) =>
+    around.some(([dx, dy]) => {
+      const el = document.elementFromPoint(x + dx!, y + dy!);
+      return !!el && el !== canvas && !!el.closest(TEXT);
+    });
+
   const draw = () => {
     ctx.clearRect(0, 0, w, h);
     if (on < 0.01) return;
 
     // The light itself: a wide, faint pool of the room color.
     const g = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, LIGHT);
-    ctx.globalAlpha = on * (dark ? 0.16 : 0.2);
+    ctx.globalAlpha = on * (dark ? 0.16 : 0.2) * (1 - 0.35 * quiet);
     g.addColorStop(0, color);
     g.addColorStop(1, 'transparent');
     ctx.fillStyle = g;
@@ -79,8 +102,8 @@ export function initField() {
         const k = 1 - d / REACH;
         const kk = k * k;
         // Lens: dots near the pointer are pushed outward a few pixels.
-        const push = (kk * 7) / (d || 1);
-        ctx.globalAlpha = on * (0.12 + 0.75 * kk);
+        const push = (kk * 7 * (1 - quiet)) / (d || 1);
+        ctx.globalAlpha = on * (0.12 + 0.75 * kk) * (1 - 0.85 * quiet);
         ctx.beginPath();
         ctx.arc(cx + dx * push, cy + dy * push, 0.9 + 1.7 * kk, 0, Math.PI * 2);
         ctx.fill();
@@ -90,11 +113,16 @@ export function initField() {
   };
 
   const tick = () => {
+    if (sample) {
+      sample = false;
+      wantQuiet = nearText(target.x, target.y) ? 1 : 0;
+    }
     pos.x += (target.x - pos.x) * 0.16;
     pos.y += (target.y - pos.y) * 0.16;
     on += (want - on) * 0.12;
+    quiet += (wantQuiet - quiet) * 0.14;
     draw();
-    const moving = Math.abs(target.x - pos.x) > 0.3 || Math.abs(target.y - pos.y) > 0.3 || Math.abs(want - on) > 0.01;
+    const moving = Math.abs(target.x - pos.x) > 0.3 || Math.abs(target.y - pos.y) > 0.3 || Math.abs(want - on) > 0.01 || Math.abs(wantQuiet - quiet) > 0.01;
     raf = moving ? requestAnimationFrame(tick) : 0;
   };
   function kick() {
@@ -112,6 +140,7 @@ export function initField() {
       }
       target.x = e.clientX;
       target.y = e.clientY;
+      sample = true;
       want = 1;
       kick();
     },
