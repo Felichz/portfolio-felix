@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Felix Andersson, Senior Frontend Engineer</title>
+<meta name="author" content="Felix Andersson" />
+<meta name="description" content="Résumé of Felix Andersson, Senior Frontend Engineer in Montevideo, Uruguay." />
+<script>
+  // One source, two editions: resume.html#dark prints the dark one.
+  if (location.hash === '#dark') document.documentElement.dataset.theme = 'dark';
+</script>
+<style>
+  @font-face { font-family: 'Archivo'; src: url('../public/fonts/archivo-wdth.woff2') format('woff2-variations'); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: 'Newsreader'; src: url('../public/fonts/newsreader-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; }
+  @font-face { font-family: 'Newsreader'; src: url('../public/fonts/newsreader-500.woff2') format('woff2'); font-weight: 500; }
+  @font-face { font-family: 'Martian Mono'; src: url('../public/fonts/martian-mono-400.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'Inter'; src: url('../public/fonts/inter-600.woff2') format('woff2'); font-weight: 600; }
+  @font-face { font-family: 'Bricolage Grotesque'; src: url('../public/fonts/bricolage-700.woff2') format('woff2'); font-weight: 700; }
+
+  /* The portfolio's two editions: warm stone and near-black, house jade. */
+  :root {
+    --bg: #f2f1ed;
+    --surface: #fbfaf7;
+    --ink: #111114;
+    --ink-2: #4a4a52;
+    --ink-3: #6a6a72;
+    --line: rgb(17 17 20 / 0.09);
+    --line-2: rgb(17 17 20 / 0.16);
+    --hi: rgb(255 255 255 / 0.95);
+    --house: #0d7a5f;
+    --glow: rgb(63 191 154 / 0.2);
+    --glow-2: rgb(240 185 140 / 0.22);
+    --dots: rgb(17 17 20 / 0.07);
+    --shadow: 0 1px 1px rgb(30 24 12 / 0.04), 0 6px 16px -8px rgb(30 24 12 / 0.14);
+    --font: 'Archivo', system-ui, sans-serif;
+    --serif: 'Newsreader', Georgia, serif;
+    color-scheme: light;
+  }
+  :root[data-theme='dark'] {
+    --bg: #0a0a0c;
+    --surface: #141418;
+    --ink: #eeeeea;
+    --ink-2: #b0b0b8;
+    --ink-3: #8a8a93;
+    --line: rgb(255 255 255 / 0.08);
+    --line-2: rgb(255 255 255 / 0.15);
+    --hi: rgb(255 255 255 / 0.07);
+    --house: #5fd6b0;
+    --glow: rgb(63 191 154 / 0.14);
+    --glow-2: rgb(240 185 140 / 0.08);
+    --dots: rgb(255 255 255 / 0.06);
+    --shadow: 0 1px 1px rgb(0 0 0 / 0.3), 0 8px 18px -10px rgb(0 0 0 / 0.7);
+    color-scheme: dark;
+  }
+
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 8.9pt; line-height: 1.45; font-stretch: 100%; }
+  a { color: inherit; text-decoration: none; }
+  ul { list-style: none; }
+
+  .page {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
+    padding: 13mm 14mm 11mm;
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    break-after: page;
+  }
+  .page:last-child { break-after: auto; }
+  /* The room's light: a jade glow and a warm one, over a faint dot grid. */
+  .page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(52% 34% at 4% 2%, var(--glow), transparent 72%),
+      radial-gradient(46% 30% at 100% 100%, var(--glow-2), transparent 72%);
+    pointer-events: none;
+  }
+  .page::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(var(--dots) 0.5pt, transparent 0.6pt);
+    background-size: 4.2mm 4.2mm;
+    -webkit-mask-image: radial-gradient(60% 40% at 18% 8%, #000, transparent 80%);
+    mask-image: radial-gradient(60% 40% at 18% 8%, #000, transparent 80%);
+    pointer-events: none;
+  }
+  .page > * { position: relative; z-index: 1; }
+
+  .label { font-size: 6.9pt; font-weight: 660; font-stretch: 86%; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+  .serif { font-family: var(--serif); font-style: italic; font-weight: 400; }
+  .glass {
+    background: var(--surface);
+    border-radius: 3.2mm;
+    box-shadow: 0 0 0 0.6pt var(--line), inset 0 0.8pt 0 var(--hi), var(--shadow);
+  }
+
+  /* ---- Header ---- */
+  .head { display: grid; grid-template-columns: 1fr 37mm; gap: 8mm; align-items: end; }
+  .name {
+    font-size: 40pt;
+    font-weight: 820;
+    font-stretch: 112%;
+    line-height: 0.88;
+    letter-spacing: -0.045em;
+  }
+  .name span { display: block; }
+  .role { margin-top: 4.2mm; font-size: 12.5pt; font-weight: 640; font-stretch: 96%; letter-spacing: -0.01em; }
+  .role .serif { font-size: 13.5pt; color: var(--ink-2); }
+  .lede { margin-top: 3.2mm; font-size: 9.6pt; line-height: 1.5; color: var(--ink-2); max-width: 118mm; }
+  .portrait {
+    width: 37mm;
+    aspect-ratio: 928 / 1151;
+    border-radius: 4.5mm;
+    overflow: hidden;
+    box-shadow: 0 0 0 0.6pt var(--line-2), var(--shadow);
+  }
+  .portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  :root[data-theme='dark'] .only-light, :root:not([data-theme='dark']) .only-dark { display: none; }
+
+  .contact {
+    margin-top: 5.5mm;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.6mm;
+  }
+  .contact a, .contact span {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.5mm;
+    padding: 1.3mm 2.8mm 1.3mm 2.3mm;
+    border-radius: 99px;
+    font-size: 8pt;
+    font-weight: 540;
+    background: var(--surface);
+    box-shadow: 0 0 0 0.6pt var(--line), inset 0 0.8pt 0 var(--hi);
+  }
+  .contact svg { width: 3.1mm; height: 3.1mm; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--ink-3); }
+  .contact .primary { background: var(--house); color: var(--bg); box-shadow: none; font-weight: 640; }
+  .contact .primary svg { color: currentColor; }
+
+  /* ---- Sections ---- */
+  .section { margin-top: 6.5mm; }
+  .section-head { display: flex; align-items: baseline; gap: 3mm; margin-bottom: 3mm; }
+  .section-head h2 { font-size: 14pt; font-weight: 790; font-stretch: 96%; letter-spacing: -0.035em; line-height: 1; }
+  .section-head .rule { flex: 1; height: 0.6pt; background: var(--line-2); transform: translateY(-1mm); }
+  .section-head .note { font-size: 8pt; color: var(--ink-3); }
+
+  /* What I bring: the portfolio's four strengths, in place of the old soft skills. */
+  .strengths { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.4mm; }
+  .strengths li { padding: 3mm 3.2mm 3.2mm; }
+  .strengths b { display: flex; align-items: center; gap: 1.6mm; font-size: 8.9pt; font-weight: 720; font-stretch: 94%; letter-spacing: -0.01em; }
+  .strengths b::before { content: ''; width: 1.6mm; height: 1.6mm; border-radius: 50%; background: var(--house); flex: none; }
+  .strengths span { display: block; margin-top: 1mm; font-size: 7.8pt; line-height: 1.4; color: var(--ink-2); }
+
+  /* ---- Experience: one continuous lane ---- */
+  .roles { position: relative; }
+  .role-item { display: grid; grid-template-columns: 27mm 1fr; gap: 5mm; position: relative; padding-bottom: 4.6mm; }
+  .role-item:last-child { padding-bottom: 0; }
+  .when { padding-top: 0.6mm; }
+  .when .dates { font-size: 7.6pt; font-weight: 620; font-stretch: 90%; color: var(--ink-2); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+  .when .via { margin-top: 0.8mm; font-size: 7.3pt; color: var(--ink-3); }
+  .what { position: relative; padding-left: 5mm; border-left: 0.6pt solid var(--line-2); }
+  .role-item:last-child .what { border-left-color: transparent; background: linear-gradient(var(--line-2), var(--line-2)) left top / 0.6pt 6mm no-repeat; }
+  .what::before {
+    content: '';
+    position: absolute;
+    left: -1.3mm;
+    top: 1.1mm;
+    width: 2.6mm;
+    height: 2.6mm;
+    border-radius: 50%;
+    background: var(--bg);
+    box-shadow: inset 0 0 0 0.8pt var(--ink-3);
+  }
+  .role-item.now .what::before { background: var(--house); box-shadow: 0 0 0 1.1mm color-mix(in oklab, var(--house) 22%, transparent); }
+  .what h3 { font-size: 10.6pt; font-weight: 740; font-stretch: 96%; letter-spacing: -0.015em; line-height: 1.2; }
+  .what .org { font-size: 8.6pt; color: var(--ink-2); margin-top: 0.4mm; }
+  .what .org b { font-weight: 640; color: var(--ink); }
+  .what .sum { margin-top: 1.5mm; font-size: 8.7pt; color: var(--ink-2); }
+  .points { margin-top: 1.6mm; display: grid; gap: 1.1mm; }
+  .points li { position: relative; padding-left: 3.6mm; }
+  .points li::before { content: ''; position: absolute; left: 0; top: 2mm; width: 1.8mm; height: 0.6pt; background: var(--ink-3); }
+  .points li b { font-weight: 660; }
+  .now-badge { display: inline-block; margin-left: 1.6mm; padding: 0.3mm 1.6mm; border-radius: 99px; font-size: 6.5pt; font-weight: 700; font-stretch: 90%; letter-spacing: 0.06em; text-transform: uppercase; color: var(--house); box-shadow: inset 0 0 0 0.6pt color-mix(in oklab, var(--house) 45%, transparent); vertical-align: 1.2pt; }
+
+  /* ---- Products ---- */
+  .products { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4mm; }
+  .product { padding: 3.2mm 3.6mm 3.4mm; display: grid; gap: 1.2mm; align-content: start; position: relative; overflow: hidden; }
+  .product::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 0.9mm; background: var(--accent); }
+  .product .top { display: flex; align-items: baseline; justify-content: space-between; gap: 2mm; }
+  .product .pname { font-size: 11pt; line-height: 1.1; color: var(--ink); }
+  .product .link { font-size: 7.2pt; font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .product p { font-size: 8.1pt; line-height: 1.42; color: var(--ink-2); }
+  .product .proof { font-size: 7.4pt; color: var(--ink-3); }
+  .product.wide { grid-column: span 2; }
+  .face-inter { font-family: 'Inter', var(--font); font-weight: 600; letter-spacing: -0.02em; }
+  .face-newsreader { font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: 12pt !important; }
+  .face-bricolage { font-family: 'Bricolage Grotesque', var(--font); font-weight: 700; letter-spacing: -0.02em; }
+  .face-martian { font-family: 'Martian Mono', monospace; font-weight: 400; font-size: 9.6pt !important; letter-spacing: 0.02em; }
+
+  /* ---- Toolset and background ---- */
+  .split { display: grid; grid-template-columns: 1.35fr 1fr; gap: 5mm; }
+  .toolset { padding: 3.4mm 4mm; }
+  .toolset div { display: grid; grid-template-columns: 26mm 1fr; gap: 3mm; padding-block: 1.25mm; border-top: 0.6pt solid var(--line); }
+  .toolset div:first-child { border-top: 0; padding-top: 0; }
+  .toolset div:last-child { padding-bottom: 0; }
+  .toolset dt { font-size: 7.6pt; font-weight: 660; font-stretch: 90%; color: var(--ink-3); padding-top: 0.2mm; }
+  .toolset dd { font-size: 8.3pt; }
+  .early { display: grid; gap: 2.2mm; }
+  .early li { display: grid; grid-template-columns: 17mm 1fr; gap: 2.5mm; align-items: baseline; }
+  .early .big { font-size: 15pt; font-weight: 800; font-stretch: 108%; letter-spacing: -0.04em; line-height: 1; }
+  .early .big small { display: block; margin-top: 0.8mm; font-size: 6.6pt; font-weight: 640; font-stretch: 86%; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  .early p { font-size: 8.2pt; color: var(--ink-2); }
+  .early-note { margin-top: 2.6mm; font-size: 8.4pt; color: var(--ink-2); }
+
+  /* ---- Footer ---- */
+  .foot { margin-top: auto; padding-top: 4mm; display: flex; justify-content: space-between; align-items: baseline; font-size: 7.4pt; color: var(--ink-3); }
+  .foot a { color: var(--house); font-weight: 620; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><path d="M12 7a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></symbol>
+  <symbol id="i-linkedin" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><path d="M2 9h4v12H2z"/><path d="M4 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.350 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></symbol>
+</svg>
+
+<!-- ============ Page 1 ============ -->
+<section class="page">
+  <header class="head">
+    <div>
+      <h1 class="name"><span>Felix</span><span>Andersson</span></h1>
+      <p class="role">Senior Frontend Engineer, <span class="serif">building interfaces people can trust.</span></p>
+      <p class="lede">
+        Nearly six years building frontend infrastructure other teams depend on: Cisco’s Magnetic design system, the React
+        component library behind the Meraki Dashboard, and the Dashboard’s most used pages. I enjoy complex, data-heavy
+        UIs and performance work most, and I own problems from spec to release. This year I also designed and shipped five
+        products of my own, end to end.
+      </p>
+    </div>
+    <div class="portrait">
+      <img class="only-light" src="portrait-dark.jpg" alt="Portrait of Felix Andersson" />
+      <img class="only-dark" src="portrait-light.jpg" alt="Portrait of Felix Andersson" />
+    </div>
+  </header>
+
+  <nav class="contact" aria-label="Contact">
+    <a class="primary" href="https://portfolio-felix-teal.vercel.app/"><svg><use href="#i-globe"/></svg>portfolio-felix-teal.vercel.app</a>
+    <a href="mailto:andersson.fx@gmail.com"><svg><use href="#i-mail"/></svg>andersson.fx@gmail.com</a>
+    <a href="tel:+59892227356"><svg><use href="#i-phone"/></svg>+598 92 227 356</a>
+    <a href="https://www.linkedin.com/in/felixandersson/"><svg><use href="#i-linkedin"/></svg>in/felixandersson</a>
+    <a href="https://github.com/Felichz"><svg><use href="#i-github"/></svg>github.com/Felichz</a>
+    <span><svg><use href="#i-pin"/></svg>Montevideo, Uruguay</span>
+  </nav>
+
+  <div class="section">
+    <div class="section-head"><h2>What I bring</h2><span class="rule"></span></div>
+    <ul class="strengths">
+      <li class="glass"><b>Design systems</b><span>React and TypeScript components every Meraki team builds on.</span></li>
+      <li class="glass"><b>Complex UI</b><span>Data-heavy dashboards, large tables, deeply nested forms.</span></li>
+      <li class="glass"><b>Ownership</b><span>A startup’s whole frontend, OKR epics, problem to release.</span></li>
+      <li class="glass"><b>AI-native tooling</b><span>The review pipeline my team runs on every push.</span></li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Experience</h2><span class="rule"></span><span class="note">All through Vairix, Montevideo</span></div>
+    <ol class="roles">
+      <li class="role-item now">
+        <div class="when"><p class="dates">Nov 2023 – Present</p><p class="via">Client: Cisco</p></div>
+        <div class="what">
+          <h3>Frontend Product Engineer <span class="now-badge">Now</span></h3>
+          <p class="org"><b>Cisco</b>, Magnetic component library</p>
+          <p class="sum">The proactive maintainer of the React and TypeScript library that Meraki teams build on. When leadership needs something, I take it from spec to release.</p>
+          <ul class="points">
+            <li>Non-blocking filtering for data tables with <b>100k+ rows</b>: the filter runs in short slices that yield to the browser, so typing stays at <b>60 FPS</b> and matches render as they arrive.</li>
+            <li>Complex, pixel-perfect data table features built to detailed design specs, the most demanding components in the library.</li>
+            <li>The team’s <b>AI engineering stack</b>, built in two to three months when AI adoption became an OKR: an AGENTS.md, coding skills with explicit boundaries, and a pre-push hook that runs a breaking-change scanner (designed from every hotfix and revert in the repo’s history) and a review orchestrator with five specialized reviewers. The team still runs it on every push.</li>
+            <li>Support and mentorship for the hundreds of developers who adopt the library, and the code review standards that keep it stable.</li>
+          </ul>
+        </div>
+      </li>
+      <li class="role-item">
+        <div class="when"><p class="dates">Aug 2022 – Nov 2023</p><p class="via">Client: Cisco Meraki</p></div>
+        <div class="what">
+          <h3>Frontend Engineer, Product Implementation</h3>
+          <p class="org"><b>Cisco Meraki</b>, Meraki Dashboard</p>
+          <ul class="points">
+            <li>Built the Dashboard’s most used data pages (Access Points, Switches, Clients): tables with filtering, sorting and export, tuned for the largest customers’ datasets.</li>
+            <li>Worked with Cisco’s design team to build and evolve Magnetic, keeping the experience consistent and accessible across the product.</li>
+            <li>Planned and broke down critical features so several developers could build them in parallel.</li>
+            <li>Moved teams from legacy UI components to Magnetic while keeping what they had working.</li>
+          </ul>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <footer class="foot"><span>Felix Andersson · Résumé</span><span>Case studies at <a href="https://portfolio-felix-teal.vercel.app/">portfolio-felix-teal.vercel.app</a></span></footer>
+</section>
+
+<!-- ============ Page 2 ============ -->
+<section class="page">
+  <div class="section" style="margin-top: 0">
+    <div class="section-head"><h2>Experience, earlier</h2><span class="rule"></span></div>
+    <ol class="roles">
+      <li class="role-item">
+        <div class="when"><p class="dates">Aug 2021 – Jul 2022</p><p class="via">Client: Cisco</p></div>
+        <div class="what">
+          <h3>Frontend Engineer, Design System</h3>
+          <p class="org"><b>Cisco</b>, Magnetic design system</p>
+          <p class="sum">Joined Magnetic while it had its first components and helped take it to its first production release.</p>
+          <ul class="points">
+            <li>Reusable React components with accessibility and performance as the bar, not an afterthought.</li>
+            <li>Detailed design specs turned into components, working directly with the design team.</li>
+            <li>Testing and QA for the library’s first production release.</li>
+          </ul>
+        </div>
+      </li>
+      <li class="role-item">
+        <div class="when"><p class="dates">Dec 2020 – May 2021</p><p class="via">Client: Device Magic</p></div>
+        <div class="what">
+          <h3>Frontend Engineer</h3>
+          <p class="org"><b>Device Magic</b></p>
+          <p class="sum">My first product. I took full ownership of the web frontend after the senior developer left, and took it to its MVP launch.</p>
+          <ul class="points">
+            <li>A dynamic forms engine: unlimited nested blocks, recursive state and real-time expression evaluation.</li>
+            <li>Large forms made <b>orders of magnitude faster</b> by reworking the algorithms and the rendering.</li>
+            <li>When the backend switched to an incompatible XML format, a client-side adapter that translated it on the fly instead of a rewrite.</li>
+            <li>The UI for a webcam barcode scanner: a focused scan area with real-time visual feedback.</li>
+          </ul>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Products I shipped this year</h2><span class="rule"></span><span class="note">Solo, end to end. English and Spanish, light and dark.</span></div>
+    <div class="products">
+      <a class="product glass" style="--accent: var(--a-katarch)" href="https://portfolio-felix-teal.vercel.app/work/katarch/">
+        <div class="top"><span class="pname face-inter">KatArch</span><span class="link">Case study ↗</span></div>
+        <p>An interactive course that replays, decision by decision, how the winning team of O’Reilly’s Fall 2020 Architecture Kata designed their system.</p>
+        <p class="proof">Astro, React islands, Motion · 6 chapters, ~80 steps, 49 animated diagram scenes</p>
+      </a>
+      <a class="product glass" style="--accent: var(--a-knowgraph)" href="https://portfolio-felix-teal.vercel.app/work/knowgraph/">
+        <div class="top"><span class="pname face-newsreader">KnowGraph</span><span class="link">Case study ↗</span></div>
+        <p>Senior React and Rails interview prep as a map of 142 concepts, each studied with an AI mentor that grades your explanation.</p>
+        <p class="proof">React 19, Node gateway, server-sent events · 146 commits, 10 ADRs, 33 Playwright tests</p>
+      </a>
+      <a class="product glass" style="--accent: var(--a-playsync)" href="https://portfolio-felix-teal.vercel.app/work/playsync/">
+        <div class="top"><span class="pname face-bricolage">PlaySync</span><span class="link">Case study ↗</span></div>
+        <p>Same video, same second, from two different time zones. Create a room, share a code, and watch YouTube together while you chat.</p>
+        <p class="proof">React 19, Node and WebSockets · server-owned clock, drift correction, no database</p>
+      </a>
+      <a class="product glass" style="--accent: var(--a-lifeui)" href="https://portfolio-felix-teal.vercel.app/work/lifeui/">
+        <div class="top"><span class="pname face-inter">LifeUI</span><span class="link">Case study ↗</span></div>
+        <p>A HUD for real life: plan the day in time blocks, run one activity at a time, and close each one with a single honest moment.</p>
+        <p class="proof">React, Radix UI, Tailwind tokens · 257 tests (Jest and Cypress), CI on every push</p>
+      </a>
+      <a class="product glass wide" style="--accent: var(--a-lolimpact)" href="https://portfolio-felix-teal.vercel.app/work/lolimpact/">
+        <div class="top"><span class="pname face-martian">LOL IMPACT</span><span class="link">Case study ↗</span></div>
+        <p>Which lane moved your League game, minute by minute, and how sure the model can be about it.</p>
+        <p class="proof">Svelte 5, Python and FastAPI, scikit-learn · six per-minute models, intervals on every number, no ML runtime in production</p>
+      </a>
+    </div>
+  </div>
+
+  <div class="section split">
+    <div>
+      <div class="section-head"><h2>Toolset</h2><span class="rule"></span></div>
+      <dl class="toolset glass">
+        <div><dt>Every day</dt><dd>React, TypeScript, CSS and HTML, design systems, accessibility, performance, Git</dd></div>
+        <div><dt>Also shipped with</dt><dd>Astro, Svelte 5, Vite, Radix UI, Tailwind, Motion, SVG data visualization</dd></div>
+        <div><dt>Testing</dt><dd>Jest, Testing Library, Playwright, Cypress, <span style="white-space:nowrap">axe-core</span></dd></div>
+        <div><dt>Server side</dt><dd>Node, WebSockets, Python and FastAPI, React on Ruby on Rails backends</dd></div>
+        <div><dt>AI in the loop</dt><dd>Claude Code, Codex, Cursor, agent skills and review pipelines, streaming LLM output</dd></div>
+      </dl>
+    </div>
+    <div>
+      <div class="section-head"><h2>How I got here</h2><span class="rule"></span></div>
+      <ul class="early">
+        <li><p class="big">8–9<small>years old</small></p><p>when I found Scratch, MIT’s programming language for kids.</p></li>
+        <li><p class="big">300k+<small>page views</small></p><p>on my site of offline flash games, from other kids.</p></li>
+        <li><p class="big">2×<small>top ten</small></p><p>in ANIMATE, Uruguay’s national animation contest.</p></li>
+      </ul>
+      <p class="early-note">I still care most about the same thing: <span class="serif">interfaces people can trust.</span></p>
+    </div>
+  </div>
+
+
+  <footer class="foot"><span>Felix Andersson · Résumé</span><span>Recordings and the engineering behind each product at <a href="https://portfolio-felix-teal.vercel.app/">portfolio-felix-teal.vercel.app</a></span></footer>
+</section>
+
+<style>
+  :root { --a-katarch: #C2410C; --a-knowgraph: #5B67D8; --a-playsync: #C2562A; --a-lifeui: #5854D6; --a-lolimpact: #C81E1E; }
+  :root[data-theme='dark'] { --a-katarch: #FF7A45; --a-knowgraph: #909CF5; --a-playsync: #FFB08A; --a-lifeui: #7C79F0; --a-lolimpact: #E5484D; }
+</style>
+</body>
+</html>
