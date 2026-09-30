@@ -53,7 +53,7 @@ Visitors come with a job description in mind and compare several candidates in t
   - KatArch (`katarch`) https://katarch.vercel.app, github.com/Felichz/katarch
   - LifeUI (`life-ui`) https://life-ui-one.vercel.app, github.com/Felichz/life-ui
   - PlaySync (`rave2`) https://syncplay-avtu.onrender.com, github.com/Felichz/PlaySync
-- Portrait photo supplied by the author (2026-09-29), cropped, in `src/assets/portrait/`: used once, in the intro. No avatars or small crops (author's choice).
+- Portrait photos supplied by the author (2026-09-30), a dark and a white studio shot, in `src/assets/portrait/`: used once, in the intro, printed in the opposite edition like the product captures. No avatars or small crops (author's choice).
 - Career narratives in the author's own words (story-arsenal.md): proactive maintainer of the component library, OKR epics, AI engineering stack, Device Magic ownership and the XML adapter. The 100k-row filtering is one example among many; do not lead with it (author's choice).
 - Device Magic is shown as Dec 2020 to Jul 2021 so the timeline has no gap before Cisco (author's instruction; the résumé PDF says 05/2021).
 - Early history (old portfolio `portfolio-old/`): Scratch from age 8 or 9, a flash-games site with 300k+ page views from other kids, top ten twice in Uruguay's national ANIMATE animation contest.

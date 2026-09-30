@@ -1,7 +1,8 @@
 ---
 import { Picture } from 'astro:assets';
 import Icon from './Icon.astro';
-import portrait from '../assets/portrait/felix-portrait.webp';
+import portraitDark from '../assets/portrait/felix-portrait-dark.webp';
+import portraitLight from '../assets/portrait/felix-portrait-light.webp';
 import { experience } from '../data/career';
 
 const first = 'Felix';
@@ -55,15 +56,27 @@ const strengths = [
 
     <figure class="portrait" data-reveal style="--d:2">
       <div class="portrait-card" data-tilt="7">
+        {/* Like the product captures, the portrait prints in the opposite edition: the dark studio shot on the
+            light site, the white one on the dark site. Both stay lazy, so only the visible one downloads. */}
         <Picture
-          src={portrait}
-          alt="Felix Andersson, smiling, in a striped linen shirt against a white wall."
+          src={portraitDark}
+          alt="Felix Andersson, smiling, in a striped linen shirt against a dark studio backdrop."
           formats={['avif', 'webp']}
-          widths={[360, 540, 720, 1000]}
+          widths={[360, 540, 720, 928]}
           sizes="(min-width: 761px) 34vw, 80vw"
-          loading="eager"
+          loading="lazy"
           fetchpriority="high"
-          class="portrait-img"
+          class="portrait-img only-light"
+        />
+        <Picture
+          src={portraitLight}
+          alt="Felix Andersson, smiling, in a striped linen shirt against a white studio backdrop."
+          formats={['avif', 'webp']}
+          widths={[360, 540, 720, 928]}
+          sizes="(min-width: 761px) 34vw, 80vw"
+          loading="lazy"
+          fetchpriority="high"
+          class="portrait-img only-dark"
         />
         <span class="portrait-sheen" aria-hidden="true"></span>
         <figcaption class="portrait-cap">
@@ -156,14 +169,14 @@ const strengths = [
   .portrait {
     position: relative;
     justify-self: center;
-    width: min(100%, calc(min(80cqh, 720px) * 0.8063));
+    width: min(100%, calc(min(80cqh, 720px) * 0.8062));
     perspective: 1200px;
   }
   .portrait-card {
     --rx: 0deg;
     --ry: 0deg;
     position: relative;
-    aspect-ratio: 1024 / 1270;
+    aspect-ratio: 928 / 1151;
     border-radius: 28px;
     overflow: hidden;
     background: var(--bg-2);
@@ -175,7 +188,6 @@ const strengths = [
   .portrait-card[data-tilting] { transition: transform 0.15s linear; }
   .portrait-card :global(.portrait-img),
   .portrait-card :global(.portrait-img img) { width: 100%; height: 100%; object-fit: cover; }
-  :global(:root[data-theme='dark']) .portrait-card :global(img) { filter: brightness(0.9) contrast(1.04) saturate(0.95); }
   .portrait-card::after {
     content: '';
     position: absolute;

@@ -93,7 +93,7 @@ npm run preview  # serve dist/
 | `src/scripts/fx.ts` | Pointer spotlight and tilt. |
 | `src/components/Plate.astro` | Theme-aware screenshot in a browser window, with the recording player. |
 | `src/styles/global.css` | Tokens for both editions, ambient layers, shell, surfaces, buttons, plates, pins. |
-| `src/assets/portrait/` | The portrait. |
+| `src/assets/portrait/` | The portrait, a dark and a white studio shot (the site shows the opposite one). |
 | `src/assets/shots/` | Product screenshots (WebP, 2x), as `name-light` / `name-dark`. |
 | `src/assets/motion/` | Screen recordings (H.264 MP4, 1920 wide), as `name-light` / `name-dark`. |
 | `docs/screenshots/` | The images in this README. |
