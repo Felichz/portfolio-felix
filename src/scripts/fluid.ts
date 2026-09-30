@@ -28,13 +28,13 @@ export function initFluid(): boolean {
   const SIM = 128; // velocity cells on the short side
   const INK_SCALE = 0.5; // ink texels per CSS pixel
   const PRESSURE_STEPS = 20;
-  const CURL = 6; // how much the trails curl; low, so they drift instead of swirling
-  const VELOCITY_FADE = 2.6; // per second; high, so motion dies out fast and the ink feels thick
-  const INK_FADE = 0.75; // per second; ink lingers about six seconds after the last stir
+  const CURL = 12; // how much the trails curl
+  const VELOCITY_FADE = 1.5; // per second; how fast motion dies out, higher feels thicker
+  const INK_FADE = 0.9; // per second; ink lingers about five seconds after the last stir
   const PRESSURE_KEEP = 0.8;
-  const FORCE = 1700;
-  const RADIUS = 0.0032;
-  const IDLE_MS = 6500; // stop simulating this long after the last stir
+  const FORCE = 3000;
+  const RADIUS = 0.0027;
+  const IDLE_MS = 6000; // stop simulating this long after the last stir
 
   // ---------- Shaders ----------
   const vertex = `#version 300 es
@@ -331,8 +331,8 @@ export function initFluid(): boolean {
     run(P, null, [1 / inkW, 1 / inkH], () => {
       bind(P, 'uTexture', ink.read);
       gl.uniform1f(P.u.strength!, dark ? 1.2 : 1);
-      gl.uniform1f(P.u.cover!, dark ? 0.42 : 0.26);
-      gl.uniform1f(P.u.shade!, dark ? 1 : 0.62);
+      gl.uniform1f(P.u.cover!, dark ? 0.45 : 0.4);
+      gl.uniform1f(P.u.shade!, dark ? 1 : 0.52);
     });
   };
 
@@ -393,7 +393,7 @@ export function initFluid(): boolean {
         // Drift between the two room colors, and put down more ink the faster the stroke.
         const k = 0.5 + 0.5 * Math.sin(now / 1400);
         const speed = Math.min(1, Math.hypot(dx, dy) * 40);
-        const amount = (dark ? 0.16 : 0.2) * (0.35 + 0.65 * speed) * (1 - 0.9 * quiet);
+        const amount = (dark ? 0.19 : 0.3) * (0.35 + 0.65 * speed) * (1 - 0.9 * quiet);
         const c = glow.map((g, i) => (g * (1 - k) + glow2[i]! * k) * amount) as [number, number, number];
         splat(pointer.x / w, 1 - pointer.y / h, dx * FORCE, -dy * FORCE, c);
       }
