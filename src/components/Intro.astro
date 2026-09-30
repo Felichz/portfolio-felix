@@ -121,7 +121,7 @@ const strengths = [
     font-weight: var(--wt, 820);
     transition: font-stretch 0.6s var(--ease-out), font-weight 0.6s var(--ease-out);
   }
-  .line:last-child .ch:last-child { background: linear-gradient(180deg, var(--ink) 40%, color-mix(in oklab, var(--house) 70%, var(--ink))); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .line:last-child .ch:last-child { color: var(--ink); }
   :global(.js) .ch { opacity: 0; }
   :global(.js) .panel[data-seen] .ch {
     opacity: 1;

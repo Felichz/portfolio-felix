@@ -49,8 +49,8 @@ export function initFx() {
 
   // Magnetic buttons, through the independent `translate` property so hover transforms still apply.
   document.querySelectorAll<HTMLElement>('.btn, .icon-btn').forEach((el) => {
-    const pull = el.classList.contains('icon-btn') ? 0.4 : 0.22;
-    const max = 6;
+    const pull = el.classList.contains('icon-btn') ? 0.25 : 0.12;
+    const max = 3;
     el.addEventListener('pointermove', (e) => {
       if (e.pointerType !== 'mouse' || !fine.matches || reduce.matches) return;
       const r = el.getBoundingClientRect();
