@@ -8,6 +8,14 @@
 <script>
   // One source, two editions: resume.html#dark prints the dark one.
   if (location.hash === '#dark') document.documentElement.dataset.theme = 'dark';
+  // The toggle links to the other edition on the site, with the icon the site shows for that switch.
+  addEventListener('DOMContentLoaded', () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    const a = document.querySelector('[data-theme-link]');
+    a.href = `https://portfolio-felix-teal.vercel.app/felix-andersson-resume${dark ? '' : '-dark'}.pdf`;
+    a.setAttribute('aria-label', `Open this résumé in the ${dark ? 'light' : 'dark'} theme`);
+    a.querySelector('use').setAttribute('href', dark ? '#i-sun' : '#i-moon');
+  });
 </script>
 <style>
   @font-face { font-family: 'Archivo'; src: url('../public/fonts/archivo-wdth.woff2') format('woff2-variations'); font-weight: 100 900; font-stretch: 62% 125%; }
@@ -88,6 +96,22 @@
     border-radius: 3.2mm;
     border: 0.6pt solid var(--line-2);
   }
+
+  /* The portfolio's theme toggle: a link to this résumé in the other edition. */
+  .theme-toggle {
+    position: absolute !important;
+    top: 5mm;
+    right: 14mm;
+    display: grid;
+    place-items: center;
+    width: 9mm;
+    height: 9mm;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 0.6pt solid var(--line-2);
+    color: var(--ink);
+  }
+  .theme-toggle svg { width: 4mm; height: 4mm; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   /* ---- Header ---- */
   .head { display: grid; grid-template-columns: 1fr 52mm; gap: 7mm; align-items: end; }
@@ -220,11 +244,14 @@
   <symbol id="i-linkedin" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><path d="M2 9h4v12H2z"/><path d="M4 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4"/></symbol>
   <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.350 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
   <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></symbol>
 </svg>
 
 <!-- ============ Page 1 ============ -->
 <section class="page">
+  <a class="theme-toggle" data-theme-link aria-label="Open this résumé in the other theme"><svg><use /></svg></a>
   <div class="glow glow-a"></div><div class="glow glow-b"></div>
   <header class="head">
     <div>
