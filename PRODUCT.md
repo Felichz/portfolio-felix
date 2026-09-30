@@ -39,7 +39,7 @@ Visitors come with a job description in mind and compare several candidates in t
 
 ## Brand Commitments
 
-- Name: Felix Andersson. Handle: Felichz. Existing domain: anderssonfelix.com.
+- Name: Felix Andersson. Handle: Felichz. Live at portfolio-felix-teal.vercel.app.
 - Voice (binding, from the author's own voice rules): direct, technically specific, understated. Name the metric and the constraint. No self-proclamation. No em-dashes anywhere in copy. Banned phrases include "passionate about", "proven track record", "results-driven", "team player", "thrilled", "delve", "testament to", "leveraging", "fast-paced".
 - Contact: andersson.fx@gmail.com, linkedin.com/in/felixandersson, github.com/Felichz. Phone number is not published on the site.
 
