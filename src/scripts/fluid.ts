@@ -28,13 +28,13 @@ export function initFluid(): boolean {
   const SIM = 128; // velocity cells on the short side
   const INK_SCALE = 0.5; // ink texels per CSS pixel
   const PRESSURE_STEPS = 20;
-  const CURL = 22; // how much the trails curl
-  const VELOCITY_FADE = 0.35;
-  const INK_FADE = 1.1; // per second; ink is gone about four seconds after the last stir
+  const CURL = 6; // how much the trails curl; low, so they drift instead of swirling
+  const VELOCITY_FADE = 2.6; // per second; high, so motion dies out fast and the ink feels thick
+  const INK_FADE = 0.75; // per second; ink lingers about six seconds after the last stir
   const PRESSURE_KEEP = 0.8;
-  const FORCE = 5200;
-  const RADIUS = 0.0022;
-  const IDLE_MS = 4500; // stop simulating this long after the last stir
+  const FORCE = 1700;
+  const RADIUS = 0.0032;
+  const IDLE_MS = 6500; // stop simulating this long after the last stir
 
   // ---------- Shaders ----------
   const vertex = `#version 300 es
