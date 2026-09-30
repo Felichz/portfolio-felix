@@ -147,6 +147,7 @@ All off on touch screens and under reduced motion; none of it runs when the poin
 
 - Section contents reveal once, staggered, the first time a section is active.
 - The ambient light changes color over 0.9s through registered custom properties, transitioned on the ambient layer only so nothing else restyles.
+- A theme switch never restarts a recording or the showcase countdown: the other edition's video seeks to where the visible one will be once it starts, and the reveal waits only for that frame (at most 200ms), see `src/scripts/handoff.ts`. Recordings are encoded with a keyframe every second so that seek stays around 60ms.
 - Every animation has a reduced-motion path: no tilt, no letter swell, no autoplay, no theme reveal, instant section moves.
 
 ## Do's and Don'ts

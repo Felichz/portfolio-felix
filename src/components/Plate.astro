@@ -126,12 +126,13 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
 </style>
 
 <script>
+  import { editions, followThemeSwitches } from '../scripts/handoff';
+
   // Recordings never load until they play (preload="none"), and only the visible edition plays.
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const hover = matchMedia('(hover: hover) and (pointer: fine)');
 
-  const clipOf = (plate: HTMLElement) =>
-    [...plate.querySelectorAll<HTMLVideoElement>('.plate-motion video')].find((v) => getComputedStyle(v).display !== 'none');
+  const clipOf = (plate: HTMLElement) => editions(plate).from;
 
   function play(plate: HTMLElement, loop: boolean) {
     const v = clipOf(plate);
@@ -209,11 +210,11 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
     });
   });
 
-  // A theme switch swaps editions: settle every recording on its still.
-  new MutationObserver(() => {
-    document.querySelectorAll<HTMLElement>('.plate[data-motion]:not([data-motion="manual"])').forEach((plate) => {
-      const s = plate.dataset.state;
-      if (s === 'playing' || s === 'loading') stop(plate, plate.dataset.motion === 'lead' ? 'done' : 'idle');
-    });
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  // A theme switch hands every running recording to the other edition's video, on the same frame.
+  followThemeSwitches(
+    () => [...document.querySelectorAll<HTMLElement>('.plate[data-motion]:not([data-motion="manual"])')],
+    (plate, to) => {
+      if (plate.dataset.state === 'loading') to.addEventListener('playing', () => plate.dataset.state === 'loading' && (plate.dataset.state = 'playing'), { once: true });
+    },
+  );
 </script>

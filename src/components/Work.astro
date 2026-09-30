@@ -424,6 +424,8 @@ const total = String(projects.length).padStart(2, '0');
 </style>
 
 <script>
+  import { editions, followThemeSwitches } from '../scripts/handoff';
+
   const root = document.querySelector<HTMLElement>('[data-work]');
   if (root) {
     const slides = [...root.querySelectorAll<HTMLElement>('[data-slide]')];
@@ -445,8 +447,10 @@ const total = String(projects.length).padStart(2, '0');
     let raf = 0;
 
     const plateOf = (i: number) => slides[i]?.querySelector<HTMLElement>('.plate') ?? null;
-    const clipOf = (i: number) =>
-      [...(plateOf(i)?.querySelectorAll<HTMLVideoElement>('.plate-motion video') ?? [])].find((v) => getComputedStyle(v).display !== 'none');
+    const clipOf = (i: number) => {
+      const plate = plateOf(i);
+      return plate ? editions(plate).from : undefined;
+    };
 
     const rest = (i: number) => {
       const plate = plateOf(i);
@@ -578,13 +582,15 @@ const total = String(projects.length).padStart(2, '0');
       const j = slides.findIndex((s) => s.dataset.id === sub);
       if (j >= 0) select(j);
     });
-    // A theme switch shows the other edition's recording: start it over.
-    new MutationObserver(() => {
-      if (!active) return;
-      rest(index);
-      setTimeout(roll, 520);
-      elapsed = 0;
-    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    // A theme switch hands the recording to the other edition's video on the same frame; the countdown
+    // doesn't notice.
+    followThemeSwitches(
+      () => (plateOf(index) && active ? [plateOf(index)!] : []),
+      (plate, to) => {
+        to.onended = () => (plate.dataset.state = 'done');
+        if (plate.dataset.state === 'loading') to.addEventListener('playing', () => plate.dataset.state === 'loading' && (plate.dataset.state = 'playing'), { once: true });
+      },
+    );
 
     setAuto(auto);
     index = -1;
