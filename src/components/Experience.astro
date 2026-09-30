@@ -125,6 +125,8 @@ const axisEnd = nowM + 3;
 const at = (v: number) => ((v - axisStart) / (axisEnd - axisStart)) * 100;
 const years = [2021, 2022, 2023, 2024, 2025, 2026];
 const barEnd = (i: number) => (roles[i + 1] ? m(roles[i + 1]!.start) : nowM);
+// What the timeline scrubber needs to name a month and the role it falls in.
+const scrub = JSON.stringify({ start: axisStart, end: axisEnd, now: nowM, roles: roles.map((r, i) => ({ name: r.bar, s: m(r.start), e: barEnd(i) })) });
 
 const monthName = (mo: number) => new Date(2000, mo - 1, 1).toLocaleString('en-US', { month: 'short' });
 const when = (r: Role) => `${monthName(r.start[1])} ${r.start[0]} to ${r.end ? `${monthName(r.end[1])} ${r.end[0]}` : 'now'}`;
@@ -151,8 +153,9 @@ const current = roles.findIndex((r) => r.id === 'library');
       <a class="btn" href="/felix-andersson-resume.pdf" target="_blank" rel="noopener"><Icon name="download" />Résumé, PDF</a>
     </header>
 
-    <div class="gantt glass" data-reveal style="--d:1">
+    <div class="gantt glass" data-reveal style="--d:1" data-scrub={scrub}>
       <div class="gantt-grid" aria-hidden="true">
+        <span class="scrub"><b data-scrub-label></b></span>
         {years.map((y) => <span class="gantt-year" style={`--at:${at(m([y, 1]))}%`}>{y}</span>)}
         <span class="gantt-now" style={`--at:${at(nowM)}%`}><b>Now</b></span>
       </div>
@@ -304,6 +307,35 @@ const current = roles.findIndex((r) => r.id === 'library');
   }
   .gantt-row { position: relative; height: clamp(40px, 6cqh, 52px); }
 
+  /* The scrubber: a hairline that follows the pointer across the years, naming the month and the role. */
+  .scrub {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    border-left: 1px solid var(--ink);
+    opacity: 0;
+    transform: translateX(var(--sx, 0px));
+    transition: opacity 0.25s var(--ease-out);
+  }
+  .gantt[data-scrubbing] .scrub { opacity: 0.9; }
+  .scrub b {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    transform: translateX(var(--shift, -50%));
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
   .bar {
     position: absolute;
     top: 0;
@@ -427,6 +459,30 @@ const current = roles.findIndex((r) => r.id === 'library');
 
 <script>
   const root = document.querySelector<HTMLElement>('[data-exp]');
+  const gantt = root?.querySelector<HTMLElement>('[data-scrub]');
+  const fine = matchMedia('(hover: hover) and (pointer: fine)');
+  if (gantt) {
+    const data = JSON.parse(gantt.dataset.scrub!) as { start: number; end: number; now: number; roles: { name: string; s: number; e: number }[] };
+    const grid = gantt.querySelector<HTMLElement>('.gantt-grid')!;
+    const line = gantt.querySelector<HTMLElement>('.scrub')!;
+    const label = gantt.querySelector<HTMLElement>('[data-scrub-label]')!;
+    const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' });
+    gantt.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse' || !fine.matches) return;
+      const r = grid.getBoundingClientRect();
+      const f = (e.clientX - r.left) / r.width;
+      const month = data.start + f * (data.end - data.start);
+      if (f < 0 || f > 1 || month > data.now) return gantt.removeAttribute('data-scrubbing');
+      const role = data.roles.find((x) => month >= x.s && month < x.e);
+      const date = fmt.format(new Date(Math.floor(month / 12), Math.floor(month % 12), 1));
+      label.textContent = role ? `${date} · ${role.name}` : date;
+      line.style.setProperty('--sx', `${e.clientX - r.left}px`);
+      // Keep the label inside the timeline near its edges.
+      line.style.setProperty('--shift', f < 0.12 ? '0%' : f > 0.88 ? '-100%' : '-50%');
+      gantt.setAttribute('data-scrubbing', '');
+    });
+    gantt.addEventListener('pointerleave', () => gantt.removeAttribute('data-scrubbing'));
+  }
   if (root) {
     const bars = [...root.querySelectorAll<HTMLButtonElement>('[data-pick]')];
     const roles = [...root.querySelectorAll<HTMLElement>('[data-role]')];

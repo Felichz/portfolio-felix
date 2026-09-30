@@ -60,6 +60,7 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 - One navigation model for wheel, trackpad, touch, keys, tabs and links. A wheel gesture moves one section, unless it started by scrolling something inside the section.
 - Deep links (`/#experience`, `/#work/lifeui`) open on their section and product before the first paint.
 - The name is set one glyph at a time along Archivo's width axis: letters widen into place on arrival and swell toward the pointer.
+- A cursor light: a soft pool of color follows the pointer and brings up the dot grid under it, with a lens bulge. Buttons are magnetic, the portrait and the showcase window tilt toward the pointer, and a scrubber on the Experience timeline names the month and role under the cursor.
 - The room light follows the content: each section, and each product in the showcase, sets the colors of the ambient glow.
 - The showcase screenshot and product name morph into the case study header (cross-document view transitions).
 - Kept cheap to render: no backdrop blur, static ambient layers. The theme toggle reveals the other edition in a circle from the button, from a single snapshot with transitions suspended.

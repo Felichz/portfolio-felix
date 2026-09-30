@@ -2,6 +2,7 @@
  * Small pointer effects, all opt-in by attribute and all off under reduced motion or on touch:
  * - `.spot`: a soft light that follows the pointer across a card (--mx / --my).
  * - `[data-tilt]`: a gentle 3D tilt toward the pointer, with a sheen position (--sx / --sy).
+ * - Buttons are magnetic: they lean a few pixels toward the pointer while it's over them.
  */
 export function initFx() {
   const fine = matchMedia('(hover: hover) and (pointer: fine)');
@@ -44,5 +45,19 @@ export function initFx() {
       el.style.setProperty('--ry', '0deg');
       el.removeAttribute('data-tilting');
     });
+  });
+
+  // Magnetic buttons, through the independent `translate` property so hover transforms still apply.
+  document.querySelectorAll<HTMLElement>('.btn, .icon-btn').forEach((el) => {
+    const pull = el.classList.contains('icon-btn') ? 0.4 : 0.22;
+    const max = 6;
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse' || !fine.matches || reduce.matches) return;
+      const r = el.getBoundingClientRect();
+      const x = Math.max(-max, Math.min(max, (e.clientX - (r.left + r.width / 2)) * pull));
+      const y = Math.max(-max, Math.min(max, (e.clientY - (r.top + r.height / 2)) * pull * 1.4));
+      el.style.translate = `${x.toFixed(1)}px ${y.toFixed(1)}px`;
+    });
+    el.addEventListener('pointerleave', () => (el.style.translate = ''));
   });
 }
