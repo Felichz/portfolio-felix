@@ -28,10 +28,9 @@
     --line-2: rgb(17 17 20 / 0.16);
     --hi: rgb(255 255 255 / 0.95);
     --house: #0d7a5f;
-    --glow: rgb(63 191 154 / 0.2);
-    --glow-2: rgb(240 185 140 / 0.22);
-    --dots: rgb(17 17 20 / 0.07);
-    --shadow: 0 1px 1px rgb(30 24 12 / 0.04), 0 6px 16px -8px rgb(30 24 12 / 0.14);
+    --glow: color-mix(in srgb, #3fbf9a 20%, #f2f1ed);
+    --glow-2: color-mix(in srgb, #f0b98c 22%, #f2f1ed);
+    --dot: #111114;
     --font: 'Archivo', system-ui, sans-serif;
     --serif: 'Newsreader', Georgia, serif;
     color-scheme: light;
@@ -46,10 +45,9 @@
     --line-2: rgb(255 255 255 / 0.15);
     --hi: rgb(255 255 255 / 0.07);
     --house: #5fd6b0;
-    --glow: rgb(63 191 154 / 0.14);
-    --glow-2: rgb(240 185 140 / 0.08);
-    --dots: rgb(255 255 255 / 0.06);
-    --shadow: 0 1px 1px rgb(0 0 0 / 0.3), 0 8px 18px -10px rgb(0 0 0 / 0.7);
+    --glow: color-mix(in srgb, #3fbf9a 14%, #0a0a0c);
+    --glow-2: color-mix(in srgb, #f0b98c 8%, #0a0a0c);
+    --dot: #ffffff;
     color-scheme: dark;
   }
 
@@ -72,38 +70,27 @@
     break-after: page;
   }
   .page:last-child { break-after: auto; }
-  /* The room's light: a jade glow and a warm one, over a faint dot grid. */
-  .page::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(52% 34% at 4% 2%, var(--glow), transparent 72%),
-      radial-gradient(46% 30% at 100% 100%, var(--glow-2), transparent 72%);
-    pointer-events: none;
-  }
-  .page::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(var(--dots) 0.5pt, transparent 0.6pt);
-    background-size: 4.2mm 4.2mm;
-    -webkit-mask-image: radial-gradient(60% 40% at 18% 8%, #000, transparent 80%);
-    mask-image: radial-gradient(60% 40% at 18% 8%, #000, transparent 80%);
-    pointer-events: none;
-  }
+  /* The room's light: a jade glow top left and a warm one bottom right. Both fade to the page color
+     itself instead of to transparent, so the PDF gets two plain gradients and no soft masks. */
+  .glow { position: absolute; z-index: 0; pointer-events: none; }
+  .glow-a { left: -70mm; top: -62mm; width: 190mm; height: 150mm; background: radial-gradient(closest-side, var(--glow), var(--bg)); }
+  .glow-b { right: -80mm; bottom: -70mm; width: 190mm; height: 150mm; background: radial-gradient(closest-side, var(--glow-2), var(--bg)); }
+  /* The dot grid, drawn as real circles by the script below (a CSS pattern with a mask prints as
+     a page-sized image with a soft mask, which PDF viewers redraw slowly). */
+  .dots { position: absolute; left: 0; top: 0; width: 210mm; height: 297mm; z-index: 0; pointer-events: none; fill: var(--dot); }
   .page > * { position: relative; z-index: 1; }
+  .page > .glow, .page > .dots { position: absolute; z-index: 0; }
 
   .label { font-size: 6.9pt; font-weight: 660; font-stretch: 86%; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
   .serif { font-family: var(--serif); font-style: italic; font-weight: 400; }
   .glass {
     background: var(--surface);
     border-radius: 3.2mm;
-    box-shadow: 0 0 0 0.6pt var(--line), inset 0 0.8pt 0 var(--hi), var(--shadow);
+    border: 0.6pt solid var(--line-2);
   }
 
   /* ---- Header ---- */
-  .head { display: grid; grid-template-columns: 1fr 37mm; gap: 8mm; align-items: end; }
+  .head { display: grid; grid-template-columns: 1fr 52mm; gap: 7mm; align-items: end; }
   .name {
     font-size: 40pt;
     font-weight: 820;
@@ -116,11 +103,11 @@
   .role .serif { font-size: 13.5pt; color: var(--ink-2); }
   .lede { margin-top: 3.2mm; font-size: 9.6pt; line-height: 1.5; color: var(--ink-2); max-width: 118mm; }
   .portrait {
-    width: 37mm;
+    width: 52mm;
     aspect-ratio: 928 / 1151;
     border-radius: 4.5mm;
     overflow: hidden;
-    box-shadow: 0 0 0 0.6pt var(--line-2), var(--shadow);
+    border: 0.6pt solid var(--line-2);
   }
   .portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
   :root[data-theme='dark'] .only-light, :root:not([data-theme='dark']) .only-dark { display: none; }
@@ -140,10 +127,10 @@
     font-size: 8pt;
     font-weight: 540;
     background: var(--surface);
-    box-shadow: 0 0 0 0.6pt var(--line), inset 0 0.8pt 0 var(--hi);
+    border: 0.6pt solid var(--line-2);
   }
   .contact svg { width: 3.1mm; height: 3.1mm; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--ink-3); }
-  .contact .primary { background: var(--house); color: var(--bg); box-shadow: none; font-weight: 640; }
+  .contact .primary { background: var(--house); color: var(--bg); border-color: var(--house); font-weight: 640; }
   .contact .primary svg { color: currentColor; }
 
   /* ---- Sections ---- */
@@ -178,9 +165,9 @@
     height: 2.6mm;
     border-radius: 50%;
     background: var(--bg);
-    box-shadow: inset 0 0 0 0.8pt var(--ink-3);
+    border: 0.8pt solid var(--ink-3);
   }
-  .role-item.now .what::before { background: var(--house); box-shadow: 0 0 0 1.1mm color-mix(in oklab, var(--house) 22%, transparent); }
+  .role-item.now .what::before { background: var(--house); border-color: var(--house); outline: 1.1mm solid color-mix(in srgb, var(--house) 22%, var(--bg)); }
   .what h3 { font-size: 10.6pt; font-weight: 740; font-stretch: 96%; letter-spacing: -0.015em; line-height: 1.2; }
   .what .org { font-size: 8.6pt; color: var(--ink-2); margin-top: 0.4mm; }
   .what .org b { font-weight: 640; color: var(--ink); }
@@ -189,12 +176,11 @@
   .points li { position: relative; padding-left: 3.6mm; }
   .points li::before { content: ''; position: absolute; left: 0; top: 2mm; width: 1.8mm; height: 0.6pt; background: var(--ink-3); }
   .points li b { font-weight: 660; }
-  .now-badge { display: inline-block; margin-left: 1.6mm; padding: 0.3mm 1.6mm; border-radius: 99px; font-size: 6.5pt; font-weight: 700; font-stretch: 90%; letter-spacing: 0.06em; text-transform: uppercase; color: var(--house); box-shadow: inset 0 0 0 0.6pt color-mix(in oklab, var(--house) 45%, transparent); vertical-align: 1.2pt; }
+  .now-badge { display: inline-block; margin-left: 1.6mm; padding: 0.3mm 1.6mm; border-radius: 99px; font-size: 6.5pt; font-weight: 700; font-stretch: 90%; letter-spacing: 0.06em; text-transform: uppercase; color: var(--house); border: 0.6pt solid color-mix(in srgb, var(--house) 45%, var(--bg)); vertical-align: 1.2pt; }
 
   /* ---- Products ---- */
   .products { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4mm; }
-  .product { padding: 3.2mm 3.6mm 3.4mm; display: grid; gap: 1.2mm; align-content: start; position: relative; overflow: hidden; }
-  .product::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 0.9mm; background: var(--accent); }
+  .product { border-left: 0.9mm solid var(--accent) !important; padding: 3.2mm 3.6mm 3.4mm; display: grid; gap: 1.2mm; align-content: start; position: relative; overflow: hidden; }
   .product .top { display: flex; align-items: baseline; justify-content: space-between; gap: 2mm; }
   .product .pname { font-size: 11pt; line-height: 1.1; color: var(--ink); }
   .product .link { font-size: 7.2pt; font-weight: 600; color: var(--accent); white-space: nowrap; }
@@ -239,6 +225,7 @@
 
 <!-- ============ Page 1 ============ -->
 <section class="page">
+  <div class="glow glow-a"></div><div class="glow glow-b"></div>
   <header class="head">
     <div>
       <h1 class="name"><span>Felix</span><span>Andersson</span></h1>
@@ -246,7 +233,7 @@
       <p class="lede">
         Nearly six years building frontend infrastructure other teams depend on: Cisco’s Magnetic design system, the React
         component library behind the Meraki Dashboard, and the Dashboard’s most used pages. I enjoy complex, data-heavy
-        UIs and performance work most, and I own problems from spec to release. This year I also designed and shipped five
+        UIs and performance work most, and I own problems from spec to release. Lately I’ve also been designing and building
         products of my own, end to end.
       </p>
     </div>
@@ -313,6 +300,7 @@
 
 <!-- ============ Page 2 ============ -->
 <section class="page">
+  <div class="glow glow-a"></div><div class="glow glow-b"></div>
   <div class="section" style="margin-top: 0">
     <div class="section-head"><h2>Experience, earlier</h2><span class="rule"></span></div>
     <ol class="roles">
@@ -347,7 +335,7 @@
   </div>
 
   <div class="section">
-    <div class="section-head"><h2>Products I shipped this year</h2><span class="rule"></span><span class="note">Solo, end to end. English and Spanish, light and dark.</span></div>
+    <div class="section-head"><h2>Recent personal products</h2><span class="rule"></span><span class="note">A few examples, each designed and built solo, end to end.</span></div>
     <div class="products">
       <a class="product glass" style="--accent: var(--a-katarch)" href="https://portfolio-felix-teal.vercel.app/work/katarch/">
         <div class="top"><span class="pname face-inter">KatArch</span><span class="link">Case study ↗</span></div>
@@ -407,5 +395,24 @@
   :root { --a-katarch: #C2410C; --a-knowgraph: #5B67D8; --a-playsync: #C2562A; --a-lifeui: #5854D6; --a-lolimpact: #C81E1E; }
   :root[data-theme='dark'] { --a-katarch: #FF7A45; --a-knowgraph: #909CF5; --a-playsync: #FFB08A; --a-lifeui: #7C79F0; --a-lolimpact: #E5484D; }
 </style>
+<script>
+  // The dot grid of the site (4.2mm tiles), fading out from the top-left light. Dots of similar
+  // strength share one path, so each page draws a handful of paths.
+  const LEVELS = 6, STEP = 4.2, R = 0.2, MAX = 0.14;
+  for (const page of document.querySelectorAll('.page')) {
+    const paths = Array.from({ length: LEVELS }, () => '');
+    for (let x = STEP / 2; x < 210; x += STEP) {
+      for (let y = STEP / 2; y < 297; y += STEP) {
+        const d = Math.hypot((x - 38) / 126, (y - 24) / 119);
+        const k = Math.max(0, 1 - d);
+        const level = Math.floor(k * LEVELS);
+        if (level < 1) continue;
+        paths[level - 1] += `M${(x - R).toFixed(2)} ${y.toFixed(2)}a${R} ${R} 0 1 0 ${2 * R} 0a${R} ${R} 0 1 0 ${-2 * R} 0`;
+      }
+    }
+    const svg = paths.map((d, i) => (d ? `<path d="${d}" fill-opacity="${((MAX * (i + 1)) / LEVELS).toFixed(3)}"/>` : '')).join('');
+    page.querySelector('.glow-b').insertAdjacentHTML('afterend', `<svg class="dots" viewBox="0 0 210 297" aria-hidden="true">${svg}</svg>`);
+  }
+</script>
 </body>
 </html>
