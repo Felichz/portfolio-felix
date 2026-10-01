@@ -1,0 +1,4 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [{ "source": "/apps/lifeui/:path*", "destination": "/apps/lifeui/index.html" }]
+}

@@ -49,6 +49,8 @@ const person = {
       (() => {
         const d = document.documentElement;
         d.classList.add('js');
+        // Opened inside itself (src/scripts/thaw.ts): start at rest, as the preview it replaces did.
+        if (window !== window.top) d.classList.add('framed');
         let t = null;
         try { t = localStorage.getItem('fa-theme'); } catch {}
         if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

@@ -34,10 +34,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const desk = p.gallery.filter((s) => !s.phone);
 const phoneShots = p.gallery.filter((s) => s.phone);
 
+const dive = p.deepDive;
 const panels: PanelLink[] = [
   { id: 'overview', label: 'Overview', icon: 'eye' },
   { id: 'story', label: 'Story', icon: 'text' },
   { id: 'engineering', label: 'Engineering', icon: 'code' },
+  ...(dive ? [{ id: 'how', label: 'How it works', icon: 'layers' } as PanelLink] : []),
   { id: 'screens', label: 'Screens', icon: 'image' },
   { id: 'specs', label: 'Specs', icon: 'list' },
 ];
@@ -156,6 +158,39 @@ const panels: PanelLink[] = [
     </div>
   </section>
 
+  {
+    dive && (
+      <section id="how" class="panel" data-label="How it works" tabindex="-1" data-accent style={accent} aria-labelledby="how-title">
+        <div class="panel-inner how">
+          <header class="how-head" data-reveal style="--d:0">
+            <p class="t-label">How it works</p>
+            <h2 id="how-title" class="t-section">{dive.title}</h2>
+            <p class="how-intro muted">{dive.intro}</p>
+          </header>
+          <ol class="how-steps">
+            {dive.steps.map((s, i) => (
+              <li class="how-step" data-reveal style={`--d:${i + 1}`}>
+                <span class="how-num t-num" aria-hidden="true">{pad(i + 1)}</span>
+                <div>
+                  <h3>{s.title}</h3>
+                  <p>{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <dl class="how-numbers" data-reveal style={`--d:${dive.steps.length + 1}`}>
+            {dive.numbers.map((n) => (
+              <div class="how-number glass">
+                <dt class="t-num">{n.value}</dt>
+                <dd>{n.label}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+    )
+  }
+
   <!-- Screens -->
   <section id="screens" class="panel" data-label="Screens" tabindex="-1" data-accent style={accent} aria-labelledby="screens-title">
     <div class="panel-inner scr">
@@ -269,6 +304,8 @@ const panels: PanelLink[] = [
   .ov-name.face-martian { font-weight: 400; letter-spacing: -0.02em; font-size: clamp(1.75rem, 14cqi, 4.5rem); }
   .ov-name.face-martian b { font-weight: 700; }
   .ov-name.face-inter { letter-spacing: -0.05em; }
+  /* Two words in the house face: they break onto two lines instead of running under the preview. */
+  .ov-name.face-archivo { white-space: normal; text-wrap: balance; font-size: clamp(2.25rem, 15cqi, 5.25rem); line-height: 0.92; }
   .ov-tagline { font-size: clamp(1rem, 0.94rem + 0.3vw, 1.1875rem); line-height: 1.5; color: var(--ink-2); }
   .ov-facts { display: grid; border-block: 1px solid var(--line); }
   .ov-facts > div { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 10px; align-items: baseline; padding-block: 9px; }
@@ -342,6 +379,20 @@ const panels: PanelLink[] = [
   .eng-card h3 { font-size: clamp(1.125rem, 0.95rem + 0.6vw, 1.5rem); line-height: 1.15; letter-spacing: -0.02em; font-weight: 740; font-stretch: 94%; }
   .eng-card p { font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); }
   .eng-stack { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* How it works: numbered steps down the left, measured numbers along the bottom. */
+  .how { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); grid-template-rows: minmax(0, 1fr) auto; gap: clamp(16px, 3cqh, 30px) clamp(24px, 4cqw, 64px); align-content: center; }
+  .how-head { display: grid; gap: 12px; align-content: start; }
+  .how-intro { max-width: 46ch; font-size: clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem); line-height: 1.6; }
+  .how-steps { display: grid; gap: clamp(8px, 1.6cqh, 16px); align-content: start; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .how-step { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr); gap: 12px; padding-block: 2px; }
+  .how-num { font-size: 0.8125rem; font-weight: 700; color: var(--accent); padding-top: 3px; }
+  .how-step h3 { font-size: 1.0625rem; line-height: 1.2; letter-spacing: -0.015em; font-weight: 720; font-stretch: 94%; }
+  .how-step p { margin-top: 4px; font-size: clamp(0.875rem, 0.85rem + 0.1vw, 0.9375rem); line-height: 1.55; color: var(--ink-2); max-width: 68ch; }
+  .how-numbers { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .how-number { display: grid; gap: 4px; align-content: start; padding: clamp(12px, 1.6cqw, 18px); border-radius: 16px; }
+  .how-number dt { font-size: clamp(1.375rem, 1.1rem + 1vw, 2rem); font-weight: 780; font-stretch: 104%; letter-spacing: -0.03em; color: var(--accent); }
+  .how-number dd { font-size: 0.8125rem; line-height: 1.45; color: var(--ink-2); }
   .eng-stack li {
     padding: 5px 12px;
     border-radius: 999px;
@@ -417,6 +468,9 @@ const panels: PanelLink[] = [
     .ov-stage { height: auto; container-type: normal; }
     .ov-stage :global(.ov-plate) { width: 100%; }
     .eng { height: auto; min-height: 100%; }
+    .how { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; height: auto; min-height: 100%; }
+    .how-steps { overflow: visible; }
+    .how-numbers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .eng-list { grid-template-columns: minmax(0, 1fr); }
     .eng-num { font-size: 2.75rem; margin-bottom: 0; }
     .st-look { max-height: none; overflow: visible; }

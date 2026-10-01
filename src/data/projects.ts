@@ -70,10 +70,20 @@ export interface Project {
   scale: string[];
   story: string[];
   highlights: { title: string; body: string }[];
+  /**
+   * An optional chapter between Engineering and Screens on the case study: how one system works, step by
+   * step, and the numbers measured along the way.
+   */
+  deepDive?: {
+    title: string;
+    intro: string;
+    steps: { title: string; body: string }[];
+    numbers: { value: string; label: string }[];
+  };
   typefaces: string[];
   palette: string[];
   /** Interface languages; English is the default everywhere. */
-  language: 'English and Spanish';
+  language: 'English and Spanish' | 'English';
   accent: { light: string; dark: string; onLight: string; onDark: string };
   main: Shot;
   callouts: Callout[];
@@ -356,6 +366,92 @@ export const projects: Project[] = [
     gallery: [
       themed('lol-draft', 'LoLImpact draft tool with ten champion slots split between your team and the rival team.', { caption: 'Draft tool' }),
       themed('lol-mobile', 'LoLImpact on a phone: the minute 12 readout above the probability column.', { phone: true, caption: 'On a phone' }),
+    ],
+  },
+  {
+    id: 'portfolio',
+    short: 'The site you’re on, and how it opens the others',
+    name: 'This portfolio',
+    face: 'face-archivo',
+    year: '2026',
+    tagline:
+      'A portfolio that opens its projects instead of linking to them: the preview you watch is the app’s own DOM, and Live starts the real app in place, on that frame.',
+    proof: 'A 40 KB tape in place of two 1.2 MB videos, motion within 70 ms of the click',
+    live: 'https://portfolio-felix-teal.vercel.app/',
+    source: 'https://github.com/Felichz/portfolio-felix',
+    role: 'Solo: design, frontend and the recording pipeline',
+    stack: ['Astro', 'TypeScript', 'Hand-written CSS', 'Custom elements', 'Web Animations API', 'View Transitions', 'Puppeteer and the Chrome DevTools Protocol', 'Vercel'],
+    scale: ['~6,100 lines of TypeScript, Astro and CSS', '9 components', '1 tape so far, 40 KB gzipped', 'Light and dark'],
+    story: [
+      'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one fixed window, sections that move one at a time, and an ambient light that takes the color of whatever you’re looking at.',
+      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. LifeUI’s preview is now a tape instead, its own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Live doesn’t send you anywhere: the camera flies into the window and the real app takes over from the frame you were watching.',
+      'So far LifeUI is the one that works this way, and this site’s own preview is a tape of its Intro. The other products still use video until their scenes are written; each one needs a scene and a way to seed its state, and that is most of the work.',
+    ],
+    highlights: [
+      {
+        title: 'One window, one gesture',
+        body: 'The document never scrolls; a deck of full-height sections does, one per gesture. Anything that can still scroll under the pointer scrolls first, and the wheel has to rest before the deck moves again, so the two never fight.',
+      },
+      {
+        title: 'Theme switches that restart nothing',
+        body: 'The new edition spreads in a circle from the toggle, in one view-transition snapshot. Recordings keep their place across it, the showcase countdown doesn’t notice, and a tape switches on the same frame.',
+      },
+      {
+        title: 'Measured, not assumed',
+        body: 'Effects stayed only after a Chrome trace. The cursor light moved off a full-window canvas (82 to 235 fps), recordings got a keyframe every second (seeks from about 220 to 85 ms), and the résumé PDF went from 27 soft-masked images to one.',
+      },
+    ],
+    deepDive: {
+      title: 'From a video of the app to the app',
+      intro:
+        'Every product preview here used to be a pair of videos. The question was whether it could be the product itself, without paying for it in page weight or frames.',
+      steps: [
+        {
+          title: 'Record',
+          body: 'A scene drives the app in headless Chrome, written like an end-to-end test. A recorder inside the page writes down the DOM and every change to it, with child lists stored whole so moves never need tracking, plus the pointer, hover and focus, and checkpoints at rest points with the app’s storage and clock.',
+        },
+        {
+          title: 'Replay',
+          body: 'A custom element rebuilds that DOM in an iframe that can’t run scripts, with the app’s own stylesheet, and applies each change at its time. Hover and focus come back as attributes the stylesheet was rewritten to match. It speaks enough of the video element’s API that the showcase didn’t have to change.',
+        },
+        {
+          title: 'Switch themes',
+          body: 'The apps change theme with one attribute on the root element, so a tape follows the site by setting it, on the same frame. With video that took two files per product and a seek to keep them in step.',
+        },
+        {
+          title: 'Thaw',
+          body: 'Hovering Live builds the window ahead and prefetches the app. The click starts a compositor-only flight while a copy of the tape reaches the next checkpoint; the app’s build, vendored on this origin, then boots under it with that storage and a clock that continues from the recorded moment, and fades in once it has painted.',
+        },
+        {
+          title: 'Measure',
+          body: 'Each step was checked in traces: frames presented during the flight, long animation frames, bytes. Booting the app during the flight cost frames, so it moved to after the landing, where the tape already looks exactly like the app.',
+        },
+      ],
+      numbers: [
+        { value: '40 KB', label: 'LifeUI’s tape, gzipped, in place of two 1.2 MB videos' },
+        { value: '< 70 ms', label: 'from the click to the first frame of the flight, measured cold' },
+        { value: '235 fps', label: 'with the cursor light on, after moving it off a full-window canvas (82 before)' },
+        { value: '85 ms', label: 'to seek and start a recording with a keyframe every second (about 220 before)' },
+      ],
+    },
+    typefaces: ['Archivo', 'Newsreader'],
+    palette: ['#F2F1ED', '#0A0A0C', '#111114', '#0D7A5F', '#5FD6B0'],
+    language: 'English',
+    accent: { light: '#0D7A5F', dark: '#5FD6B0', onLight: '#FFFFFF', onDark: '#04140F' },
+    main: {
+      ...themed('portfolio-main', 'This portfolio’s Intro: the name set in Archivo, the role and a short lede, four strengths, and the portrait on the right.'),
+      tape: 'portfolio',
+    },
+    callouts: [
+      { x: 31, y: 22, text: 'The name is set one letter at a time, and widens toward the pointer along Archivo’s width axis.' },
+      { x: 2.4, y: 43, text: 'One gesture moves one section. These dots are the only navigation chrome.' },
+      { x: 76, y: 30, text: 'Two portraits, one per edition; only the visible one is downloaded.' },
+    ],
+    gallery: [
+      themed('portfolio-work', 'The work showcase with LifeUI selected: its preview, a tape of the app’s own DOM, is in the middle of the closing ritual.', { caption: 'A tape in the showcase' }),
+      themed('portfolio-thaw', 'Opening LifeUI in place: the window grows toward the screen while the portfolio scales past it.', { caption: 'Opening an app in place' }),
+      themed('portfolio-case', 'A case study overview: LifeUI’s name, facts and actions next to its preview.', { caption: 'A case study' }),
+      themed('portfolio-mobile', 'This portfolio’s Intro on a phone, with the tab bar at the bottom.', { phone: true, caption: 'On a phone' }),
     ],
   },
 ];

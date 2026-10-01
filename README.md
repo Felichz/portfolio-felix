@@ -14,7 +14,7 @@ Personal site of Felix Andersson, Senior Frontend Engineer in Montevideo. Five y
 The site works like a desktop app in a fixed window: a bar on top, a rail of section dots down the left edge, and full-height sections that move one at a time. A scroll gesture jumps to the next section; a section scrolls inside itself only when the window is too small for it. On phones the sections scroll naturally and the rail becomes a tab bar.
 
 - **Intro.** Name, role, the short version, what I bring, and a portrait.
-- **Work.** A showcase of five products. Each product's screen recording plays, holds on its last frame, and the next one slides in; the rail fills in the product's color as its turn runs. Pause it with the button, or by reading the product copy.
+- **Work.** A showcase of six products, this site included. Each product's screen recording plays, holds on its last frame, and the next one slides in; the rail fills in the product's color as its turn runs. Pause it with the button, or by reading the product copy.
 - **Experience.** The CV: roles from 2020 to now on a continuous timeline, with the detail of the selected role below and a few concrete examples in prose.
 - **About.** How I got here, the toolset, and contact.
 - **One case study per product** (`/work/katarch`, `/work/knowgraph`, ...), as five sections: Overview with the lead screenshot, its recording and numbered callouts; Story; Engineering; Screens; Specs and the next case study.
@@ -57,6 +57,9 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 
 ## Details that took some care
 
+- **Tapes instead of videos.** LifeUI's preview, and this site's own, are tapes: the app's DOM recorded while a scripted scene drives it in headless Chrome, then replayed by a `<tape-player>` element in a script-less iframe with the app's real stylesheet. One 40 KB file replaces two 1.2 MB videos, plays in either theme, and stays sharp at any size.
+- **Live, in place.** Live doesn't leave the site: the camera flies into the product's window while a copy of the tape reaches the next recorded checkpoint, and the app's own build, vendored under `/apps/<id>/`, boots under it with that checkpoint's storage and clock, then fades in once it has painted. On this site's own slide, Live opens the site inside itself.
+
 - One navigation model for wheel, trackpad, touch, keys, tabs and links. A wheel gesture moves one section, unless it started by scrolling something inside the section.
 - Deep links (`/#experience`, `/#work/lifeui`) open on their section and product before the first paint.
 - The name is set one glyph at a time along Archivo's width axis: letters widen into place on arrival and swell toward the pointer.
@@ -71,6 +74,16 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 ## Stack
 
 Astro 7, TypeScript, hand-written CSS with custom properties. Deployed as a static site.
+
+## Tapes and live apps
+
+```bash
+node scripts/apps/vendor.mjs lifeui      # build LifeUI for /apps/lifeui/ (needs ../life-ui-embed)
+node scripts/tapes/record.mjs lifeui     # record public/tapes/lifeui.json from its scene
+node scripts/tapes/record.mjs portfolio  # this site's Intro, from dist/ (build first)
+```
+
+Scenes live in `scripts/tapes/scenes/`. The player is `src/scripts/tape.ts`, the flight and handoff `src/scripts/thaw.ts`, and the clock bridge inlined into vendored apps `scripts/apps/bridge.js`.
 
 ## Running it
 

@@ -25,7 +25,9 @@
   const events = [];
   const emit = (e) => events.push(e);
 
-  const skip = (n) => n.nodeType === 8 || (n.nodeType === 1 && SKIP.has(n.tagName));
+  // Scenes can leave parts of the page out of the tape (window.__tapeIgnore, a selector).
+  const ignore = window.__tapeIgnore;
+  const skip = (n) => n.nodeType === 8 || (n.nodeType === 1 && (SKIP.has(n.tagName) || (ignore && n.matches(ignore))));
   const fixUrl = (name, value) => {
     if (!URL_ATTRS.has(name) || !value || /^(data:|blob:|#|mailto:|tel:|javascript:)/i.test(value)) return value;
     try {

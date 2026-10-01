@@ -12,10 +12,12 @@ import puppeteer from 'puppeteer-core';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
-const pub = resolve(root, 'public');
 const id = process.argv[2];
 if (!id) throw new Error('Usage: node scripts/tapes/record.mjs <id>');
 const scene = (await import(pathToFileURL(resolve(here, 'scenes', `${id}.mjs`)).href)).default;
+// What to serve: public/ for vendored apps, or the built site itself (dist/) for its own tape.
+const pub = resolve(root, scene.root ?? 'public');
+const tapes = resolve(root, 'public', 'tapes');
 
 // ---- Static server over public/, with the app's routes falling back to its index.html
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp' };
@@ -42,7 +44,7 @@ const [w, h] = scene.viewport;
 await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
 
 // Pin the clock (like cy.clock, but still running) so every recording shows the same time of day.
-await page.evaluateOnNewDocument((pin) => {
+if (scene.clock !== null) await page.evaluateOnNewDocument((pin) => {
   const RealDate = Date;
   const offset = (() => {
     const d = new RealDate();
@@ -70,6 +72,7 @@ await new Promise((r) => setTimeout(r, 400));
 // ---- Scene helpers: a cursor that moves like a hand (eased, slightly curved), clicks, rests
 let cursor = { x: w * 0.62, y: h * 0.78 };
 await page.mouse.move(cursor.x, cursor.y);
+await page.evaluate((ignore) => (window.__tapeIgnore = ignore), scene.ignore ?? null);
 await page.evaluate(readFileSync(resolve(here, 'recorder.js'), 'utf8'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -121,7 +124,9 @@ server.close();
 
 // Everything the player and the thaw need, in one file.
 const index = readFileSync(join(pub, scene.base, 'index.html'), 'utf8');
-const prefetch = [...index.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)].map((m) => m[1]);
+// Files to prefetch on intent. Not for this site's own tape: it is already loaded, and its hashed
+// file names change with every build.
+const prefetch = scene.prefetch === false ? [] : [...index.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)].map((m) => m[1]);
 const out = {
   v: 1,
   id,
@@ -130,8 +135,8 @@ const out = {
   app: { entry: scene.base, readySelector: scene.readySelector, storage: scene.storage, themeKey: scene.themeKey, prefetch },
   ...tape,
 };
-mkdirSync(join(pub, 'tapes'), { recursive: true });
-const file = join(pub, 'tapes', `${id}.json`);
+mkdirSync(tapes, { recursive: true });
+const file = join(tapes, `${id}.json`);
 const json = JSON.stringify(out);
 writeFileSync(file, json);
 const kinds = {};

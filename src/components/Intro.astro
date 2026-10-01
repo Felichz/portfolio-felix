@@ -128,6 +128,7 @@ const strengths = [
     animation: letter-in 1.2s var(--ease-out) backwards;
     animation-delay: calc(var(--i) * 45ms + 120ms);
   }
+  :global(.framed) .ch { opacity: 1; animation: none; }
   @keyframes letter-in {
     from { opacity: 0; font-stretch: 62%; font-weight: 300; transform: translateY(0.16em); }
   }

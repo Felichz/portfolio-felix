@@ -120,14 +120,22 @@ function prepare(id: string): Window_ {
     status: overlay.querySelector<HTMLElement>('.thaw-status')!,
     ready: copy.ready(),
   };
-  // While the visitor hovers, the copy plays along with the plate, so a click finds it on the same frame.
-  const player = sourcePlate(id)?.querySelector<TapePlayer>('tape-player');
-  void standby.ready.then(() => {
-    if (!player?.tape || standby?.copy !== copy) return;
-    copy.currentTime = player.currentTime;
-    if (!player.paused) void copy.play();
-  });
   return standby;
+}
+
+/**
+ * On hover the prepared window starts being painted (still invisible) and its copy plays along with the
+ * plate, so a click finds it painted and on the same frame. Before that it costs nothing per frame.
+ */
+function warm(w: Window_, on: boolean) {
+  w.overlay.classList.toggle('warm', on);
+  if (!on) return w.copy.pause();
+  const player = sourcePlate(w.id)?.querySelector<TapePlayer>('tape-player');
+  void w.ready.then(() => {
+    if (standby !== w || !w.overlay.classList.contains('warm') || !player?.tape) return;
+    w.copy.currentTime = player.currentTime;
+    if (!player.paused) void w.copy.play();
+  });
 }
 
 async function thaw(id: string, trigger: HTMLAnchorElement) {
@@ -142,10 +150,14 @@ async function thaw(id: string, trigger: HTMLAnchorElement) {
   const cps = tape.checkpoints;
   const cp: Checkpoint = cps.find((c) => c.t >= from - 50) ?? cps[cps.length - 1]!;
   const ahead = Math.max(0, cp.t - from);
-  const rate = Math.min(6, Math.max(1, ahead / (FLIGHT * 0.9)));
+  // After landing, the copy plays on to the checkpoint, faster when it's far.
+  const rate = Math.min(4, Math.max(1, ahead / 700));
   const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
 
-  // ---- Seed: the app's storage as recorded at the checkpoint, in the edition the plate shows.
+  // ---- Seed: the app's storage as recorded at the checkpoint, in the edition the plate shows. What was
+  // there before goes back on close: the app shares this origin's storage (this site's own theme, too).
+  const keys = [...new Set([...tape.app.storage, ...(tape.app.themeKey ? [tape.app.themeKey] : [])])];
+  const before = new Map(keys.map((k) => [k, localStorage.getItem(k)]));
   for (const key of tape.app.storage) {
     if (key in cp.storage) localStorage.setItem(key, cp.storage[key]!);
     else localStorage.removeItem(key);
@@ -183,9 +195,8 @@ async function thaw(id: string, trigger: HTMLAnchorElement) {
   document.documentElement.classList.add('thawing');
   document.dispatchEvent(new CustomEvent('thaw:open', { detail: { id } }));
 
-  copy.playbackRate = rate;
-  const flightStart = Date.now();
-  const reached = ahead > 0 ? copy.playTo(cp.t) : Promise.resolve();
+  // The copy holds still in flight: a static picture flies on the compositor alone.
+  copy.pause();
 
   const flights = [
     win.animate([{ transform: lift, borderRadius: radius }, { transform: 'none', borderRadius: '0px' }], opts),
@@ -202,15 +213,25 @@ async function thaw(id: string, trigger: HTMLAnchorElement) {
   window.__thaw = {
     app: id,
     clock: cp.clock + Math.max(0, from - cp.t),
-    real: flightStart + ahead / rate,
+    real: Date.now() + ahead / rate,
     readySelector: tape.app.readySelector,
     ready: () => appReady(),
   };
+  // Landed: the copy finishes what it was doing while the app boots under it.
+  copy.playbackRate = rate;
+  const reached = ahead > 0 ? copy.playTo(cp.t) : Promise.resolve();
   const frame = document.createElement('iframe');
   frame.className = 'thaw-app';
   frame.title = trigger.dataset.name ?? id;
   frame.src = tape.app.entry.replace(/\/$/, '') + cp.route;
   screen.append(frame);
+  // Apps without the bridge (this site, opened in itself) are watched from here: same origin.
+  const watch = window.setInterval(() => {
+    const doc = frame.contentDocument;
+    if (!doc || doc.readyState === 'loading' || !doc.querySelector(tape.app.readySelector)) return;
+    clearInterval(watch);
+    void doc.fonts.ready.then(() => frame.contentWindow?.requestAnimationFrame(() => frame.contentWindow?.requestAnimationFrame(() => appReady())));
+  }, 50);
 
   // ---- The swap
   const slow = window.setTimeout(() => (status.textContent = 'Starting the app…'), 400);
@@ -270,6 +291,11 @@ async function thaw(id: string, trigger: HTMLAnchorElement) {
     layers.forEach((el) => (el.style.transformOrigin = ''));
     document.documentElement.classList.remove('thawing', 'thaw-ready');
     delete window.__thaw;
+    clearInterval(watch);
+    for (const [k, v] of before) {
+      if (v === null) localStorage.removeItem(k);
+      else localStorage.setItem(k, v);
+    }
     open = null;
     document.dispatchEvent(new CustomEvent('thaw:close', { detail: { id } }));
     trigger.focus({ preventScroll: true });
@@ -279,6 +305,8 @@ async function thaw(id: string, trigger: HTMLAnchorElement) {
 
 /** Any link with data-thaw="<id>" opens that app in place; modified clicks still open the real site. */
 export function initThaw() {
+  // Inside a thawed frame (this site opened in itself), links behave like links: no frames in frames.
+  if (window !== window.top) return;
   document.addEventListener('click', (e) => {
     const a = (e.target as Element).closest<HTMLAnchorElement>('a[data-thaw]');
     if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -295,16 +323,34 @@ export function initThaw() {
     root.classList.add('thaw-ready');
     void loadTape(`/tapes/${a.dataset.thaw}.json`).then((tape) => {
       prefetch(tape);
-      if (!open) prepare(a.dataset.thaw!);
+      if (!open) warm(prepare(a.dataset.thaw!), true);
     });
   };
   const cool = (e: Event) => {
     if (!(e.target as Element).closest?.('a[data-thaw]') || open) return;
     root.classList.remove('thaw-ready');
-    standby?.copy.pause();
+    if (standby) warm(standby, false);
   };
   document.addEventListener('pointerover', intent, { passive: true });
   document.addEventListener('focusin', intent);
   document.addEventListener('pointerout', cool, { passive: true });
   document.addEventListener('focusout', cool);
+
+  // Earlier still: once a plate that can be opened is on screen, its window is built in idle time, so
+  // even a quick click finds it ready. One at a time, for the plate in view.
+  if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  const idle = (fn: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 2500 }) : setTimeout(fn, 600));
+  const seen = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        const id = (e.target as HTMLElement).dataset.app!;
+        if (e.intersectionRatio < 0.6 || open || standby?.id === id || innerWidth < 900) continue;
+        idle(() => {
+          if (!open && sourcePlate(id) === e.target) void loadTape(`/tapes/${id}.json`).then(() => !open && prepare(id));
+        });
+      }
+    },
+    { threshold: [0, 0.6] },
+  );
+  document.querySelectorAll<HTMLElement>('.plate[data-app]').forEach((p) => seen.observe(p));
 }

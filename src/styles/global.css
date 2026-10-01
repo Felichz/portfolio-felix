@@ -117,6 +117,7 @@
 .face-bricolage-grotesque,
 .face-bricolage { font-family: 'Bricolage Grotesque', var(--font); font-weight: 700; }
 .face-figtree { font-family: 'Figtree', var(--font); font-weight: 400; }
+.face-archivo { font-family: var(--font); font-weight: 780; font-stretch: 108%; letter-spacing: -0.03em; }
 .face-martian-mono { font-family: 'Martian Mono', var(--mono); font-weight: 400; }
 
 /* Cross-document view transitions: the showcase screenshot grows into its case study. */
@@ -339,6 +340,7 @@ html.app, html.app body { overflow: hidden; overscroll-behavior: none; }
 @media (prefers-reduced-motion: reduce) {
   .js [data-reveal] { opacity: 1; transform: none; transition: none; }
 }
+.framed [data-reveal] { opacity: 1; transform: none; transition: none; }
 
 /* ------------------------------------------------------------------
    Type roles
@@ -606,10 +608,14 @@ html.thawing { overflow: hidden; }
 /* On intent to open an app, the page layers become compositor layers ahead of the flight. */
 html.thaw-ready body > :is(header, nav, main, .ambient, .cursor-light) { will-change: transform, opacity; }
 .thaw { position: fixed; inset: 0; z-index: 1000; }
-/* Built ahead on intent: laid out, painted and ready, but invisible and out of the way until the click.
-   Not opacity 0: the browser skips painting fully transparent layers, and that first paint is the cost
-   this is here to move out of the flight. */
-.thaw.standby { opacity: 0.001; pointer-events: none; }
+/* Built ahead in idle time: laid out and ready, invisible and out of the way until the click. On hover
+   it warms up at opacity 0.001, not 0: the browser skips painting fully transparent layers, and that
+   first paint is the cost this moves out of the flight. */
+.thaw.standby { opacity: 0; pointer-events: none; }
+/* Until there's intent, the browser keeps its state but skips rendering it, the app's own CSS
+   animations included: a built window costs nothing per frame. */
+.thaw.standby:not(.warm) .thaw-screen { content-visibility: hidden; }
+.thaw.standby.warm { opacity: 0.001; }
 .thaw-window {
   position: absolute;
   inset: 0;
