@@ -1,0 +1,3 @@
+# Vendored app builds and tapes are generated artifacts: keep them byte for byte.
+public/apps/** -text
+public/tapes/** -text

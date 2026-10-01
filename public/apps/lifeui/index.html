@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script data-app="lifeui">/*
+ * Portfolio bridge, inlined at the top of each vendored app's index.html (scripts/apps/vendor.mjs).
+ * Inert unless the app runs inside the portfolio's thaw frame (src/scripts/thaw.ts), which leaves a
+ * `__thaw` handoff on its window before creating the frame. Then, before any of the app's code runs:
+ * - the clock continues from the recorded moment the preview froze on, so times and running timers
+ *   match the frame the visitor was looking at;
+ * - once the app has painted its first screen, the portfolio is told, so it can swap the preview for
+ *   the live app without a visible seam.
+ * The app's own state (localStorage) was already seeded by the portfolio, same origin.
+ */
+(function () {
+  var handoff;
+  try {
+    handoff = window.parent !== window && window.parent.__thaw;
+  } catch (e) {}
+  if (!handoff || handoff.app !== document.currentScript.dataset.app) return;
+
+  // ---- Clock: recorded time at the checkpoint, advancing in real time from the moment it was reached.
+  var RealDate = Date;
+  var offset = handoff.clock - handoff.real;
+  var now = function () {
+    return RealDate.now() + offset;
+  };
+  class ShiftedDate extends RealDate {
+    constructor() {
+      if (arguments.length === 0) super(now());
+      else super(...arguments);
+    }
+    static now() {
+      return now();
+    }
+  }
+  // `Date()` called without `new` returns a string.
+  window.Date = new Proxy(ShiftedDate, {
+    apply: function () {
+      return new ShiftedDate().toString();
+    },
+  });
+
+  // ---- Ready: the first screen is in the DOM, its fonts are loaded, and it has been painted.
+  var report = function () {
+    document.fonts.ready.then(function () {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          handoff.ready();
+        });
+      });
+    });
+  };
+  var check = function () {
+    if (!document.querySelector(handoff.readySelector)) return false;
+    report();
+    return true;
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    if (check()) return;
+    var watch = new MutationObserver(function () {
+      if (check()) watch.disconnect();
+    });
+    watch.observe(document.body, { childList: true, subtree: true });
+  });
+})();
+</script>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/apps/lifeui/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="LifeUI: a HUD for your real day. Plan, focus on one thing at a time and close it honestly."
+    />
+    <meta name="theme-color" content="#fcfcfd" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0f12" media="(prefers-color-scheme: dark)" />
+    <title>LifeUI</title>
+    <script>
+      // Tema e idioma antes del primer pintado (evita el destello).
+      (function () {
+        var pref = "system";
+        var locale = "en";
+        try {
+          pref =
+            localStorage.getItem("lifeui.theme") ||
+            localStorage.getItem("qualia.theme") ||
+            "system";
+          var saved = localStorage.getItem("lifeui.locale");
+          if (saved === "es" || saved === "en") locale = saved;
+        } catch (e) {}
+        document.documentElement.lang = locale;
+        var dark =
+          pref === "dark" ||
+          (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      })();
+    </script>
+    <script type="module" crossorigin src="/apps/lifeui/assets/index-CIhC9AhV.js"></script>
+    <link rel="modulepreload" crossorigin href="/apps/lifeui/assets/react-BkLjhQ28.js">
+    <link rel="modulepreload" crossorigin href="/apps/lifeui/assets/ui-D1YShXc2.js">
+    <link rel="modulepreload" crossorigin href="/apps/lifeui/assets/dnd-Cwjad30Y.js">
+    <link rel="stylesheet" crossorigin href="/apps/lifeui/assets/index-b_FJRUIZ.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

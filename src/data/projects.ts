@@ -27,6 +27,11 @@ export interface Shot {
   phone?: boolean;
   /** MP4 recordings, same framing as the screenshot. For a lead shot, the last frame matches the still. */
   motion?: { light: string; dark: string };
+  /**
+   * A tape instead of recordings: public/tapes/<id>.json, the app's own DOM replayed (src/scripts/tape.ts).
+   * One tape serves both themes, and it can be thawed into the live app, vendored at public/apps/<id>/.
+   */
+  tape?: string;
 }
 
 function themed(name: string, alt: string, extra: Partial<Shot> = {}): Shot {
@@ -280,13 +285,13 @@ export const projects: Project[] = [
     palette: ['#FCFCFD', '#16161A', '#5854D6', '#F59E0B', '#148054'],
     language: 'English and Spanish',
     accent: { light: '#5854D6', dark: '#7C79F0', onLight: '#FFFFFF', onDark: '#0E0F12' },
-    main: moving(
-      themed(
+    main: {
+      ...themed(
         'lifeui-main',
         'LifeUI Today screen: Read has just started from a quick-start chip, 157 tempos today at 157% of the daily reference, the day plan by time blocks, and a log where Write report was just closed at 9 out of 10 for 78 tempos.',
       ),
-      'lifeui-main',
-    ),
+      tape: 'lifeui',
+    },
     callouts: [
       { x: 19, y: 12, text: 'Only one activity runs at a time, with its progress against its estimate or timebox.' },
       { x: 73.6, y: 12.4, text: 'Tempos today, shown as a share of your reference: an anchor, never a debt.' },

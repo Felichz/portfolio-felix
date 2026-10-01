@@ -103,7 +103,7 @@ const total = String(projects.length).padStart(2, '0');
                     Case study
                     <Icon name="arrow-right" class="icon-right" />
                   </a>
-                  <a class="arrow-link" href={p.live} target="_blank" rel="noopener">
+                  <a class="arrow-link" href={p.live} target="_blank" rel="noopener" data-thaw={p.main.tape} data-name={p.name}>
                     Live <Icon name="arrow-up-right" />
                   </a>
                   <a class="arrow-link" href={p.source} target="_blank" rel="noopener">
@@ -456,7 +456,7 @@ const total = String(projects.length).padStart(2, '0');
       const plate = plateOf(i);
       if (!plate) return;
       if (plate.dataset.state) plate.dataset.state = 'idle';
-      const v = plate.querySelectorAll('video');
+      const v = plate.querySelectorAll<HTMLVideoElement>('video, tape-player');
       setTimeout(() => v.forEach((x) => (x.pause(), (x.currentTime = 0))), 500);
     };
 
@@ -582,6 +582,18 @@ const total = String(projects.length).padStart(2, '0');
       const j = slides.findIndex((s) => s.dataset.id === sub);
       if (j >= 0) select(j);
     });
+    // An app opened in place (src/scripts/thaw.ts) holds the showcase until it closes.
+    document.addEventListener('thaw:open', () => {
+      if (!active) return;
+      cancelAnimationFrame(raf);
+    });
+    document.addEventListener('thaw:close', () => {
+      if (!active) return;
+      const v = clipOf(index);
+      if (v && plateOf(index)?.dataset.state === 'playing') void v.play();
+      run();
+    });
+
     // A theme switch hands the recording to the other edition's video on the same frame; the countdown
     // doesn't notice.
     followThemeSwitches(

@@ -9,6 +9,9 @@
  * playback, so the click stays responsive; the circle reveal covers the moment it takes to start.
  * Only one video decodes, apart from that moment.
  */
+// Plates hold <tape-player> elements too; define it before any plate script drives one.
+import './tape';
+
 export interface ThemeSwitch {
   theme: 'light' | 'dark';
   waitUntil: (p: Promise<unknown>) => void;
@@ -25,9 +28,10 @@ let startCost = 0.2;
  * same ones that hide the other edition.
  */
 export function editions(plate: HTMLElement) {
-  const all = [...plate.querySelectorAll<HTMLVideoElement>('.plate-motion video')];
+  const all = [...plate.querySelectorAll<HTMLVideoElement>('.plate-motion video, .plate-motion tape-player')];
   const shown = document.documentElement.dataset.theme === 'dark' ? 'only-dark' : 'only-light';
-  const from = all.find((v) => v.classList.contains(shown));
+  // A tape plays in both themes (src/scripts/tape.ts), so it is always the visible one and has no twin.
+  const from = all.find((v) => v.tagName === 'TAPE-PLAYER' || v.classList.contains(shown));
   const to = all.find((v) => v !== from);
   return { from, to };
 }

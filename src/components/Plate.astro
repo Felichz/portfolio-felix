@@ -28,7 +28,8 @@ const { shot, sizes, widths = [480, 800, 1200, 1600, 2000], chrome, zoom = true,
 const single = shot.light === shot.dark;
 const phone = !!shot.phone;
 const w = phone ? [280, 420, 640] : widths;
-const clip = motion && shot.motion ? shot.motion : undefined;
+const clip = motion && shot.motion && !shot.tape ? shot.motion : undefined;
+const tape = motion && shot.tape ? shot.tape : undefined;
 
 const full = async (src: ImageMetadata) => (await getImage({ src, format: 'webp', width: Math.min(src.width, 2880), quality: 84 })).src;
 const zoomLight = zoom ? await full(shot.light) : undefined;
@@ -52,7 +53,8 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
 <div
   class:list={['plate', phone && 'plate--phone', chrome && !phone && 'plate--chrome', className]}
   style={styles}
-  data-motion={clip ? motion : undefined}
+  data-motion={clip || tape ? motion : undefined}
+  data-app={tape}
 >
   {
     chrome && !phone && (
@@ -60,7 +62,7 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
         <span class="plate-dots" aria-hidden="true"><i /><i /><i /></span>
         <span class="plate-url" aria-hidden="true"><Icon name="lock" />{chrome}</span>
         <span class="plate-tools">
-          {clip && motion === 'lead' && (
+          {(clip || tape) && motion === 'lead' && (
             <button class="motion-btn" type="button" data-motion-play>
               <Icon name="play" class="motion-btn-play" />
               <Icon name="replay" class="motion-btn-replay" />
@@ -92,6 +94,14 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
             <Picture src={shot.dark} {...common} class="only-light" />
             <Picture src={shot.light} {...common} class="only-dark" />
           </>
+        )
+      }
+      {
+        tape && (
+          <span class="plate-motion" aria-hidden="true">
+            {/* The app's own DOM, replayed; one tape for both themes (src/scripts/tape.ts). */}
+            <tape-player src={`/tapes/${tape}.json`} />
+          </span>
         )
       }
       {
@@ -158,7 +168,7 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
     // Let the fade finish before rewinding, so the last frame doesn't jump.
     plate.dataset.stopTimer = String(
       setTimeout(() => {
-        plate.querySelectorAll('video').forEach((v) => {
+        plate.querySelectorAll<HTMLVideoElement>('video, tape-player').forEach((v) => {
           v.pause();
           if (state === 'idle') v.currentTime = 0;
         });
@@ -191,7 +201,7 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
     const mode = plate.dataset.motion;
     if (mode === 'manual') return;
     seen.observe(plate);
-    plate.querySelectorAll('video').forEach((v) =>
+    plate.querySelectorAll('video, tape-player').forEach((v) =>
       v.addEventListener('ended', () => {
         if (mode === 'lead') stop(plate, 'done');
       }),
