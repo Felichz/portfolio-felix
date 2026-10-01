@@ -183,6 +183,8 @@ class Session {
     }, 50);
     await painted;
     for (const [k, v] of this.#restore) v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
+    this.syncTheme();
+    this.preview(true);
     this.#capture = (e: Event) => {
       // Previewed, the app takes hover but not clicks: a click opens it.
       if (this.live && this.plate.contains(this.frame) && !document.querySelector('.thaw')) {
@@ -194,6 +196,31 @@ class Session {
     for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click', 'dblclick', 'contextmenu'])
       frame.contentWindow!.addEventListener(type, this.#capture, true);
     this.#follow();
+  }
+
+  /**
+   * Follows the site's theme switch, inverted like the tape: on the same frame, so the switch's circle
+   * spreads over the app too. The app's own key is saved, so it reloads in that edition; a key this
+   * site shares with the app (this site in itself) is left to the site.
+   */
+  syncTheme() {
+    const doc = this.frame?.contentDocument;
+    if (!doc || !this.tape) return;
+    const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    doc.documentElement.setAttribute(this.tape.themeAttr, theme);
+    const key = this.tape.app.themeKey;
+    if (key && !this.tape.app.restore?.includes(key))
+      try {
+        localStorage.setItem(key, theme);
+      } catch {}
+  }
+
+  /** In a preview the whole app is one button that opens it: the cursor says so, over the app too. */
+  preview(on: boolean) {
+    const doc = this.frame?.contentDocument;
+    if (!doc) return;
+    doc.getElementById('live-preview-cursor')?.remove();
+    if (on) doc.head.insertAdjacentHTML('beforeend', '<style id="live-preview-cursor">*, *::before, *::after { cursor: zoom-in !important; }</style>');
   }
 
   /** Keeps up with the tape: replays the clicks it passes; restarts if the tape went back. */
@@ -340,17 +367,28 @@ async function zoom(plate: HTMLElement) {
   const name = nameOf(plate);
   const full = !caseStudy; // on a case study the window takes the screen
 
-  // ---- Geometry: from the plate to a centered window, one uniform scale for the app. Only the bar
-  // changes: the plate's 30px chrome gives way to a thin toolbar drawn at its final size.
+  // ---- Geometry. The window takes the room the screen has, and the app runs in it at its own size
+  // (1:1, scaled down only below 1100px wide), laid out for that size like any browser window. The
+  // window is built at that final size and flown with one uniform scale: at the start it covers the
+  // plate and is clipped to it, so the frame you clicked is where it was; the clip opens as it lands.
+  // Only the bar changes on the way: the plate's 30px chrome gives way to a thin toolbar.
   const r = plate.getBoundingClientRect();
-  const s0 = r.width / 1440;
   const BAR = 34;
-  const [mx, top, bottom] = full ? [12, 12, 50] : [28, 20, 56];
-  const k = Math.min((innerWidth - 2 * mx) / 1440, (innerHeight - top - bottom - BAR) / 900);
-  const x1 = (innerWidth - 1440 * k) / 2;
-  const y1 = top + (innerHeight - top - bottom - (BAR + 900 * k)) / 2;
+  const [mx, top, bottom] = full ? [12, 12, 50] : [24, 18, 52];
+  const availW = innerWidth - 2 * mx;
+  const availH = innerHeight - top - bottom - BAR;
+  const k = Math.min(1, availW / 1100);
+  const vw = availW / k;
+  const vh = availH / k;
+  const s0 = Math.max(r.width / vw, (r.height - 30) / vh);
+  const hEnd = BAR / k + vh; // the window's height, landed
+  const hWin = Math.max(hEnd, r.height / s0);
   const lift = `translate(${r.left}px, ${r.top}px) scale(${s0})`;
-  const land = `translate(${x1}px, ${y1}px) scale(${k})`;
+  const land = `translate(${mx}px, ${top}px) scale(${k})`;
+  const clip0 = `inset(0 ${vw - r.width / s0}px ${hWin - r.height / s0}px 0 round ${(parseFloat(getComputedStyle(plate).borderTopLeftRadius) || 12) / s0}px)`;
+  const radius = 12 / k;
+  const clip1 = `inset(0 0 ${hWin - hEnd}px 0 round ${radius}px)`;
+  const shade0 = `scale(${r.width / s0 / vw}, ${r.height / s0 / hEnd})`;
   // The screen starts under the plate's bar (30px at the plate's scale) and ends under the toolbar.
   const drop0 = `translateY(${30 / s0}px)`;
   const drop1 = `translateY(${BAR / k}px)`;
@@ -366,24 +404,29 @@ async function zoom(plate: HTMLElement) {
     a ? `<a class="thaw-tool" href="${a.href}"${a.target === '_blank' ? ' target="_blank" rel="noopener"' : ''}>${i}<span>${label}</span></a>` : '';
   const closeLabel = `aria-label="Close ${name} and return to the portfolio"`;
   overlay.innerHTML = `<div class="thaw-window plate plate--chrome" data-state="playing">
+      <div class="thaw-shade"></div>
+      <div class="thaw-clip">
       <div class="thaw-chrome"></div>
       <div class="thaw-bar">
         <span class="thaw-lights"><button class="thaw-light" type="button" ${closeLabel} title="Close">${ICONS.close}</button><i></i><i></i></span>
         <span class="thaw-tools">${tool(caseStudy, 'Case study', ICONS.doc)}${tool(live, 'Live site', ICONS.out)}${tool(source, 'Source', ICONS.code)}<button class="thaw-tool thaw-close" type="button" ${closeLabel}>${ICONS.close}<span>Close</span></button></span>
       </div>
       <div class="thaw-screen"></div>
+      </div>
     </div>
     <p class="thaw-hint" aria-hidden="true"><kbd>Esc</kbd> or click outside to return to the portfolio</p>`;
   const win = overlay.querySelector<HTMLElement>('.thaw-window')!;
   const screen = overlay.querySelector<HTMLElement>('.thaw-screen')!;
   const bar = overlay.querySelector<HTMLElement>('.thaw-bar')!;
   const oldBar = overlay.querySelector<HTMLElement>('.thaw-chrome')!;
-  const radius = parseFloat(getComputedStyle(plate).borderTopLeftRadius) || 12;
-  win.style.setProperty('--bar-k', String(1 / s0));
-  win.style.setProperty('--win-r', `${radius / k}px`);
-  win.style.height = `${BAR / k + 900}px`;
-  bar.style.cssText = `width:${1440 * k}px;height:${BAR}px;transform:scale(${1 / k})`;
-  overlay.querySelector<HTMLElement>('.thaw-hint')!.style.top = `${y1 + BAR + 900 * k + 12}px`;
+  const clip = overlay.querySelector<HTMLElement>('.thaw-clip')!;
+  const shade = overlay.querySelector<HTMLElement>('.thaw-shade')!;
+  win.style.cssText = `width:${vw}px;height:${hWin}px;--win-r:${radius}px`;
+  shade.style.cssText = `width:${vw}px;height:${hEnd}px`;
+  oldBar.style.cssText = `width:${r.width}px;transform:scale(${1 / s0})`;
+  bar.style.cssText = `width:${availW}px;height:${BAR}px;transform:scale(${1 / k})`;
+  screen.style.cssText = `width:${vw}px;height:${vh}px`;
+  overlay.querySelector<HTMLElement>('.thaw-hint')!.style.top = `${top + BAR + availH + 14}px`;
   // The plate's own bar, as it is on that frame, to start from.
   const chrome = plate.querySelector('.plate-chrome')?.cloneNode(true) as HTMLElement | undefined;
   if (chrome) {
@@ -414,6 +457,8 @@ async function zoom(plate: HTMLElement) {
       forward ? frames : frames.map((f) => ('offset' in f ? { ...f, offset: 1 - Number(f.offset) } : f)).reverse();
     return [
       screen.animate(way([{ transform: drop0 }, { transform: drop1 }]), o),
+      clip.animate(way([{ clipPath: clip0 }, { clipPath: clip1 }]), o),
+      shade.animate(way([{ transform: shade0 }, { transform: 'none' }]), o),
       oldBar.animate(way([{ opacity: 1 }, { opacity: 0, offset: 0.45 }, { opacity: 0 }]), o),
       bar.animate(way([{ opacity: 0 }, { opacity: 0, offset: 0.3 }, { opacity: 1 }]), o),
     ];
@@ -424,7 +469,10 @@ async function zoom(plate: HTMLElement) {
     ...layers.map((el) => el.animate([{ transform: 'none', opacity: 1 }, { transform: back, opacity: dim }], opts)),
   ];
   // Not live yet (a click before the hover finished): it becomes live in the window.
-  void session.goLive().then(() => session.frame.focus());
+  void session.goLive().then(() => {
+    session.preview(false);
+    session.frame.focus();
+  });
   await Promise.all(flights.map((f) => f.finished));
   layers.forEach((el) => (el.inert = true));
   overlay.classList.add('landed');
@@ -449,6 +497,7 @@ async function zoom(plate: HTMLElement) {
     flights.forEach((f) => f.cancel());
     await Promise.all(returns.map((f) => f.finished));
     home.moveBefore(motion, homeNext);
+    session.preview(true);
     plate.style.visibility = '';
     overlay.remove();
     returns.forEach((f) => f.cancel());
@@ -550,5 +599,7 @@ export function initLive() {
     { threshold: [0, 0.6] },
   );
   plates.forEach((p) => seen.observe(p));
+  // The theme switch reaches the live apps (it reaches the tapes in tape.ts).
+  new MutationObserver(() => sessions.forEach((s) => s.syncTheme())).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   new MutationObserver(() => plates.forEach(update)).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['inert'] });
 }
