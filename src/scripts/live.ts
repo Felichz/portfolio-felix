@@ -5,12 +5,13 @@
  * with its clock and timers following the recording (scripts/apps/bridge.js). So at any moment the
  * live app is in the state the tape shows.
  *
- * - Hover: the preview lifts a little and the live app takes the tape's place on the same frame. Its
- *   hover states, tooltips and cursors are real from there on.
- * - Click: the preview's contents (the live app itself, moved with moveBefore so it keeps its state)
- *   go into a window over the page, with the portfolio's toolbar: the case study, the live site, the
- *   source, and Close. In the showcase the window keeps a margin of page around it; on a case study it
- *   fills the screen. Close, Escape, a click outside or Back return it to the preview, still live.
+ * - Hover: the preview lifts a little and the live app takes the tape's place on the same frame. From
+ *   there it's the app: hover states, cursors and clicks are real. Its bar has only the window lights,
+ *   which keep to the pointer's side.
+ * - The green light: the preview's contents (the live app itself, moved with moveBefore so it keeps
+ *   its state) go into a window over the page, where the app runs at its own size. The case study, the
+ *   live site and the source wait under it. Red or yellow, Escape, a click outside or Back return it
+ *   to the preview, still live.
  *
  * Nothing boots before the visitor's first input, so page-load audits (Lighthouse) never pay for it,
  * and only one app runs at a time: it's dropped when its preview leaves the screen. Desktop pointers
@@ -113,7 +114,6 @@ class Session {
   #loop = 0;
   #disposed = false;
   #restore = new Map<string, string | null>();
-  #capture?: (e: Event) => void;
   #fit?: ResizeObserver;
 
   constructor(
@@ -184,17 +184,24 @@ class Session {
     await painted;
     for (const [k, v] of this.#restore) v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
     this.syncTheme();
-    this.preview(true);
-    this.#capture = (e: Event) => {
-      // Previewed, the app takes hover but not clicks: a click opens it.
-      if (this.live && this.plate.contains(this.frame) && !document.querySelector('.thaw')) {
+    const win = frame.contentWindow!;
+    // Where the pointer is over the app, for the window lights (they keep to the pointer's side).
+    win.addEventListener('pointermove', (e) => frame.dispatchEvent(new CustomEvent('live:pointer', { bubbles: true, detail: e.clientX / win.innerWidth })), {
+      passive: true,
+    });
+    // In a preview the app takes the pointer and clicks, but not the wheel: that still scrolls the page
+    // (and moves the showcase, which listens for it). In its window, the app scrolls itself.
+    win.addEventListener(
+      'wheel',
+      (e) => {
+        if (!this.plate.contains(frame)) return;
         e.preventDefault();
-        e.stopImmediatePropagation();
-        if (e.type === 'pointerdown') void zoom(this.plate);
-      }
-    };
-    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click', 'dblclick', 'contextmenu'])
-      frame.contentWindow!.addEventListener(type, this.#capture, true);
+        const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
+        const pass = new WheelEvent('wheel', { deltaX: e.deltaX * k, deltaY: e.deltaY * k, bubbles: true, cancelable: true });
+        if (this.plate.dispatchEvent(pass)) scrollBy(e.deltaX * k, e.deltaY * k);
+      },
+      { passive: false },
+    );
     this.#follow();
   }
 
@@ -213,14 +220,6 @@ class Session {
       try {
         localStorage.setItem(key, theme);
       } catch {}
-  }
-
-  /** In a preview the whole app is one button that opens it: the cursor says so, over the app too. */
-  preview(on: boolean) {
-    const doc = this.frame?.contentDocument;
-    if (!doc) return;
-    doc.getElementById('live-preview-cursor')?.remove();
-    if (on) doc.head.insertAdjacentHTML('beforeend', '<style id="live-preview-cursor">*, *::before, *::after { cursor: zoom-in !important; }</style>');
   }
 
   /** Keeps up with the tape: replays the clicks it passes; restarts if the tape went back. */
@@ -323,6 +322,73 @@ const sessionFor = (plate: HTMLElement) => {
 };
 
 // ---------------------------------------------------------------------------------------------------
+// Window lights: the only controls on a live preview's bar, as on a Mac. In the preview the green one
+// opens the app in a window; in the window, red and yellow light up and take it back. They keep to
+// the side of the window the pointer is on, so they're always at hand, and that they move at all
+// says they're real.
+// ---------------------------------------------------------------------------------------------------
+
+const glyph = (d: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">${d}</svg>`;
+const GLYPHS = {
+  close: glyph('<path d="m7 7 10 10M17 7 7 17"/>'),
+  min: glyph('<path d="M6 12h12"/>'),
+  zoom: glyph('<path d="M6.5 17.5v-7l7 7zM17.5 6.5v7l-7-7z" fill="currentColor" stroke="none"/>'),
+  unzoom: glyph('<path d="M11 13H4l7 7zM13 11h7l-7-7z" fill="currentColor" stroke="none"/>'),
+};
+
+function lightsHTML(mode: 'preview' | 'window', name: string) {
+  const open = mode === 'window';
+  const b = (kind: 'close' | 'min' | 'zoom', label: string, on: boolean, g = GLYPHS[kind]) =>
+    `<button class="light light--${kind}" type="button" data-light="${kind}" aria-label="${label}"${on ? '' : ' disabled'}>${g}</button>`;
+  return `<span class="lights" data-side="left">${b('close', `Close ${name}`, open)}${b('min', `Minimize ${name}`, open)}${
+    open ? b('zoom', `Restore ${name}`, true, GLYPHS.unzoom) : b('zoom', `Open ${name} in a window`, true)
+  }</span>`;
+}
+
+const LIGHTS_PAD = 12;
+const lightsSpan = (lights: HTMLElement) => (lights.parentElement?.clientWidth ?? 0) - lights.offsetWidth - 2 * LIGHTS_PAD;
+
+/** Puts the lights in a corner at once. */
+function placeLights(lights: HTMLElement, side: 'left' | 'right') {
+  lights.getAnimations().forEach((a) => a.cancel());
+  lights.dataset.side = side;
+  lights.style.transform = side === 'right' ? `translateX(${lightsSpan(lights)}px)` : '';
+}
+
+/**
+ * Sends the lights to the side the pointer is on (`f`: its position across the window, 0 to 1, with a
+ * dead band in the middle). They speed up as they go, stretched by the speed, hit the far corner,
+ * squash against it and settle with a small bounce.
+ */
+function moveLights(lights: HTMLElement | null | undefined, f: number) {
+  if (!lights?.isConnected) return;
+  const now = lights.dataset.side === 'right' ? 'right' : 'left';
+  const side = f > 0.56 ? 'right' : f < 0.44 ? 'left' : now;
+  if (side === now) return;
+  const bar = lights.parentElement!;
+  const k = bar.getBoundingClientRect().width / bar.clientWidth || 1;
+  const from = (lights.getBoundingClientRect().left - bar.getBoundingClientRect().left) / k - LIGHTS_PAD;
+  placeLights(lights, side);
+  const to = side === 'right' ? lightsSpan(lights) : 0;
+  if (reduce.matches || Math.abs(to - from) < 1) return;
+  const dir = Math.sign(to - from);
+  // Scaled from the leading edge: the stretch trails behind, and the squash keeps it on the wall.
+  lights.style.transformOrigin = dir > 0 ? '100% 50%' : '0 50%';
+  const at = (x: number, sx = 1, sy = 1) => `translateX(${x}px) scale(${sx}, ${sy})`;
+  lights.animate(
+    [
+      { transform: at(from), easing: 'cubic-bezier(0.55, 0, 0.9, 0.45)' },
+      { offset: 0.5, transform: at(from + (to - from) * 0.58, 1.5, 0.8), easing: 'cubic-bezier(0.2, 0.4, 0.5, 1)' },
+      { offset: 0.72, transform: at(to, 0.78, 1.15), easing: 'cubic-bezier(0.3, 0, 0.35, 1)' },
+      { offset: 0.87, transform: at(to - dir * 3, 1.05, 0.96), easing: 'ease-in-out' },
+      { transform: at(to) },
+    ],
+    { duration: 600 },
+  );
+}
+
+// ---------------------------------------------------------------------------------------------------
 // Zoom: the live preview, in a window
 // ---------------------------------------------------------------------------------------------------
 
@@ -374,7 +440,7 @@ async function zoom(plate: HTMLElement) {
   // Only the bar changes on the way: the plate's 30px chrome gives way to a thin toolbar.
   const r = plate.getBoundingClientRect();
   const BAR = 34;
-  const [mx, top, bottom] = full ? [12, 12, 50] : [24, 18, 52];
+  const [mx, top, bottom] = full ? [12, 12, 62] : [24, 18, 66];
   const availW = innerWidth - 2 * mx;
   const availH = innerHeight - top - bottom - BAR;
   const k = Math.min(1, availW / 1100);
@@ -400,21 +466,22 @@ async function zoom(plate: HTMLElement) {
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-label', `${name}, live`);
   overlay.style.setProperty('--accent', getComputedStyle(plate).getPropertyValue('--accent'));
-  const tool = (a: HTMLAnchorElement | null, label: string, i: string) =>
-    a ? `<a class="thaw-tool" href="${a.href}"${a.target === '_blank' ? ' target="_blank" rel="noopener"' : ''}>${i}<span>${label}</span></a>` : '';
-  const closeLabel = `aria-label="Close ${name} and return to the portfolio"`;
+  // The way on (case study, live site, source) and the way back sit outside the window, in the site's
+  // own edition; the window's bar has only its lights.
+  const action = (a: HTMLAnchorElement | null, label: string, i: string) =>
+    a ? `<a class="btn btn--sm" href="${a.href}"${a.target === '_blank' ? ' target="_blank" rel="noopener"' : ''}>${i}${label}</a>` : '';
   overlay.innerHTML = `<div class="thaw-window plate plate--chrome" data-state="playing">
       <div class="thaw-shade"></div>
       <div class="thaw-clip">
-      <div class="thaw-chrome"></div>
-      <div class="thaw-bar">
-        <span class="thaw-lights"><button class="thaw-light" type="button" ${closeLabel} title="Close">${ICONS.close}</button><i></i><i></i></span>
-        <span class="thaw-tools">${tool(caseStudy, 'Case study', ICONS.doc)}${tool(live, 'Live site', ICONS.out)}${tool(source, 'Source', ICONS.code)}<button class="thaw-tool thaw-close" type="button" ${closeLabel}>${ICONS.close}<span>Close</span></button></span>
-      </div>
-      <div class="thaw-screen"></div>
+        <div class="thaw-chrome"></div>
+        <div class="thaw-bar">${lightsHTML('window', name)}</div>
+        <div class="thaw-screen"></div>
       </div>
     </div>
-    <p class="thaw-hint" aria-hidden="true"><kbd>Esc</kbd> or click outside to return to the portfolio</p>`;
+    <div class="thaw-actions">
+      ${action(caseStudy, 'Case study', ICONS.doc)}${action(live, 'Live site', ICONS.out)}${action(source, 'Source', ICONS.code)}
+      <p class="thaw-hint"><kbd>Esc</kbd> or click outside to return</p>
+    </div>`;
   const win = overlay.querySelector<HTMLElement>('.thaw-window')!;
   const screen = overlay.querySelector<HTMLElement>('.thaw-screen')!;
   const bar = overlay.querySelector<HTMLElement>('.thaw-bar')!;
@@ -426,17 +493,14 @@ async function zoom(plate: HTMLElement) {
   oldBar.style.cssText = `width:${r.width}px;transform:scale(${1 / s0})`;
   bar.style.cssText = `width:${availW}px;height:${BAR}px;transform:scale(${1 / k})`;
   screen.style.cssText = `width:${vw}px;height:${vh}px`;
-  overlay.querySelector<HTMLElement>('.thaw-hint')!.style.top = `${top + BAR + availH + 14}px`;
+  overlay.querySelector<HTMLElement>('.thaw-actions')!.style.top = `${top + BAR + availH + 14}px`;
   // The plate's own bar, as it is on that frame, to start from.
   const chrome = plate.querySelector('.plate-chrome')?.cloneNode(true) as HTMLElement | undefined;
-  if (chrome) {
-    if (plate.hasAttribute('data-live')) {
-      chrome.querySelector<HTMLElement>('.live-badge')?.style.setProperty('display', 'inline-flex');
-      chrome.querySelector('.motion-btn')?.remove();
-    }
-    oldBar.append(chrome);
-  }
+  if (chrome) oldBar.append(chrome);
   document.body.append(overlay);
+  // The lights start on the side they were on in the preview.
+  const lights = bar.querySelector<HTMLElement>('.lights')!;
+  placeLights(lights, plate.querySelector<HTMLElement>('.lights')?.dataset.side === 'right' ? 'right' : 'left');
   const layers = pageLayers();
   const origin = `${r.left + r.width / 2}px ${r.top + r.height / 2}px`;
   layers.forEach((el) => (el.style.transformOrigin = origin));
@@ -469,10 +533,7 @@ async function zoom(plate: HTMLElement) {
     ...layers.map((el) => el.animate([{ transform: 'none', opacity: 1 }, { transform: back, opacity: dim }], opts)),
   ];
   // Not live yet (a click before the hover finished): it becomes live in the window.
-  void session.goLive().then(() => {
-    session.preview(false);
-    session.frame.focus();
-  });
+  void session.goLive().then(() => session.frame.focus());
   await Promise.all(flights.map((f) => f.finished));
   layers.forEach((el) => (el.inert = true));
   overlay.classList.add('landed');
@@ -497,7 +558,6 @@ async function zoom(plate: HTMLElement) {
     flights.forEach((f) => f.cancel());
     await Promise.all(returns.map((f) => f.finished));
     home.moveBefore(motion, homeNext);
-    session.preview(true);
     plate.style.visibility = '';
     overlay.remove();
     returns.forEach((f) => f.cancel());
@@ -516,7 +576,10 @@ async function zoom(plate: HTMLElement) {
   addEventListener('keydown', onKey, true);
   session.frame.contentWindow?.addEventListener('keydown', onKey, true);
   overlay.addEventListener('click', (e) => e.target === overlay && void close());
-  overlay.querySelectorAll('.thaw-close, .thaw-light').forEach((b) => b.addEventListener('click', () => void close()));
+  overlay.querySelectorAll('[data-light]').forEach((b) => b.addEventListener('click', () => void close()));
+  // The lights keep to the pointer's side: over the page around the window, and over the app in it.
+  overlay.addEventListener('pointermove', (e) => moveLights(lights, (e.clientX - mx) / availW));
+  overlay.addEventListener('live:pointer', (e) => moveLights(lights, (e as CustomEvent<number>).detail));
   // The deck listens on window: keep wheel and keys over the overlay from moving the page under it.
   for (const type of ['wheel', 'keydown'] as const) overlay.addEventListener(type, (e) => e.stopPropagation());
   history.pushState({ ...(history.state ?? {}), liveZoom: true }, '', location.href);
@@ -534,22 +597,33 @@ export function initLive() {
   const plates = [...document.querySelectorAll<HTMLElement>('.plate[data-app]')];
   if (!plates.length) return;
 
-  // A click on a preview opens it (the plate is wrapped in a link to the case study in the showcase,
-  // and in the lightbox button on a case study).
+  const ok = () => desktop() && canMove;
+  const mark = () => document.documentElement.classList.toggle('live-ok', ok());
+  mark();
+  addEventListener('resize', mark, { passive: true });
+
+  // A preview is the app: its bar has only the lights, and the green one opens it in a window.
+  for (const plate of plates) plate.querySelector('.plate-dots')?.insertAdjacentHTML('afterend', lightsHTML('preview', nameOf(plate)));
+
+  // Clicks on a preview are the app's (the plate sits in a link to the case study in the showcase, and
+  // in the lightbox button on a case study: neither takes them). Only the green light opens the window.
   document.addEventListener(
     'click',
     (e) => {
-      const plate = (e.target as Element).closest<HTMLElement>('.plate[data-app]');
-      if (!plate || !desktop() || !canMove || (e as MouseEvent).button !== 0) return;
-      if ((e.target as Element).closest('.plate-tools')) return; // its own buttons (Play recording)
+      const t = e.target as Element;
+      const plate = t.closest<HTMLElement>('.plate[data-app]');
+      if (!plate || !ok() || plate.closest('.thaw')) return;
       e.preventDefault();
       e.stopPropagation();
-      void zoom(plate);
+      if (t.closest('[data-light="zoom"]')) void zoom(plate);
+      else if (!t.closest('[data-light]')) void sessionFor(plate).goLive();
     },
     true,
   );
 
-  // Hover: the preview lifts and the live app takes its place; the showcase holds while it's hovered.
+  // Hover: the preview lifts and the live app takes its place; the showcase holds while it's hovered,
+  // and the lights keep to the pointer's side of it.
+  const lightsOf = (plate: HTMLElement) => plate.querySelector<HTMLElement>('.lights');
   for (const plate of plates) {
     plate.addEventListener('pointerenter', (e) => {
       if (e.pointerType !== 'mouse' || !desktop()) return;
@@ -557,8 +631,28 @@ export function initLive() {
       const s = sessions.get(plate);
       if (s) void s.goLive();
     });
-    plate.addEventListener('pointerleave', () => document.dispatchEvent(new CustomEvent('live:hold', { detail: false })));
+    plate.addEventListener('pointermove', (e) => {
+      if (e.target instanceof HTMLIFrameElement) return; // the app reports its own (live:pointer)
+      const r = plate.getBoundingClientRect();
+      moveLights(lightsOf(plate), (e.clientX - r.left) / r.width);
+    });
+    plate.addEventListener('live:pointer', (e) => moveLights(lightsOf(plate), (e as CustomEvent<number>).detail));
+    plate.addEventListener('pointerleave', () => {
+      // (Moving into the app's frame isn't leaving.)
+      requestAnimationFrame(() => {
+        if (plate.matches(':hover')) return;
+        document.dispatchEvent(new CustomEvent('live:hold', { detail: false }));
+        moveLights(lightsOf(plate), 0);
+      });
+    });
   }
+  // A preview booted under the pointer becomes live at once.
+  const boot = (plate: HTMLElement) => {
+    const s = sessionFor(plate);
+    void s.booted.then(() => {
+      if (plate.matches(':hover')) void s.goLive();
+    });
+  };
 
   // Boot only after the visitor's first input, and only for the preview on screen: in view, and not in
   // an inactive showcase slide (they overlap the active one, hidden and inert).
@@ -569,7 +663,7 @@ export function initLive() {
     if (started || !desktop()) return;
     started = true;
     for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) removeEventListener(type, start, true);
-    for (const p of visible) idle(() => visible.has(p) && !zooming && sessionFor(p));
+    for (const p of visible) idle(() => visible.has(p) && !zooming && boot(p));
   };
   for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(type, start, { capture: true, passive: true });
   const idle = (fn: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 2000 }) : setTimeout(fn, 400));
@@ -580,7 +674,7 @@ export function initLive() {
     if (on) {
       visible.add(plate);
       clearTimeout(leaving.get(plate));
-      if (started && !zooming) idle(() => visible.has(plate) && sessionFor(plate));
+      if (started && !zooming) idle(() => visible.has(plate) && boot(plate));
     } else {
       visible.delete(plate);
       // Off screen for a moment: let the app go (not while its window is open).

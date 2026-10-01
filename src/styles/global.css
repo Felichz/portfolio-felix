@@ -618,25 +618,49 @@ kbd .icon { width: 12px; height: 12px; }
   pointer-events: none;
 }
 .plate-motion .live-app.shown { opacity: 1; pointer-events: auto; transition: opacity 0.16s ease-out; }
-/* A live preview lifts a little under the pointer: it's real, and it answers. A click opens it. */
-@media (hover: hover) and (pointer: fine) { .plate[data-app] .plate-screen { cursor: zoom-in; } }
+/* A live preview lifts a little under the pointer: it's real, and it answers. It's the app, not a
+   link or a lightbox: no zoom cursor, and only its lights on the bar (no address, no recording button). */
 .plate[data-app] { transition: scale 0.45s var(--ease-out), box-shadow 0.45s var(--ease-out); }
 .plate[data-live]:hover { scale: 1.025; box-shadow: 0 0 0 1px var(--line-2), 0 30px 70px -30px color-mix(in oklab, var(--accent, var(--ink)) 45%, transparent), var(--shadow-lg); }
 @media (prefers-reduced-motion: reduce) { .plate[data-live]:hover { scale: none; } }
-.live-badge {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  height: 20px;
-  padding: 0 8px;
-  border-radius: 999px;
-  color: var(--chrome-ink);
-  font: 600 0.6875rem/1 var(--font);
-  white-space: nowrap;
-}
-.live-badge i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent, var(--house)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent, var(--house)) 25%, transparent); }
-.plate[data-live] .live-badge { display: inline-flex; }
 .plate[data-live] .motion-btn { display: none; }
+.lights { display: none; }
+html.live-ok .plate[data-app], html.live-ok .plate[data-app] .zoom { cursor: default; }
+html.live-ok .plate[data-app] .plate-chrome { position: relative; }
+html.live-ok .plate[data-app] :is(.plate-dots, .motion-btn) { display: none; }
+html.live-ok .plate[data-app] .lights, .thaw .lights { display: flex; }
+
+/* Window lights (src/scripts/live.ts), as on a Mac: red closes, yellow minimizes, green zooms; the ones
+   that can't act are grey. They show their marks under the pointer, and move with transform only. */
+.lights {
+  position: absolute;
+  top: calc(50% - 6px);
+  left: 12px;
+  gap: 8px;
+  will-change: transform;
+}
+.light {
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--l);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.2);
+  color: rgb(0 0 0 / 0.55);
+  cursor: pointer;
+  transition: scale 0.2s var(--ease-out), background 0.3s;
+}
+.light--close { --l: #ff5f57; }
+.light--min { --l: #febc2e; }
+.light--zoom { --l: #28c840; }
+.light:disabled { --l: color-mix(in oklab, var(--chrome-ink) 26%, transparent); box-shadow: none; cursor: default; }
+.light svg { width: 8px; height: 8px; opacity: 0; transition: opacity 0.15s; }
+.lights:hover .light:not(:disabled) svg, .light:focus-visible svg { opacity: 1; }
+.light:not(:disabled):hover { scale: 1.15; }
+.light:focus-visible { outline: 2px solid var(--chrome-ink); outline-offset: 2px; }
 
 /* The window a preview opens in (src/scripts/live.ts), built at its landed size, where the app runs
    at its own size, and flown as one piece. It starts clipped to the plate, with the plate's own bar,
@@ -672,77 +696,35 @@ html.thawing { overflow: hidden; }
   transform-origin: 0 0;
   pointer-events: none;
 }
-.thaw-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 8px 0 12px;
-  color: var(--chrome-ink);
-  transform-origin: 0 0;
-}
-.thaw-lights { display: flex; align-items: center; gap: 7px; }
-.thaw-lights i, .thaw-light { width: 11px; height: 11px; border-radius: 50%; background: color-mix(in oklab, var(--chrome-ink) 45%, transparent); }
-/* The first light closes the window, as on a Mac: it shows its mark under the pointer. */
-.thaw-light {
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  background: color-mix(in oklab, var(--accent, var(--chrome-ink)) 85%, transparent);
-  color: rgb(0 0 0 / 0.6);
-  cursor: pointer;
-  transition: scale 0.2s var(--ease-out), background 0.2s;
-}
-.thaw-light .icon { width: 8px; height: 8px; stroke-width: 3; opacity: 0; transition: opacity 0.15s; }
-.thaw-lights:hover .thaw-light .icon, .thaw-light:focus-visible .icon { opacity: 1; }
-.thaw-light:hover { scale: 1.15; background: var(--accent, var(--chrome-ink)); }
-.thaw-light:focus-visible { outline: 2px solid var(--chrome-ink); outline-offset: 2px; }
-.thaw-tools { display: flex; align-items: center; gap: 2px; min-width: 0; }
-.thaw-tool {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 24px;
-  padding: 0 10px 0 8px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--chrome-ink);
-  font: 600 0.75rem/1 var(--font);
-  letter-spacing: 0.02em;
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.thaw-tool:hover, .thaw-tool:focus-visible { background: color-mix(in oklab, var(--chrome-ink) 14%, transparent); }
-.thaw-tool .icon { width: 12px; height: 12px; }
-/* Close is the one to find: it carries a ring. */
-.thaw-close { margin-left: 4px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--chrome-ink) 40%, transparent); }
+.thaw-bar { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
 .thaw-screen { position: absolute; left: 0; top: 0; overflow: hidden; }
 /* In the window the app fills the screen at its own size, no longer the recorded 1440x900. */
 .thaw-screen .live-app { width: 100%; height: 100%; transform: none; }
-/* How to leave, outside the window, once it has landed. */
-.thaw-hint {
+/* The way on and the way back, under the window, in the site's own edition. They arrive once it has
+   landed. */
+.thaw-actions {
   position: absolute;
   left: 50%;
-  translate: -50% 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0;
+  translate: -50% 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s var(--ease-out), translate 0.5s var(--ease-out);
+  cursor: auto;
+}
+.thaw.landed .thaw-actions { opacity: 1; translate: -50% 0; pointer-events: auto; transition-delay: 0.08s; }
+.thaw-actions .btn { white-space: nowrap; }
+.thaw-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 0 10px;
   color: var(--ink-2);
   font-size: 0.8125rem;
   white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.4s var(--ease-out) 0.15s;
-  pointer-events: none;
 }
-.thaw.landed .thaw-hint { opacity: 1; }
 
 /* Tapes (src/scripts/tape.ts): the recorded viewport, scaled to cover the plate, and a drawn cursor. */
 tape-player { position: absolute; inset: 0; overflow: hidden; contain: strict; --tape-k: 1; }

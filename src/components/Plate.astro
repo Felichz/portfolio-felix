@@ -60,9 +60,7 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
     chrome && !phone && (
       <div class="plate-chrome">
         <span class="plate-dots" aria-hidden="true"><i /><i /><i /></span>
-        <span class="plate-url" aria-hidden="true"><Icon name="lock" />{chrome}</span>
         <span class="plate-tools">
-          {tape && <span class="live-badge" aria-hidden="true"><i />Live · click to open</span>}
           {(clip || tape) && motion === 'lead' && (
             <button class="motion-btn" type="button" data-motion-play>
               <Icon name="play" class="motion-btn-play" />
@@ -131,9 +129,6 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
   }
   .plate-chrome .motion-btn:hover { color: var(--chrome-ink); background: color-mix(in oklab, var(--chrome-ink) 16%, transparent); }
   .plate-chrome .motion-btn :global(.icon) { width: 11px; height: 11px; }
-  @media (max-width: 560px) {
-    .plate-url { display: none; }
-  }
 </style>
 
 <script>
