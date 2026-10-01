@@ -340,45 +340,60 @@ async function zoom(plate: HTMLElement) {
   const name = nameOf(plate);
   const full = !caseStudy; // on a case study the window takes the screen
 
-  // ---- The window: the plate rebuilt at the app's 1440×900, with the portfolio's toolbar.
+  // ---- Geometry: from the plate to a centered window, one uniform scale for the app. Only the bar
+  // changes: the plate's 30px chrome gives way to a thin toolbar drawn at its final size.
   const r = plate.getBoundingClientRect();
+  const s0 = r.width / 1440;
+  const BAR = 34;
+  const [mx, top, bottom] = full ? [12, 12, 50] : [28, 20, 56];
+  const k = Math.min((innerWidth - 2 * mx) / 1440, (innerHeight - top - bottom - BAR) / 900);
+  const x1 = (innerWidth - 1440 * k) / 2;
+  const y1 = top + (innerHeight - top - bottom - (BAR + 900 * k)) / 2;
+  const lift = `translate(${r.left}px, ${r.top}px) scale(${s0})`;
+  const land = `translate(${x1}px, ${y1}px) scale(${k})`;
+  // The screen starts under the plate's bar (30px at the plate's scale) and ends under the toolbar.
+  const drop0 = `translateY(${30 / s0}px)`;
+  const drop1 = `translateY(${BAR / k}px)`;
+
+  // ---- The window: the plate rebuilt at the app's 1440×900, with the portfolio's toolbar.
   const overlay = document.createElement('div');
   overlay.className = 'thaw';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-label', `${name}, live`);
   overlay.style.setProperty('--accent', getComputedStyle(plate).getPropertyValue('--accent'));
-  overlay.innerHTML = `<div class="thaw-window plate plate--chrome" data-state="playing"><div class="thaw-chrome"></div><div class="thaw-screen"></div></div>
+  const tool = (a: HTMLAnchorElement | null, label: string, i: string) =>
+    a ? `<a class="thaw-tool" href="${a.href}"${a.target === '_blank' ? ' target="_blank" rel="noopener"' : ''}>${i}<span>${label}</span></a>` : '';
+  const closeLabel = `aria-label="Close ${name} and return to the portfolio"`;
+  overlay.innerHTML = `<div class="thaw-window plate plate--chrome" data-state="playing">
+      <div class="thaw-chrome"></div>
+      <div class="thaw-bar">
+        <span class="thaw-lights"><button class="thaw-light" type="button" ${closeLabel} title="Close">${ICONS.close}</button><i></i><i></i></span>
+        <span class="thaw-tools">${tool(caseStudy, 'Case study', ICONS.doc)}${tool(live, 'Live site', ICONS.out)}${tool(source, 'Source', ICONS.code)}<button class="thaw-tool thaw-close" type="button" ${closeLabel}>${ICONS.close}<span>Close</span></button></span>
+      </div>
+      <div class="thaw-screen"></div>
+    </div>
     <p class="thaw-hint" aria-hidden="true"><kbd>Esc</kbd> or click outside to return to the portfolio</p>`;
   const win = overlay.querySelector<HTMLElement>('.thaw-window')!;
   const screen = overlay.querySelector<HTMLElement>('.thaw-screen')!;
-  win.style.setProperty('--bar-k', String(1440 / r.width));
+  const bar = overlay.querySelector<HTMLElement>('.thaw-bar')!;
+  const oldBar = overlay.querySelector<HTMLElement>('.thaw-chrome')!;
+  const radius = parseFloat(getComputedStyle(plate).borderTopLeftRadius) || 12;
+  win.style.setProperty('--bar-k', String(1 / s0));
+  win.style.setProperty('--win-r', `${radius / k}px`);
+  win.style.height = `${BAR / k + 900}px`;
+  bar.style.cssText = `width:${1440 * k}px;height:${BAR}px;transform:scale(${1 / k})`;
+  overlay.querySelector<HTMLElement>('.thaw-hint')!.style.top = `${y1 + BAR + 900 * k + 12}px`;
+  // The plate's own bar, as it is on that frame, to start from.
   const chrome = plate.querySelector('.plate-chrome')?.cloneNode(true) as HTMLElement | undefined;
   if (chrome) {
-    const tools = chrome.querySelector('.plate-tools')!;
-    tools.replaceChildren();
-    const tool = (a: HTMLAnchorElement | null, label: string, i: string) =>
-      a ? `<a class="motion-btn thaw-tool" href="${a.href}"${a.target === '_blank' ? ' target="_blank" rel="noopener"' : ''}>${i}<span>${label}</span></a>` : '';
-    tools.insertAdjacentHTML(
-      'beforeend',
-      tool(caseStudy, 'Case study', ICONS.doc) +
-        tool(live, 'Live site', ICONS.out) +
-        tool(source, 'Source', ICONS.code) +
-        `<button class="motion-btn thaw-tool thaw-close" type="button" aria-label="Close ${name} and return to the portfolio">${ICONS.close}<span>Close</span><kbd>Esc</kbd></button>`,
-    );
-    overlay.querySelector('.thaw-chrome')!.append(chrome);
+    if (plate.hasAttribute('data-live')) {
+      chrome.querySelector<HTMLElement>('.live-badge')?.style.setProperty('display', 'inline-flex');
+      chrome.querySelector('.motion-btn')?.remove();
+    }
+    oldBar.append(chrome);
   }
   document.body.append(overlay);
-
-  // ---- Geometry: from the plate to a centered window, one uniform scale.
-  const H = 900 + 30 * (1440 / r.width);
-  const s0 = r.width / 1440;
-  const margin = full ? 16 : Math.max(40, Math.min(innerWidth, innerHeight) * 0.08);
-  const k = Math.min((innerWidth - 2 * margin) / 1440, (innerHeight - 2 * margin - (full ? 0 : 28)) / H);
-  const x1 = (innerWidth - 1440 * k) / 2;
-  const y1 = (innerHeight - H * k) / 2 - (full ? 0 : 14);
-  const lift = `translate(${r.left}px, ${r.top}px) scale(${s0})`;
-  const land = `translate(${x1}px, ${y1}px) scale(${k})`;
   const layers = pageLayers();
   const origin = `${r.left + r.width / 2}px ${r.top + r.height / 2}px`;
   layers.forEach((el) => (el.style.transformOrigin = origin));
@@ -392,8 +407,20 @@ async function zoom(plate: HTMLElement) {
   plate.style.visibility = 'hidden';
   document.documentElement.classList.add('thawing');
   document.dispatchEvent(new CustomEvent('thaw:open'));
+  // The plate's bar fades as the screen rises into the toolbar's place.
+  // (Keyframes reversed by hand on the way back, so they share the window's easing.)
+  const bars = (forward: boolean, o: KeyframeAnimationOptions) => {
+    const way = (frames: Keyframe[]) =>
+      forward ? frames : frames.map((f) => ('offset' in f ? { ...f, offset: 1 - Number(f.offset) } : f)).reverse();
+    return [
+      screen.animate(way([{ transform: drop0 }, { transform: drop1 }]), o),
+      oldBar.animate(way([{ opacity: 1 }, { opacity: 0, offset: 0.45 }, { opacity: 0 }]), o),
+      bar.animate(way([{ opacity: 0 }, { opacity: 0, offset: 0.3 }, { opacity: 1 }]), o),
+    ];
+  };
   const flights = [
     win.animate([{ transform: lift }, { transform: land }], opts),
+    ...bars(true, opts),
     ...layers.map((el) => el.animate([{ transform: 'none', opacity: 1 }, { transform: back, opacity: dim }], opts)),
   ];
   // Not live yet (a click before the hover finished): it becomes live in the window.
@@ -416,6 +443,7 @@ async function zoom(plate: HTMLElement) {
     const ret: KeyframeAnimationOptions = { duration: reduce.matches ? 1 : FLIGHT * 0.85, easing: EASE, fill: 'both' };
     const returns = [
       win.animate([{ transform: land }, { transform: lift }], ret),
+      ...bars(false, ret),
       ...layers.map((el) => el.animate([{ transform: back, opacity: dim }, { transform: 'none', opacity: 1 }], ret)),
     ];
     flights.forEach((f) => f.cancel());
@@ -439,7 +467,7 @@ async function zoom(plate: HTMLElement) {
   addEventListener('keydown', onKey, true);
   session.frame.contentWindow?.addEventListener('keydown', onKey, true);
   overlay.addEventListener('click', (e) => e.target === overlay && void close());
-  overlay.querySelector('.thaw-close')?.addEventListener('click', () => void close());
+  overlay.querySelectorAll('.thaw-close, .thaw-light').forEach((b) => b.addEventListener('click', () => void close()));
   // The deck listens on window: keep wheel and keys over the overlay from moving the page under it.
   for (const type of ['wheel', 'keydown'] as const) overlay.addEventListener(type, (e) => e.stopPropagation());
   history.pushState({ ...(history.state ?? {}), liveZoom: true }, '', location.href);

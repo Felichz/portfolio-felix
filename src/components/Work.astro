@@ -304,18 +304,19 @@ const total = String(projects.length).padStart(2, '0');
   }
   .slide-media:hover :global(.plate) { transform: perspective(1600px) translateY(-4px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
   .slide-media[data-tilting] :global(.plate) { transition: transform 0.15s linear, box-shadow 0.6s var(--ease-out); }
-  .slide-media::after {
+  /* On the window itself, so it moves with the lean and the lift. */
+  .slide-media :global(.plate)::after {
     content: '';
     position: absolute;
     inset: 0;
     z-index: 3;
-    border-radius: var(--radius);
+    border-radius: inherit;
     background: radial-gradient(45% 55% at var(--sx, 50%) var(--sy, 0%), rgb(255 255 255 / 0.12), transparent 65%);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s var(--ease-out);
   }
-  .slide-media[data-tilting]::after { opacity: 1; }
+  .slide-media[data-tilting] :global(.plate)::after { opacity: 1; }
 
   .slide-info {
     display: grid;
