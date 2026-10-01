@@ -132,7 +132,7 @@ const out = {
   id,
   viewport: scene.viewport,
   themeAttr: scene.themeAttr,
-  app: { entry: scene.base, readySelector: scene.readySelector, storage: scene.storage, themeKey: scene.themeKey, prefetch },
+  app: { entry: scene.base, readySelector: scene.readySelector, storage: scene.storage, themeKey: scene.themeKey, restore: scene.restore, prefetch },
   ...tape,
 };
 mkdirSync(tapes, { recursive: true });

@@ -49,7 +49,7 @@ const person = {
       (() => {
         const d = document.documentElement;
         d.classList.add('js');
-        // Opened inside itself (src/scripts/thaw.ts): start at rest, as the preview it replaces did.
+        // Opened inside itself (src/scripts/live.ts): start at rest, as the preview it replaces did.
         if (window !== window.top) d.classList.add('framed');
         let t = null;
         try { t = localStorage.getItem('fa-theme'); } catch {}
@@ -103,10 +103,10 @@ const person = {
   import { initDeck } from '../scripts/deck';
   import { initFx } from '../scripts/fx';
   import { initField } from '../scripts/field';
-  import { initThaw } from '../scripts/thaw';
+  import { initLive } from '../scripts/live';
 
   initDeck();
   initFx();
-  initThaw();
+  initLive();
   initField();
 </script>

@@ -58,7 +58,7 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 ## Details that took some care
 
 - **Tapes instead of videos.** LifeUI's preview, and this site's own, are tapes: the app's DOM recorded while a scripted scene drives it in headless Chrome, then replayed by a `<tape-player>` element in a script-less iframe with the app's real stylesheet. One 40 KB file replaces two 1.2 MB videos, plays in either theme, and stays sharp at any size.
-- **Live, in place.** Live doesn't leave the site: the product's window lifts off with the frame you were watching, and under it the app's own build (vendored under `/apps/<id>/`) boots with the last checkpoint's storage and replays the scene's clicks since then, with its clock and timers set to each recorded moment. When the window lands, the app is in the preview's exact state and takes its place. On this site's own slide, Live opens the site inside itself.
+- **Live previews.** After the visitor's first input (never during page load, so Lighthouse stays at 100), the app's own build, vendored under `/apps/<id>/`, boots under the preview and keeps up with the tape by replaying its recorded clicks, with its clock and timers following the recording. Hover a preview and it lifts and becomes the live app on the same frame; click it and it moves (with `moveBefore`, state intact) into a window with the case study, the live site, the source and Close. On this site's own slide, the preview is the site, live, inside itself.
 
 - One navigation model for wheel, trackpad, touch, keys, tabs and links. A wheel gesture moves one section, unless it started by scrolling something inside the section.
 - Deep links (`/#experience`, `/#work/lifeui`) open on their section and product before the first paint.
@@ -83,7 +83,7 @@ node scripts/tapes/record.mjs lifeui     # record public/tapes/lifeui.json from 
 node scripts/tapes/record.mjs portfolio  # this site's Intro, from dist/ (build first)
 ```
 
-Scenes live in `scripts/tapes/scenes/`. The player is `src/scripts/tape.ts`, the flight and handoff `src/scripts/thaw.ts`, and the clock bridge inlined into vendored apps `scripts/apps/bridge.js`.
+Scenes live in `scripts/tapes/scenes/`. The player is `src/scripts/tape.ts`, the live previews and their window `src/scripts/live.ts`, and the clock bridge inlined into vendored apps `scripts/apps/bridge.js`.
 
 ## Running it
 

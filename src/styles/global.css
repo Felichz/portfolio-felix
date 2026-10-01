@@ -603,22 +603,45 @@ kbd .icon { width: 12px; height: 12px; }
 /* A tape's last frame is the app itself, not a video still: it stays up once it ends. */
 .plate[data-state='done'] .plate-motion tape-player { opacity: 1; }
 
-/* Thaw (src/scripts/thaw.ts): the window an app opens in. It is the plate itself, rebuilt at the tape's
-   1440px width: the same chrome, scaled by --bar-k (window units per plate pixel) so its proportions
-   are the plate's, over the same 1440×900 screen. The flight is then one uniform scale of identical
-   content, and the live app runs in that same viewport. */
+/* Live previews (src/scripts/live.ts). Once the visitor is using the page, a preview's real app runs
+   under its tape at the recorded 1440x900, scaled like the tape, invisible until it takes over. */
+.plate-motion .live-app {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1440px;
+  height: 900px;
+  border: 0;
+  transform-origin: 0 0;
+  transform: scale(var(--live-k, 1));
+  opacity: 0;
+  pointer-events: none;
+}
+.plate-motion .live-app.shown { opacity: 1; pointer-events: auto; transition: opacity 0.16s ease-out; }
+/* A live preview lifts a little under the pointer: it's real, and it answers. */
+.plate[data-app] { transition: scale 0.45s var(--ease-out), box-shadow 0.45s var(--ease-out); }
+.plate[data-live]:hover { scale: 1.025; box-shadow: 0 0 0 1px var(--line-2), 0 30px 70px -30px color-mix(in oklab, var(--accent, var(--ink)) 45%, transparent), var(--shadow-lg); }
+@media (prefers-reduced-motion: reduce) { .plate[data-live]:hover { scale: none; } }
+.live-badge {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: var(--chrome-ink);
+  font: 600 0.6875rem/1 var(--font);
+  white-space: nowrap;
+}
+.live-badge i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent, var(--house)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent, var(--house)) 25%, transparent); }
+.plate[data-live] .live-badge { display: inline-flex; }
+.plate[data-live] .motion-btn { display: none; }
+
+/* The window a preview opens in: the plate rebuilt at 1440px wide, its chrome scaled by --bar-k
+   (window units per plate pixel) so its proportions are the plate's. The flight is one uniform scale
+   of identical content, and the preview's own contents are moved into it, live. */
 html.thawing { overflow: hidden; }
-/* On intent to open an app, the page layers become compositor layers ahead of the flight. */
-html.thaw-ready body > :is(header, nav, main, .ambient, .cursor-light) { will-change: transform, opacity; }
-.thaw { position: fixed; inset: 0; z-index: 1000; }
-/* Built ahead in idle time: laid out and ready, invisible and out of the way until the click. Until
-   there's intent the browser keeps its state but skips rendering it, the app's own CSS animations
-   included, so it costs nothing per frame. On hover it warms up at opacity 0.001, not 0: the browser
-   skips painting fully transparent layers, and that first paint is the cost this moves out of the
-   flight. */
-.thaw.standby { opacity: 0; pointer-events: none; }
-.thaw.standby:not(.warm) .thaw-screen { content-visibility: hidden; }
-.thaw.standby.warm { opacity: 0.001; }
+.thaw { position: fixed; inset: 0; z-index: 1000; cursor: zoom-out; }
 .thaw-window {
   position: absolute;
   top: 0;
@@ -629,6 +652,7 @@ html.thaw-ready body > :is(header, nav, main, .ambient, .cursor-light) { will-ch
   border-radius: calc(var(--radius) * var(--bar-k, 1.6));
   transform-origin: 0 0;
   will-change: transform;
+  cursor: auto;
 }
 .thaw-chrome {
   width: calc(1440px / var(--bar-k, 1.6));
@@ -636,23 +660,54 @@ html.thaw-ready body > :is(header, nav, main, .ambient, .cursor-light) { will-ch
   transform: scale(var(--bar-k, 1.6));
   transform-origin: 0 0;
 }
+/* The tools need their room: the address takes what's left, centered. */
+.thaw-chrome .plate-chrome { grid-template-columns: auto minmax(0, 1fr) auto; }
+.thaw-chrome .plate-url { justify-self: center; }
+.thaw-chrome .plate-tools { gap: 3px; }
+.thaw-window .thaw-tool {
+  height: 20px;
+  padding: 0 8px 0 6px;
+  gap: 5px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--chrome-ink);
+  font-size: 0.6875rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.thaw-window .thaw-tool:hover, .thaw-window .thaw-tool:focus-visible { background: color-mix(in oklab, var(--chrome-ink) 16%, transparent); color: var(--chrome-ink); box-shadow: none; }
+.thaw-window .thaw-tool .icon { width: 11px; height: 11px; }
+/* Close is the one to find: it carries a ring and the Escape key. */
+.thaw-window .thaw-close { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--chrome-ink) 40%, transparent); }
 .thaw-screen { position: absolute; left: 0; top: calc(30px * var(--bar-k, 1.6)); width: 1440px; height: 900px; overflow: hidden; }
-.thaw-app { position: absolute; inset: 0; width: 1440px; height: 900px; border: 0; opacity: 0; pointer-events: none; }
-/* Until it takes the frame's place, the app gets no pointer: the visitor's cursor resting over it would
-   otherwise hover things the frame doesn't show hovered (and pause a toast the frame shows leaving). */
-.thaw-app.live { pointer-events: auto; }
-/* The window's own controls arrive once it has landed. */
-.thaw-tool { opacity: 0; transition: opacity 0.3s var(--ease-out), color 0.2s, box-shadow 0.2s; }
-.thaw.landed .thaw-tool { opacity: 1; }
+/* The window's own controls, and how to leave, arrive once it has landed. */
+/* (They borrow the plate's motion-btn look, but not its rule that mutes it while a recording plays.) */
+.thaw .thaw-window.plate .thaw-tool { opacity: 0; pointer-events: auto; transition: opacity 0.3s var(--ease-out), color 0.2s, box-shadow 0.2s; }
+.thaw.landed .thaw-window.plate .thaw-tool { opacity: 1; }
 .thaw-tool kbd {
   padding: 1px 4px;
   border-radius: 4px;
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--chrome-ink) 35%, transparent);
   font: 600 0.5625rem/1 var(--font);
 }
-/* A slow start: the window breathes until the app has caught up. */
-.thaw.waiting .plate-dots i:first-child { animation: thaw-wait 0.9s var(--ease-io) infinite alternate; }
-@keyframes thaw-wait { to { opacity: 0.25; } }
+.thaw-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  translate: -50% 0;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  box-shadow: 0 0 0 1px var(--line-2), var(--shadow-sm);
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out) 0.2s;
+  pointer-events: none;
+}
+.thaw-hint kbd { font: 600 0.6875rem/1 var(--font); padding: 2px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--line-2); }
+.thaw.landed .thaw-hint { opacity: 1; }
 
 /* Tapes (src/scripts/tape.ts): the recorded viewport, scaled to cover the plate, and a drawn cursor. */
 tape-player { position: absolute; inset: 0; overflow: hidden; contain: strict; --tape-k: 1; }
@@ -680,7 +735,6 @@ tape-player { position: absolute; inset: 0; overflow: hidden; contain: strict; -
 }
 .tape-cursor svg { display: block; transition: transform 0.12s var(--ease-out); transform-origin: 4.6px 2.3px; }
 .tape-cursor.down svg { transform: scale(0.84); }
-.tape-cursor.gone { opacity: 0 !important; transition: opacity 0.25s var(--ease-out); }
 
 /* A lead recording hides the callouts while it plays; they come back one by one on the final frame. */
 .plate[data-motion='lead'] .pin--live {

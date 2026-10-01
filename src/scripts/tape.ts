@@ -40,7 +40,7 @@ export interface Tape {
   id: string;
   viewport: [number, number];
   themeAttr: string;
-  app: { entry: string; readySelector: string; storage: string[]; themeKey?: string; prefetch: string[] };
+  app: { entry: string; readySelector: string; storage: string[]; themeKey?: string; restore?: string[]; prefetch: string[] };
   snapshot: TapeNode;
   events: TapeEvent[];
   checkpoints: Checkpoint[];
@@ -196,21 +196,6 @@ export class TapePlayer extends HTMLElement {
     return this.#frame;
   }
 
-  /**
-   * Drops the recorded pointer: hover, pressed and focus marks, and the drawn cursor. The thaw does
-   * this as the window lifts off, so the frozen frame shows what the live app will, under the
-   * visitor's own pointer.
-   */
-  releasePointer() {
-    this.#hover = this.#chain(this.#hover, undefined, 'data-tape-hover');
-    this.#focus = this.#chain(this.#focus, undefined, 'data-tape-focus-within');
-    this.#doc?.querySelectorAll('[data-tape-active],[data-tape-focus],[data-tape-focus-visible]').forEach((el) => {
-      el.removeAttribute('data-tape-active');
-      el.removeAttribute('data-tape-focus');
-      el.removeAttribute('data-tape-focus-visible');
-    });
-    this.#cursor?.classList.add('gone');
-  }
 
   syncTheme() {
     if (this.#doc && this.tape) this.#doc.documentElement.setAttribute(this.tape.themeAttr, appTheme());

@@ -99,14 +99,14 @@ const total = String(projects.length).padStart(2, '0');
                   ))}
                 </ul>
                 <div class="slide-actions">
-                  <a class="btn btn--solid btn--sm" href={`/work/${p.id}/`}>
+                  <a class="btn btn--solid btn--sm" href={`/work/${p.id}/`} data-link="case">
                     Case study
                     <Icon name="arrow-right" class="icon-right" />
                   </a>
-                  <a class="arrow-link" href={p.live} target="_blank" rel="noopener" data-thaw={p.main.tape} data-name={p.name}>
+                  <a class="arrow-link" href={p.live} target="_blank" rel="noopener" data-link="live">
                     Live <Icon name="arrow-up-right" />
                   </a>
-                  <a class="arrow-link" href={p.source} target="_blank" rel="noopener">
+                  <a class="arrow-link" href={p.source} target="_blank" rel="noopener" data-link="source">
                     Source <Icon name="arrow-up-right" />
                   </a>
                 </div>
@@ -440,6 +440,7 @@ const total = String(projects.length).padStart(2, '0');
     let index = Number(root.dataset.start ?? 0);
     let auto = !reduce.matches;
     let hold = false;
+    let liveHold = false;
     let active = root.hasAttribute('data-active');
     let elapsed = 0;
     let total = STILL;
@@ -517,7 +518,7 @@ const total = String(projects.length).padStart(2, '0');
     const loop = (now: number) => {
       const dt = Math.min(100, now - last);
       last = now;
-      if (auto && active && !hold && !document.hidden) {
+      if (auto && active && !hold && !liveHold && !document.hidden) {
         elapsed += dt;
         if (elapsed >= total) select(index + 1, 'auto');
       }
@@ -582,7 +583,9 @@ const total = String(projects.length).padStart(2, '0');
       const j = slides.findIndex((s) => s.dataset.id === sub);
       if (j >= 0) select(j);
     });
-    // An app opened in place (src/scripts/thaw.ts) holds the showcase until it closes.
+    // A live preview being used (hovered) holds the countdown (src/scripts/live.ts).
+    document.addEventListener('live:hold', (e) => (liveHold = (e as CustomEvent<boolean>).detail));
+    // An app opened in its window holds the showcase until it closes.
     document.addEventListener('thaw:open', () => {
       if (!active) return;
       cancelAnimationFrame(raf);
@@ -590,7 +593,9 @@ const total = String(projects.length).padStart(2, '0');
     document.addEventListener('thaw:close', () => {
       if (!active) return;
       const v = clipOf(index);
-      if (v && plateOf(index)?.dataset.state === 'playing') void v.play();
+      const plate = plateOf(index);
+      // A live preview stays live; only a tape or a video picks up again.
+      if (v && plate?.dataset.state === 'playing' && !plate.hasAttribute('data-live')) void v.play();
       run();
     });
 

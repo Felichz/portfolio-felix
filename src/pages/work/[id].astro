@@ -73,8 +73,8 @@ const panels: PanelLink[] = [
           <div><dt class="t-label">Interface</dt><dd>{p.language}, light and dark</dd></div>
         </dl>
         <div class="ov-actions" data-reveal style="--d:3">
-          <a class="btn btn--accent" href={p.live} target="_blank" rel="noopener" data-thaw={p.main.tape} data-name={p.name}>Open the live app <Icon name="arrow-up-right" class="icon-up" /></a>
-          <a class="btn" href={p.source} target="_blank" rel="noopener"><Icon name="github" />Source</a>
+          <a class="btn btn--accent" href={p.live} target="_blank" rel="noopener" data-link="live">Open the live app <Icon name="arrow-up-right" class="icon-up" /></a>
+          <a class="btn" href={p.source} target="_blank" rel="noopener" data-link="source"><Icon name="github" />Source</a>
         </div>
         {p.liveNote && <p class="ov-note" data-reveal style="--d:4">{p.liveNote}</p>}
       </header>

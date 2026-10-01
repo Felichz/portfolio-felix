@@ -10,6 +10,8 @@ export default {
   readySelector: '#intro-name',
   storage: ['fa-theme'],
   themeKey: 'fa-theme',
+  // This site's own key: seeded for the copy inside, given back once that copy has read it.
+  restore: ['fa-theme'],
   ignore: '#work, #experience, #about, .cursor-light',
   prefetch: false,
 

@@ -3,8 +3,8 @@
   <head>
     <script data-app="lifeui">/*
  * Portfolio bridge, inlined at the top of each vendored app's index.html (scripts/apps/vendor.mjs).
- * Inert unless the app runs inside the portfolio's thaw frame (src/scripts/thaw.ts), which leaves a
- * `__thaw` handoff on its window before creating the frame. Then, before any of the app's code runs, the
+ * Inert unless the app runs inside the portfolio (src/scripts/live.ts), which leaves a handoff for it in
+ * `window.__live[<app>]` before creating its frame. Then, before any of the app's code runs, the
  * app's time belongs to the portfolio:
  * - Date reads a clock the portfolio sets: frozen at the checkpoint's recorded moment while the app
  *   boots, moved to each recorded click's moment while the scene's clicks are replayed, and released at
@@ -18,9 +18,9 @@
 (function () {
   var handoff;
   try {
-    handoff = window.parent !== window && window.parent.__thaw;
+    handoff = window.parent !== window && window.parent.__live && window.parent.__live[document.currentScript.dataset.app];
   } catch (e) {}
-  if (!handoff || handoff.app !== document.currentScript.dataset.app) return;
+  if (!handoff) return;
 
   // ---- The clock
   var RealDate = Date;

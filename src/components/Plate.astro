@@ -62,6 +62,7 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
         <span class="plate-dots" aria-hidden="true"><i /><i /><i /></span>
         <span class="plate-url" aria-hidden="true"><Icon name="lock" />{chrome}</span>
         <span class="plate-tools">
+          {tape && <span class="live-badge" aria-hidden="true"><i />Live · click to open</span>}
           {(clip || tape) && motion === 'lead' && (
             <button class="motion-btn" type="button" data-motion-play>
               <Icon name="play" class="motion-btn-play" />

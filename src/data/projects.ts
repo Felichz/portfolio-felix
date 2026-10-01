@@ -29,7 +29,7 @@ export interface Shot {
   motion?: { light: string; dark: string };
   /**
    * A tape instead of recordings: public/tapes/<id>.json, the app's own DOM replayed (src/scripts/tape.ts).
-   * One tape serves both themes, and it can be thawed into the live app, vendored at public/apps/<id>/.
+   * One tape serves both themes, and the live app (vendored at public/apps/<id>/) boots under it (src/scripts/live.ts).
    */
   tape?: string;
 }
@@ -376,7 +376,7 @@ export const projects: Project[] = [
     year: '2026',
     tagline:
       'A portfolio that opens its projects instead of linking to them: the preview you watch is the app’s own DOM, and Live starts the real app in place, on that frame.',
-    proof: 'A 40 KB tape in place of two 1.2 MB videos, and the live app opens in the preview’s exact state',
+    proof: 'A 40 KB tape in place of two 1.2 MB videos, and a live app under it after your first input',
     live: 'https://portfolio-felix-teal.vercel.app/',
     source: 'https://github.com/Felichz/portfolio-felix',
     role: 'Solo: design, frontend and the recording pipeline',
@@ -384,7 +384,7 @@ export const projects: Project[] = [
     scale: ['~6,100 lines of TypeScript, Astro and CSS', '9 components', '1 tape so far, 40 KB gzipped', 'Light and dark'],
     story: [
       'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one fixed window, sections that move one at a time, and an ambient light that takes the color of whatever you’re looking at.',
-      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. LifeUI’s preview is now a tape instead, its own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Live doesn’t send you anywhere: the window lifts off with the frame you were watching, and the real app takes over in that same state.',
+      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. LifeUI’s preview is now a tape instead, its own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Once you’re using the page, the real app runs under the preview and keeps up with it. Hover it and it’s the app, live, in the state you were watching; click it and it opens in a window, still live.',
       'So far LifeUI is the one that works this way, and this site’s own preview is a tape of its Intro. The other products still use video until their scenes are written; each one needs a scene and a way to seed its state, and that is most of the work.',
     ],
     highlights: [
@@ -412,24 +412,24 @@ export const projects: Project[] = [
         },
         {
           title: 'Replay',
-          body: 'A custom element rebuilds that DOM in an iframe that can’t run scripts, with the app’s own stylesheet, and applies each change at its time. Hover and focus come back as attributes the stylesheet was rewritten to match. It speaks enough of the video element’s API that the showcase didn’t have to change.',
+          body: 'A custom element rebuilds that DOM in an iframe that can’t run scripts, with the app’s own stylesheet, and applies each change at its time. Hover and focus come back as attributes the stylesheet was rewritten to match, and the app’s theme is one attribute, so a single tape plays in both editions. It speaks enough of the video element’s API that the showcase didn’t have to change.',
         },
         {
-          title: 'Switch themes',
-          body: 'The apps change theme with one attribute on the root element, so a tape follows the site by setting it, on the same frame. With video that took two files per product and a seek to keep them in step.',
+          title: 'Go live',
+          body: 'After your first input, never during page load, the app’s build (vendored on this origin) boots under the preview with the last checkpoint’s storage. It keeps up with the tape: each recorded click is replayed in it as the tape reaches it, with the app’s clock and timers set to that recorded moment. Hovering swaps the tape for the app on the same frame, so the hover states you see are real.',
         },
         {
-          title: 'Thaw',
-          body: 'The flight carries the preview, not the app: a copy of the plate at the same 1440×900 viewport scales up into a window, still on the frame you clicked, while the page steps back. Under it, the app’s build boots with the last checkpoint’s storage, and the scene’s clicks since then are replayed in it, each with the app’s clock and timers set to the moment it was recorded. When it lands, the app is in that frame’s state, interactive, and takes its place.',
+          title: 'Open in a window',
+          body: 'A click moves the preview’s contents into a window over the page with moveBefore, which keeps an iframe’s state where a regular move would reload it: the same live app, scaled up, with the case study, the live site, the source and Close around it. Closing moves it back into the preview, still live.',
         },
         {
           title: 'Measure',
-          body: 'Each step was checked against traces and pixels: frames presented during the flight, screenshots of the preview and the app on both sides of the swap. Flying the camera through the page made the GPU raster it again at every new scale for 200 ms, so the page steps back instead; scaling down keeps the raster it has.',
+          body: 'Each step was checked against traces, pixels and Lighthouse. Scaling the page up behind the window made the GPU raster it again for 200 ms, so it steps back instead. Booting after the first input keeps the audit at 100 with 0 ms of blocking time.',
         },
       ],
       numbers: [
         { value: '40 KB', label: 'LifeUI’s tape, gzipped, in place of two 1.2 MB videos' },
-        { value: '< 40 ms', label: 'from the click to the first frame of the flight, measured cold' },
+        { value: '100', label: 'Lighthouse performance with live apps in place, 0 ms of blocking time' },
         { value: '235 fps', label: 'with the cursor light on, after moving it off a full-window canvas (82 before)' },
         { value: '9 of 9', label: 'frames tested where the live app opened with exactly the preview’s text, dialogs and timers included' },
       ],
@@ -449,7 +449,7 @@ export const projects: Project[] = [
     ],
     gallery: [
       themed('portfolio-work', 'The work showcase with LifeUI selected: its preview, a tape of the app’s own DOM, is in the middle of the closing ritual.', { caption: 'A tape in the showcase' }),
-      themed('portfolio-thaw', 'Opening LifeUI in place: its window grows toward the screen, still on the frame that was clicked, while the portfolio steps back behind it.', { caption: 'Opening an app in place' }),
+      themed('portfolio-thaw', 'Opening LifeUI: the live preview grows into a window over the portfolio, which steps back behind it.', { caption: 'Opening an app in place' }),
       themed('portfolio-case', 'A case study overview: LifeUI’s name, facts and actions next to its preview.', { caption: 'A case study' }),
       themed('portfolio-mobile', 'This portfolio’s Intro on a phone, with the tab bar at the bottom.', { phone: true, caption: 'On a phone' }),
     ],
