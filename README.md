@@ -58,7 +58,7 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 ## Details that took some care
 
 - **Tapes instead of videos.** LifeUI's preview, and this site's own, are tapes: the app's DOM recorded while a scripted scene drives it in headless Chrome, then replayed by a `<tape-player>` element in a script-less iframe with the app's real stylesheet. One 40 KB file replaces two 1.2 MB videos, plays in either theme, and stays sharp at any size.
-- **Live, in place.** Live doesn't leave the site: the camera flies into the product's window while a copy of the tape reaches the next recorded checkpoint, and the app's own build, vendored under `/apps/<id>/`, boots under it with that checkpoint's storage and clock, then fades in once it has painted. On this site's own slide, Live opens the site inside itself.
+- **Live, in place.** Live doesn't leave the site: the product's window lifts off with the frame you were watching, and under it the app's own build (vendored under `/apps/<id>/`) boots with the last checkpoint's storage and replays the scene's clicks since then, with its clock and timers set to each recorded moment. When the window lands, the app is in the preview's exact state and takes its place. On this site's own slide, Live opens the site inside itself.
 
 - One navigation model for wheel, trackpad, touch, keys, tabs and links. A wheel gesture moves one section, unless it started by scrolling something inside the section.
 - Deep links (`/#experience`, `/#work/lifeui`) open on their section and product before the first paint.

@@ -28,6 +28,13 @@ export interface Checkpoint {
   storage: Record<string, string>;
 }
 
+/** A recorded click, addressed by its element-child path from <body>, with a signature to check it. */
+export interface Action {
+  t: number;
+  path: number[];
+  sig: { tag: string; testid?: string; role?: string; label?: string; text: string };
+}
+
 export interface Tape {
   v: number;
   id: string;
@@ -37,6 +44,10 @@ export interface Tape {
   snapshot: TapeNode;
   events: TapeEvent[];
   checkpoints: Checkpoint[];
+  /** The scene's clicks, which the thaw replays in the live app. */
+  actions: Action[];
+  /** The app's clock at tape time 0. */
+  clock0: number;
   css: string;
   duration: number;
 }
@@ -183,6 +194,22 @@ export class TapePlayer extends HTMLElement {
   /** The frame's document, for the thaw to copy from. */
   get frame() {
     return this.#frame;
+  }
+
+  /**
+   * Drops the recorded pointer: hover, pressed and focus marks, and the drawn cursor. The thaw does
+   * this as the window lifts off, so the frozen frame shows what the live app will, under the
+   * visitor's own pointer.
+   */
+  releasePointer() {
+    this.#hover = this.#chain(this.#hover, undefined, 'data-tape-hover');
+    this.#focus = this.#chain(this.#focus, undefined, 'data-tape-focus-within');
+    this.#doc?.querySelectorAll('[data-tape-active],[data-tape-focus],[data-tape-focus-visible]').forEach((el) => {
+      el.removeAttribute('data-tape-active');
+      el.removeAttribute('data-tape-focus');
+      el.removeAttribute('data-tape-focus-visible');
+    });
+    this.#cursor?.classList.add('gone');
   }
 
   syncTheme() {
@@ -430,10 +457,11 @@ export class TapePlayer extends HTMLElement {
   }
 }
 
-/** Added to every tape's stylesheet: no scrollbars, no text caret, nothing reacts to the real pointer. */
+/**
+ * Added to every tape's stylesheet: no text caret, nothing reacts to the real pointer. Scrollbars stay:
+ * the live app has them (taking width on Windows, overlaid on macOS), and the thaw swaps the two.
+ */
 const TAPE_CSS = `
-html, body { scrollbar-width: none; }
-::-webkit-scrollbar { display: none; }
 * { caret-color: transparent !important; cursor: default !important; }
 html { pointer-events: none; }
 `;

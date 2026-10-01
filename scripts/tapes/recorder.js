@@ -18,6 +18,8 @@
   const SKIP = new Set(['SCRIPT', 'NOSCRIPT', 'LINK', 'META', 'TITLE', 'BASE', 'TEMPLATE', 'IFRAME']);
   const URL_ATTRS = new Set(['src', 'href', 'xlink:href', 'poster', 'action']);
   const t0 = performance.now();
+  // The app's clock when the tape starts; at tape time t it read clock0 + t.
+  const clock0 = Date.now();
   const T = () => Math.round((performance.now() - t0) * 10) / 10;
 
   const ids = new WeakMap();
@@ -139,6 +141,29 @@
     }
   });
   on('pointerdown', () => emit(['d', T(), 1]));
+  // Clicks, addressed by structure: the live app renders the same DOM for the same build and state, so
+  // the path of element-child indices from <body> finds the same node there. The thaw replays these to
+  // bring the live app to the frame the preview was on.
+  const actions = [];
+  const pathOf = (el) => {
+    const path = [];
+    for (let x = el; x && x !== document.body; x = x.parentElement) path.unshift([...x.parentElement.children].indexOf(x));
+    return path;
+  };
+  // A signature too, in case a portal that only appeared here (a tooltip on hover) shifted the path.
+  const sigOf = (el) => ({
+    tag: el.localName,
+    testid: el.getAttribute('data-testid') ?? undefined,
+    role: el.getAttribute('role') ?? undefined,
+    label: el.getAttribute('aria-label') ?? undefined,
+    text: (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60),
+  });
+  on('click', (e) => {
+    if (!(e.target instanceof Element) || !document.body.contains(e.target)) return;
+    // The element that handles the click, not the icon inside it.
+    const el = e.target.closest('button, a, [role], input, label, summary') ?? e.target;
+    actions.push({ t: T(), path: pathOf(el), sig: sigOf(el) });
+  });
   on('pointerup', () => emit(['d', T(), 0]));
   on('focusin', (e) => emit(['f', T(), idOf(e.target), e.target.matches(':focus-visible') ? 1 : 0]));
   on('focusout', (e) => {
@@ -184,6 +209,6 @@
       rewrite(sheet.cssRules);
       css += Array.from(sheet.cssRules, (r) => r.cssText).join('\n') + '\n';
     }
-    return { snapshot, events, checkpoints, css, duration };
+    return { snapshot, events, checkpoints, actions, clock0, css, duration };
   };
 })();

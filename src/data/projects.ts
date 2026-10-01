@@ -376,7 +376,7 @@ export const projects: Project[] = [
     year: '2026',
     tagline:
       'A portfolio that opens its projects instead of linking to them: the preview you watch is the app’s own DOM, and Live starts the real app in place, on that frame.',
-    proof: 'A 40 KB tape in place of two 1.2 MB videos, motion within 70 ms of the click',
+    proof: 'A 40 KB tape in place of two 1.2 MB videos, and the live app opens in the preview’s exact state',
     live: 'https://portfolio-felix-teal.vercel.app/',
     source: 'https://github.com/Felichz/portfolio-felix',
     role: 'Solo: design, frontend and the recording pipeline',
@@ -384,7 +384,7 @@ export const projects: Project[] = [
     scale: ['~6,100 lines of TypeScript, Astro and CSS', '9 components', '1 tape so far, 40 KB gzipped', 'Light and dark'],
     story: [
       'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one fixed window, sections that move one at a time, and an ambient light that takes the color of whatever you’re looking at.',
-      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. LifeUI’s preview is now a tape instead, its own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Live doesn’t send you anywhere: the camera flies into the window and the real app takes over from the frame you were watching.',
+      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. LifeUI’s preview is now a tape instead, its own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Live doesn’t send you anywhere: the window lifts off with the frame you were watching, and the real app takes over in that same state.',
       'So far LifeUI is the one that works this way, and this site’s own preview is a tape of its Intro. The other products still use video until their scenes are written; each one needs a scene and a way to seed its state, and that is most of the work.',
     ],
     highlights: [
@@ -420,18 +420,18 @@ export const projects: Project[] = [
         },
         {
           title: 'Thaw',
-          body: 'Hovering Live builds the window ahead and prefetches the app. The click starts a compositor-only flight while a copy of the tape reaches the next checkpoint; the app’s build, vendored on this origin, then boots under it with that storage and a clock that continues from the recorded moment, and fades in once it has painted.',
+          body: 'The flight carries the preview, not the app: a copy of the plate at the same 1440×900 viewport scales up into a window, still on the frame you clicked, while the page steps back. Under it, the app’s build boots with the last checkpoint’s storage, and the scene’s clicks since then are replayed in it, each with the app’s clock and timers set to the moment it was recorded. When it lands, the app is in that frame’s state, interactive, and takes its place.',
         },
         {
           title: 'Measure',
-          body: 'Each step was checked in traces: frames presented during the flight, long animation frames, bytes. Booting the app during the flight cost frames, so it moved to after the landing, where the tape already looks exactly like the app.',
+          body: 'Each step was checked against traces and pixels: frames presented during the flight, screenshots of the preview and the app on both sides of the swap. Flying the camera through the page made the GPU raster it again at every new scale for 200 ms, so the page steps back instead; scaling down keeps the raster it has.',
         },
       ],
       numbers: [
         { value: '40 KB', label: 'LifeUI’s tape, gzipped, in place of two 1.2 MB videos' },
-        { value: '< 70 ms', label: 'from the click to the first frame of the flight, measured cold' },
+        { value: '< 40 ms', label: 'from the click to the first frame of the flight, measured cold' },
         { value: '235 fps', label: 'with the cursor light on, after moving it off a full-window canvas (82 before)' },
-        { value: '85 ms', label: 'to seek and start a recording with a keyframe every second (about 220 before)' },
+        { value: '9 of 9', label: 'frames tested where the live app opened with exactly the preview’s text, dialogs and timers included' },
       ],
     },
     typefaces: ['Archivo', 'Newsreader'],
@@ -449,7 +449,7 @@ export const projects: Project[] = [
     ],
     gallery: [
       themed('portfolio-work', 'The work showcase with LifeUI selected: its preview, a tape of the app’s own DOM, is in the middle of the closing ritual.', { caption: 'A tape in the showcase' }),
-      themed('portfolio-thaw', 'Opening LifeUI in place: the window grows toward the screen while the portfolio scales past it.', { caption: 'Opening an app in place' }),
+      themed('portfolio-thaw', 'Opening LifeUI in place: its window grows toward the screen, still on the frame that was clicked, while the portfolio steps back behind it.', { caption: 'Opening an app in place' }),
       themed('portfolio-case', 'A case study overview: LifeUI’s name, facts and actions next to its preview.', { caption: 'A case study' }),
       themed('portfolio-mobile', 'This portfolio’s Intro on a phone, with the tab bar at the bottom.', { phone: true, caption: 'On a phone' }),
     ],
