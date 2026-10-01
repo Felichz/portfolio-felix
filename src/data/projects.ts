@@ -384,7 +384,7 @@ export const projects: Project[] = [
     scale: ['~6,100 lines of TypeScript, Astro and CSS', '9 components', '1 tape so far, 40 KB gzipped', 'Light and dark'],
     story: [
       'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one fixed window, sections that move one at a time, and an ambient light that takes the color of whatever you’re looking at.',
-      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. LifeUI’s preview is now a tape instead, its own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Once you’re using the page, the real app runs under the preview and keeps up with it. Hover it and it’s the app, live, in the state you were watching; click it and it opens in a window, still live.',
+      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. LifeUI’s preview is now a tape instead, its own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Once you’re using the page, the real app runs under the preview and keeps up with it. Hover it and it’s the app, live, in the state you were watching, there to be used; its green light opens it in a window, still live.',
       'So far LifeUI is the one that works this way, and this site’s own preview is a tape of its Intro. The other products still use video until their scenes are written; each one needs a scene and a way to seed its state, and that is most of the work.',
     ],
     highlights: [
@@ -416,11 +416,11 @@ export const projects: Project[] = [
         },
         {
           title: 'Go live',
-          body: 'After your first input, never during page load, the app’s build (vendored on this origin) boots under the preview with the last checkpoint’s storage. It keeps up with the tape: each recorded click is replayed in it as the tape reaches it, with the app’s clock and timers set to that recorded moment. Hovering swaps the tape for the app on the same frame, so the hover states you see are real.',
+          body: 'After your first input, never during page load, the app’s build (vendored on this origin) boots under the preview with the last checkpoint’s storage. It keeps up with the tape: each recorded click is replayed in it as the tape reaches it, with the app’s clock and timers set to that recorded moment. Hovering swaps the tape for the app on the same frame; from there, hovers and clicks are the app’s own.',
         },
         {
           title: 'Open in a window',
-          body: 'A click moves the preview’s contents into a window over the page with moveBefore, which keeps an iframe’s state where a regular move would reload it: the same live app, scaled up, with the case study, the live site, the source and Close around it. Closing moves it back into the preview, still live.',
+          body: 'The green light moves the preview’s contents into a window over the page with moveBefore, which keeps an iframe’s state where a regular move would reload it. There the same app runs at its own size, with the case study, the live site and the source under the window. Red or yellow moves it back into the preview, still live.',
         },
         {
           title: 'Measure',
