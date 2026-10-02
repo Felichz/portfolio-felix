@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script data-app="playsync">/*
+ * Portfolio bridge, inlined at the top of each vendored app's index.html (scripts/apps/vendor.mjs).
+ * Inert unless the app runs inside the portfolio (src/scripts/live.ts), which leaves a handoff for it in
+ * `window.__live[<app>]` before creating its frame. Then, before any of the app's code runs, the
+ * app's time belongs to the portfolio:
+ * - Date reads a clock the portfolio sets: frozen at the checkpoint's recorded moment while the app
+ *   boots, moved to each recorded click's moment while the scene's clicks are replayed, and released at
+ *   the frame the preview froze on as the app appears, running from there.
+ * - setTimeout and setInterval run on that clock. Moving it forward fires what fell due, the way the
+ *   recording lived through it (a toast that had time to leave leaves); while it's frozen, nothing
+ *   timed fires early.
+ * - Its backend answers as it did while the scene was recorded: fetches the scene made get the
+ *   recorded responses (anything else goes to the network as usual).
+ * - Once the app has painted its first screen, the portfolio is told.
+ * The app's own state (localStorage) was already seeded by the portfolio, same origin.
+ */
+(function () {
+  var handoff;
+  try {
+    handoff = window.parent !== window && window.parent.__live && window.parent.__live[document.currentScript.dataset.app];
+  } catch (e) {}
+  if (!handoff) return;
+
+  // ---- The route, for a single-page app loaded from its index.html: set once, before its code runs.
+  if (handoff.route) {
+    history.replaceState(history.state, '', handoff.route);
+    handoff.route = undefined;
+  }
+
+  // ---- The clock
+  var RealDate = Date;
+  var base = handoff.clock;
+  var realBase = RealDate.now();
+  var frozen = true;
+  // A later page of an app of several pages picks up the clock where the last one left it, running.
+  if (handoff.running) {
+    base = realBase + handoff.offset;
+    frozen = false;
+  }
+  var now = function () {
+    return frozen ? base : base + (RealDate.now() - realBase);
+  };
+  class ShiftedDate extends RealDate {
+    constructor() {
+      if (arguments.length === 0) super(now());
+      else super(...arguments);
+    }
+    static now() {
+      return now();
+    }
+  }
+  // `Date()` called without `new` returns a string.
+  window.Date = new Proxy(ShiftedDate, {
+    apply: function () {
+      return new ShiftedDate().toString();
+    },
+  });
+
+  // ---- Timers on that clock
+  var realSetTimeout = window.setTimeout.bind(window);
+  var realClearTimeout = window.clearTimeout.bind(window);
+  var timers = new Map();
+  var seq = 1e6;
+  var schedule = function (t) {
+    if (t.real !== null) realClearTimeout(t.real);
+    var wait = t.due - now();
+    // Frozen time doesn't bring anything due; it waits for the clock to move.
+    t.real = frozen && wait > 0 ? null : realSetTimeout(fire, Math.max(0, wait), t);
+  };
+  var fire = function (t) {
+    if (!timers.has(t.id)) return;
+    if (t.every) {
+      t.due += t.every;
+      if (t.due < now()) t.due = now() + t.every;
+      schedule(t);
+    } else timers.delete(t.id);
+    if (typeof t.fn === 'function') t.fn.apply(window, t.args);
+  };
+  var add = function (fn, delay, args, every) {
+    var t = { id: ++seq, fn: fn, args: args, every: every, due: now() + Math.max(0, Number(delay) || 0), real: null };
+    timers.set(t.id, t);
+    schedule(t);
+    return t.id;
+  };
+  var drop = function (id) {
+    var t = timers.get(id);
+    if (!t) return;
+    if (t.real !== null) realClearTimeout(t.real);
+    timers.delete(id);
+  };
+  window.setTimeout = function (fn, delay) {
+    return add(fn, delay, Array.prototype.slice.call(arguments, 2), 0);
+  };
+  window.setInterval = function (fn, delay) {
+    return add(fn, delay, Array.prototype.slice.call(arguments, 2), Math.max(1, Number(delay) || 0));
+  };
+  window.clearTimeout = window.clearInterval = drop;
+
+  /**
+   * Sets the clock to `ms`, frozen or running; moving forward fires whatever fell due on the way. With
+   * `tick`, every interval runs once now, so anything that shows the time redraws at the new time.
+   */
+  handoff.setClock = function (ms, freeze, tick) {
+    base = ms;
+    realBase = RealDate.now();
+    frozen = !!freeze;
+    handoff.running = !freeze;
+    handoff.offset = ms - realBase;
+    timers.forEach(schedule);
+    if (tick)
+      timers.forEach(function (t) {
+        if (t.every && typeof t.fn === 'function') t.fn.apply(window, t.args);
+      });
+  };
+
+  // ---- The backend, as the scene got it
+  if (handoff.network && handoff.network.length) {
+    var answers = {};
+    handoff.network.forEach(function (x) {
+      answers[x.m + ' ' + x.u] = x;
+    });
+    var keyOf = function (method, url) {
+      var u = new URL(url, location.href);
+      return method.toUpperCase() + ' ' + (u.origin === location.origin ? u.pathname + u.search : u.href);
+    };
+    var realFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      var req = typeof Request !== 'undefined' && input instanceof Request ? input : null;
+      var method = (init && init.method) || (req && req.method) || 'GET';
+      var x = answers[keyOf(method, req ? req.url : String(input))];
+      if (!x) return realFetch(input, init);
+      return Promise.resolve(new Response(x.b, { status: x.s, headers: { 'content-type': x.h } }));
+    };
+  }
+
+  // ---- Ready: the first screen is in the DOM, its fonts are loaded, and it has been painted.
+  var report = function () {
+    document.fonts.ready.then(function () {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          handoff.ready();
+        });
+      });
+    });
+  };
+  var check = function () {
+    if (!document.querySelector(handoff.readySelector)) return false;
+    report();
+    return true;
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    if (check()) return;
+    var watch = new MutationObserver(function () {
+      if (check()) watch.disconnect();
+    });
+    watch.observe(document.body, { childList: true, subtree: true });
+  });
+})();
+</script>
+    <script data-app="playsync">/*
+ * PlaySync's room, played inside the app for the portfolio's live preview. vendor.mjs inlines it after
+ * the bridge in public/apps/playsync/index.html; it's inert outside the portfolio.
+ *
+ * The real app talks to its server over a WebSocket (/ws). Inside the portfolio there's no server, so
+ * this stands in for one room:
+ * - It opens as the room was at the moment the live app boots from (a checkpoint of the tape): its
+ *   state, chat and people, rebuilt from what the scene's socket received, and rebased on the app's
+ *   clock (the bridge's), so positions and chat times line up.
+ * - What the other participant said later in the scene arrives at the same moments, on that clock.
+ * - What the visitor does gets the answers the server would give: their own chat messages, play,
+ *   pause, seek, the queue. In a room of two, the visitor is the host.
+ */
+(function () {
+  var handoff;
+  try {
+    handoff = window.parent !== window && window.parent.__live && window.parent.__live[document.currentScript.dataset.app];
+  } catch (e) {}
+  if (!handoff || !handoff.socket) return;
+
+  var rec = handoff.socket.in.map(function (x) {
+    return { t: x[0], m: JSON.parse(x[1]) };
+  });
+  var at = handoff.at || 0;
+
+  // ---- The room as the scene saw it at `at`
+  var you = null;
+  var state = null;
+  var chat = [];
+  var people = [];
+  var sync = null; // a tape time and the server's clock then
+  rec.forEach(function (r) {
+    if (r.t > at) return;
+    var m = r.m;
+    if (m.type === 'welcome') {
+      you = m.you;
+      state = m.state;
+      chat = m.chat.slice();
+      people = m.participants;
+      sync = { t: r.t, server: m.state.serverTime };
+    } else if (m.type === 'state') {
+      state = m.state;
+      sync = { t: r.t, server: m.state.serverTime };
+    } else if (m.type === 'chat') chat.push(m.message);
+    else if (m.type === 'participants') people = m.participants;
+  });
+  if (!state) return;
+
+  // The recorded server's clock, moved onto this app's clock (Date is the bridge's).
+  var serverAtBoot = sync.server + (at - sync.t);
+  var shift = Date.now() - serverAtBoot;
+  state = Object.assign({}, state, {
+    position: state.position + (state.isPlaying ? (serverAtBoot - state.lastUpdatedAt) / 1000 : 0),
+    lastUpdatedAt: Date.now(),
+    serverTime: Date.now(),
+  });
+  chat = chat.map(function (c) {
+    return Object.assign({}, c, { at: c.at + shift });
+  });
+  var me = people.filter(function (p) {
+    return p.id === you;
+  })[0];
+  var myName = me ? me.name : 'You';
+  // Later in the scene: what the others said.
+  var later = rec.filter(function (r) {
+    return r.t > at && r.m.type === 'chat' && r.m.message.from !== you;
+  });
+  var seq = 0;
+  var scheduled = false;
+
+  // ---- The server's answers
+  var now = function () {
+    return Date.now();
+  };
+  var position = function () {
+    return state.position + (state.isPlaying ? (now() - state.lastUpdatedAt) / 1000 : 0);
+  };
+  var send = function (ws, msg) {
+    if (ws.readyState === 1) ws._emit('message', { data: JSON.stringify(msg) });
+  };
+  var update = function (ws, patch) {
+    state = Object.assign({}, state, { position: position() }, patch, { lastUpdatedAt: now(), serverTime: now() });
+    send(ws, { type: 'state', state: state });
+  };
+  var say = function (ws, message) {
+    chat.push(message);
+    send(ws, { type: 'chat', message: message });
+  };
+  var answer = function (ws, m) {
+    var q;
+    switch (m.type) {
+      case 'join':
+        send(ws, { type: 'welcome', you: you, state: Object.assign({}, state, { position: position(), lastUpdatedAt: now(), serverTime: now() }), chat: chat, participants: people });
+        if (scheduled) return;
+        scheduled = true;
+        later.forEach(function (r) {
+          setTimeout(function () {
+            say(ws, Object.assign({}, r.m.message, { at: now() }));
+          }, r.t - at);
+        });
+        return;
+      case 'ping':
+        return send(ws, { type: 'pong', t0: m.t0, t1: now() });
+      case 'sync-request':
+        return send(ws, { type: 'state', state: Object.assign({}, state, { serverTime: now() }) });
+      case 'chat':
+        var message = { id: 'local-' + ++seq, from: you, name: myName, text: m.text || '', at: now() };
+        if (m.media) message.media = m.media;
+        return say(ws, message);
+      case 'play':
+        return update(ws, { isPlaying: true, ended: false });
+      case 'pause':
+        return update(ws, { isPlaying: false });
+      case 'seek':
+        return update(ws, { position: Math.max(0, Number(m.position) || 0) });
+      case 'load':
+        return update(ws, { videoId: m.videoId, videoTitle: m.title || null, media: null, position: 0, isPlaying: m.autoplay !== false, ended: false });
+      case 'queue-add':
+        return update(ws, { queue: state.queue.concat([{ videoId: m.videoId, title: m.title, addedBy: myName }]) });
+      case 'queue-remove':
+        q = state.queue.slice();
+        q.splice(m.index, 1);
+        return update(ws, { queue: q });
+      case 'queue-jump':
+        var item = state.queue[m.index];
+        if (!item) return;
+        return update(ws, {
+          videoId: item.videoId || null,
+          videoTitle: item.title || null,
+          media: item.media || null,
+          position: 0,
+          isPlaying: true,
+          ended: false,
+          queue: state.queue.filter(function (_, i) {
+            return i !== m.index;
+          }),
+        });
+      case 'ended':
+        var next = state.queue[0];
+        if (next) return update(ws, { videoId: next.videoId || null, videoTitle: next.title || null, media: next.media || null, position: 0, isPlaying: true, queue: state.queue.slice(1) });
+        return update(ws, { isPlaying: false, ended: true });
+      case 'rename':
+        myName = m.name;
+        people = people.map(function (p) {
+          return p.id === you ? Object.assign({}, p, { name: m.name }) : p;
+        });
+        return send(ws, { type: 'participants', participants: people });
+      default:
+        return; // control requests and grants: the visitor is the host already
+    }
+  };
+
+  // ---- A WebSocket for /ws that talks to this room (any other socket is a real one)
+  var RealWebSocket = window.WebSocket;
+  function RoomSocket(url) {
+    this.url = String(url);
+    this.readyState = 0;
+    this.protocol = '';
+    this.extensions = '';
+    this.bufferedAmount = 0;
+    this.binaryType = 'blob';
+    this.onopen = this.onmessage = this.onclose = this.onerror = null;
+    this._listeners = {};
+    var self = this;
+    setTimeout(function () {
+      self.readyState = 1;
+      self._emit('open', {});
+    }, 0);
+  }
+  RoomSocket.CONNECTING = 0;
+  RoomSocket.OPEN = 1;
+  RoomSocket.CLOSING = 2;
+  RoomSocket.CLOSED = 3;
+  RoomSocket.prototype.addEventListener = function (type, fn) {
+    (this._listeners[type] = this._listeners[type] || []).push(fn);
+  };
+  RoomSocket.prototype.removeEventListener = function (type, fn) {
+    this._listeners[type] = (this._listeners[type] || []).filter(function (f) {
+      return f !== fn;
+    });
+  };
+  RoomSocket.prototype._emit = function (type, ev) {
+    ev.type = type;
+    ev.target = ev.currentTarget = this;
+    if (typeof this['on' + type] === 'function') this['on' + type](ev);
+    var self = this;
+    (this._listeners[type] || []).slice().forEach(function (fn) {
+      fn.call(self, ev);
+    });
+  };
+  RoomSocket.prototype.send = function (data) {
+    var self = this;
+    var m;
+    try {
+      m = JSON.parse(data);
+    } catch (e) {
+      return;
+    }
+    setTimeout(function () {
+      answer(self, m);
+    }, 0);
+  };
+  RoomSocket.prototype.close = function () {
+    if (this.readyState === 3) return;
+    this.readyState = 3;
+    this._emit('close', { code: 1000, reason: '', wasClean: true });
+  };
+  window.WebSocket = function (url, protocols) {
+    var u = new URL(url, location.href);
+    if (/\/ws$/.test(u.pathname)) return new RoomSocket(url);
+    return protocols === undefined ? new RealWebSocket(url) : new RealWebSocket(url, protocols);
+  };
+  window.WebSocket.CONNECTING = 0;
+  window.WebSocket.OPEN = 1;
+  window.WebSocket.CLOSING = 2;
+  window.WebSocket.CLOSED = 3;
+})();
+</script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>PlaySync · Watch YouTube together</title>
+    <meta name="description" content="Watch YouTube videos in sync with the people you care about, from any device." />
+    <meta name="theme-color" content="#0f0b10" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400..700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="/apps/playsync/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apps/playsync/icons/apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PlaySync" />
+    <script>
+      // Theme before first paint, so a light room never flashes dark (and the other way round).
+      // Saved choice in localStorage 'playsync:theme' ('light' | 'dark'); otherwise the system's.
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem('playsync:theme');
+        } catch (e) {}
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        var root = document.documentElement;
+        root.setAttribute('data-theme', t);
+        root.style.colorScheme = t;
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'light' ? '#f3ebe4' : '#0f0b10');
+        document
+          .querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+          .setAttribute('content', t === 'light' ? 'default' : 'black-translucent');
+      })();
+    </script>
+    <script type="module" crossorigin src="/apps/playsync/assets/index-CH8Sijbq.js"></script>
+    <link rel="stylesheet" crossorigin href="/apps/playsync/assets/index-Hc0lgbm4.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

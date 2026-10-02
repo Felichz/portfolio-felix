@@ -21,6 +21,10 @@
   const SKIP = new Set(['SCRIPT', 'NOSCRIPT', 'LINK', 'META', 'TITLE', 'BASE', 'TEMPLATE', 'IFRAME']);
   const URL_ATTRS = new Set(['src', 'href', 'xlink:href', 'poster', 'action']);
   const t0 = performance.now();
+  window.__tapeT0 = t0;
+  // Scenes with a video player in a frame (PlaySync's YouTube) record it as a clip (record.mjs); the
+  // frame becomes a <video> of the same size and place on the tape, which plays that clip.
+  const clip = !!window.__tapeClip;
   // The app's clock when the tape starts; at tape time t it read clock0 + t.
   const clock0 = Date.now();
   const T = () => Math.round((performance.now() - t0) * 10) / 10;
@@ -33,7 +37,8 @@
   // Scenes can leave parts of the page out of the tape (window.__tapeIgnore, a selector).
   const ignore = window.__tapeIgnore;
   const actions = [];
-  const skip = (n) => n.nodeType === 8 || (n.nodeType === 1 && (SKIP.has(n.tagName) || (ignore && n.matches(ignore))));
+  const skip = (n) =>
+    n.nodeType === 8 || (n.nodeType === 1 && ((SKIP.has(n.tagName) && !(clip && n.tagName === 'IFRAME')) || (ignore && n.matches(ignore))));
   const fixUrl = (name, value) => {
     if (!URL_ATTRS.has(name) || !value || /^(data:|blob:|#|mailto:|tel:|javascript:)/i.test(value)) return value;
     try {
@@ -60,6 +65,10 @@
     ids.set(n, id);
     fresh.add(n);
     if (n.nodeType === 3) return [id, n.data];
+    if (n.tagName === 'IFRAME') {
+      const style = `position:absolute;left:${n.offsetLeft}px;top:${n.offsetTop}px;width:${n.offsetWidth}px;height:${n.offsetHeight}px;object-fit:cover;background:#000`;
+      return [id, 'video', { 'data-tape-clip': '', style }];
+    }
     const kids = [];
     for (const c of n.childNodes) if (!skip(c) && (c.nodeType === 1 || c.nodeType === 3)) kids.push(ser(c));
     const tag = n.namespaceURI === SVG ? 's:' + n.localName : n.localName;
@@ -88,6 +97,7 @@
     }
     for (const [el, names] of dirtyAttrs) {
       if (!ids.has(el) || fresh.has(el) || !el.isConnected) continue;
+      if (el.tagName === 'IFRAME') continue; // a clip on the tape: its frame's own attributes don't apply
       for (const name of names) {
         if (/^on/i.test(name)) continue;
         const v = el.getAttribute(name);
@@ -277,11 +287,21 @@
       }
     };
     let css = '';
+    let imports = '';
     for (const sheet of document.styleSheets) {
       if (sheet.ownerNode && sheet.ownerNode.tagName !== 'LINK') continue; // inline <style> nodes are in the DOM
-      rewrite(sheet.cssRules);
-      css += Array.from(sheet.cssRules, (r) => r.cssText).join('\n') + '\n';
+      let rules;
+      try {
+        rules = sheet.cssRules;
+      } catch {
+        // Another origin's stylesheet (a font service) can't be read: the tape links it instead.
+        if (sheet.href) imports += `@import url("${sheet.href}");\n`;
+        continue;
+      }
+      rewrite(rules);
+      css += Array.from(rules, (r) => r.cssText).join('\n') + '\n';
     }
+    css = imports + css;
     return { snapshot, events, checkpoints, actions, clock0, css, duration };
   };
 })();

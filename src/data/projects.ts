@@ -242,13 +242,13 @@ export const projects: Project[] = [
     palette: ['#0F0B10', '#FFB08A', '#FF8497', '#7FDCAE', '#F7EEE9'],
     language: 'English and Spanish',
     accent: { light: '#C2562A', dark: '#FFB08A', onLight: '#FFFFFF', onDark: '#2B130C' },
-    main: moving(
-      themed(
+    main: {
+      ...themed(
         'playsync-main',
         'PlaySync room on desktop: Big Buck Bunny playing with custom controls, the room code, a Watching together status, a chat between Felix and Sofi, and Sofi’s popcorn reaction floating over the video.',
       ),
-      'playsync-main',
-    ),
+      tape: 'playsync',
+    },
     callouts: [
       { x: 74.8, y: 3.2, text: 'Live presence: who is here, and whether the room is watching together.' },
       { x: 25.8, y: 3.2, text: 'The room code. No accounts, just share it.' },

@@ -31,6 +31,15 @@ export const APPS = {
     repo: resolve(root, '../learning-embed'),
     build: (out) => ['npx', ['vite', 'build', '--base', '/apps/knowgraph/', '--outDir', out, '--emptyOutDir']],
   },
+  playsync: {
+    // A worktree of github.com/Felichz/PlaySync on the portfolio-embed branch: no service worker in
+    // this build, and the video starts muted in a frame. There's no server here: playsync-room.js
+    // stands in for one room, played from the tape (public/tapes/playsync.json, app.socket).
+    repo: resolve(root, '../rave2-embed'),
+    env: { PLAYSYNC_EMBED: '1' },
+    build: (out) => ['npx', ['vite', 'build', '--base', '/apps/playsync/', '--outDir', out, '--emptyOutDir']],
+    inject: ['playsync-room.js'],
+  },
   lolimpact: {
     // github.com/Felichz/LoL-Impact: the Svelte frontend. Its API answers come with the tape
     // (public/tapes/lolimpact.net.json), recorded against a local backend.
@@ -47,9 +56,11 @@ for (const [id, app] of Object.entries(APPS)) {
   const out = resolve(root, 'public/apps', id);
   const [cmd, args] = app.build(out);
   console.log(`building ${id} from ${app.repo}`);
-  execFileSync(cmd, args, { cwd: app.repo, stdio: 'inherit', shell: process.platform === 'win32' });
+  execFileSync(cmd, args, { cwd: app.repo, stdio: 'inherit', shell: process.platform === 'win32', env: { ...process.env, ...app.env } });
 
   const bridge = readFileSync(resolve(here, 'bridge.js'), 'utf8');
+  // App-specific stand-ins (a room server, for PlaySync) go right after it, before the app's code.
+  const extra = (app.inject ?? []).map((f) => `\n    <script data-app="${id}">${readFileSync(resolve(here, f), 'utf8')}</script>`).join('');
   for (const file of walk(out)) {
     const ext = extname(file);
     if (ext !== '.html' && ext !== '.js') continue;
@@ -57,7 +68,7 @@ for (const [id, app] of Object.entries(APPS)) {
     const before = text;
     for (const [from, to] of app.rewrite ?? []) text = text.replace(from, to);
     if (ext === '.html') {
-      text = text.replace(/<head>/, `<head>\n    <script data-app="${id}">${bridge}</script>`);
+      text = text.replace(/<head>/, `<head>\n    <script data-app="${id}">${bridge}</script>${extra}`);
       // An app with a Content-Security-Policy allows the bridge by its hash, like its own inline scripts.
       const hash = `'sha256-${createHash('sha256').update(bridge).digest('base64')}'`;
       text = text.replace(/(http-equiv="Content-Security-Policy"\s+content="[^"]*script-src [^;"]*)/, `$1 ${hash}`);

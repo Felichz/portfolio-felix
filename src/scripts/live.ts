@@ -31,6 +31,8 @@ interface Handoff {
   clock: number;
   readySelector: string;
   ready: () => void;
+  /** The tape time the app boots at (its checkpoint's), for stand-ins that replay what came later. */
+  at?: number;
   /** For a single-page app: the URL it should see, set by the bridge before its code runs. */
   route?: string;
   /** The backend's recorded answers, which the bridge serves to the app's fetches. */
@@ -65,13 +67,16 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // ---------------------------------------------------------------------------------------------------
 
 /** Finds a recorded click's element in the live app: by its path, checked against its signature. */
+// Text, without the counts in it ("Chat 9" is the Chat tab with nine unread messages).
+const textOf = (s: string) => s.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().slice(0, 50);
+
 function resolve(doc: Document, a: Action) {
   const matches = (el: Element | null | undefined): el is HTMLElement =>
     !!el &&
     el.localName === a.sig.tag &&
     (a.sig.testid ?? null) === el.getAttribute('data-testid') &&
     (a.sig.label ?? null) === el.getAttribute('aria-label') &&
-    (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) === a.sig.text;
+    (a.kind === 'input' || textOf((el.textContent ?? '').slice(0, 60)) === textOf(a.sig.text));
   let el: Element | undefined = doc.body;
   for (const i of a.path) el = el?.children[i];
   if (!a.path.length && a.sig.tag === 'body') return doc.body;
@@ -223,6 +228,7 @@ class Session {
       ready: () => ready(),
       network,
       socket: tape.app.socket,
+      at: cp.t,
       route: tape.app.spa ? tape.app.entry.replace(/\/$/, '') + cp.route : undefined,
     };
     (window.__live ??= {})[this.id] = this.handoff;
@@ -231,6 +237,8 @@ class Session {
     frame.className = 'live-app';
     frame.title = `${nameOf(this.plate)}, live`;
     frame.tabIndex = -1;
+    // Media inside the app (PlaySync's YouTube player) may play and go full screen.
+    frame.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
     // A single-page app loads its index.html (a real file on any server) and the bridge gives it the
     // route; an app of several pages loads the page itself.
     frame.src = tape.app.spa ? tape.app.entry : tape.app.entry.replace(/\/$/, '') + cp.route;

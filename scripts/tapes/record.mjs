@@ -4,7 +4,9 @@
 //
 // Usage: node scripts/tapes/record.mjs <id>   (CHROME overrides the browser path)
 import { createServer } from 'node:http';
-import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
@@ -84,6 +86,21 @@ if (scene.network) {
   });
 }
 
+// A real-time app (PlaySync): its socket is pointed at the real server while recording, and what comes
+// in over it is kept, so the live app's stand-in room can replay it (scripts/apps/playsync-room.js).
+if (scene.socket)
+  await page.evaluateOnNewDocument((target) => {
+    const Real = window.WebSocket;
+    window.__wsLog = [];
+    window.WebSocket = class extends Real {
+      constructor(url, protocols) {
+        if (/\/ws$/.test(new URL(url, location.href).pathname)) url = target;
+        super(url, protocols);
+        this.addEventListener('message', (e) => typeof e.data === 'string' && window.__wsLog.push([performance.now(), e.data]));
+      }
+    };
+  }, scene.socket.url);
+
 await page.goto(origin + scene.base + (scene.start ?? ''), { waitUntil: 'networkidle0' });
 await scene.setup(page);
 await page.waitForSelector(scene.readySelector);
@@ -94,6 +111,7 @@ await new Promise((r) => setTimeout(r, 400));
 let cursor = { x: w * 0.62, y: h * 0.78 };
 await page.mouse.move(cursor.x, cursor.y);
 await page.evaluate((ignore) => (window.__tapeIgnore = ignore), scene.ignore ?? null);
+if (scene.clip) await page.evaluate(() => (window.__tapeClip = true));
 await page.evaluate(readFileSync(resolve(here, 'recorder.js'), 'utf8'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -152,10 +170,52 @@ const helpers = {
   },
 };
 
+// A frame the tape can't keep (a YouTube player) is filmed while the scene runs, and kept as a clip.
+const shots = [];
+const cdp = scene.clip ? await page.createCDPSession() : null;
+if (cdp) {
+  cdp.on('Page.screencastFrame', async (f) => {
+    shots.push({ at: f.metadata.timestamp * 1000, data: f.data });
+    await cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
+  });
+  await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 88, everyNthFrame: 1 });
+}
 await scene.run(helpers);
+if (cdp) await cdp.send('Page.stopScreencast');
+const clipRect = scene.clip
+  ? await page.evaluate(() => {
+      const f = document.querySelector('iframe');
+      const r = f.getBoundingClientRect();
+      return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
+    })
+  : null;
+const wall0 = await page.evaluate(() => performance.timeOrigin + window.__tapeT0);
+const socketLog = scene.socket ? await page.evaluate(() => window.__wsLog) : null;
+const pageT0 = await page.evaluate(() => window.__tapeT0);
 const tape = await page.evaluate(() => window.__tapeStop());
 await browser.close();
+await scene.teardown?.();
 server.close();
+
+// The clip: the frames' crop of the player, at 30 fps, starting at the tape time of its first frame.
+let clip;
+if (shots.length > 1) {
+  const dir = mkdtempSync(join(tmpdir(), 'tape-clip-'));
+  const list = [];
+  shots.forEach((s, i) => {
+    writeFileSync(join(dir, `${i}.jpg`), Buffer.from(s.data, 'base64'));
+    const next = shots[i + 1]?.at ?? s.at + 33;
+    list.push(`file '${i}.jpg'`, `duration ${((next - s.at) / 1000).toFixed(4)}`);
+  });
+  list.push(`file '${shots.length - 1}.jpg'`);
+  writeFileSync(join(dir, 'list.txt'), list.join('\n'));
+  const { x, y, w, h } = clipRect;
+  const even = (n) => n - (n % 2);
+  const width = Math.min(960, even(w));
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', join(dir, 'list.txt'), '-vf', `crop=${even(w)}:${even(h)}:${x}:${y},scale=${width}:-2,fps=30`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '30', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', join(tapes, `${id}.clip.mp4`)]);
+  rmSync(dir, { recursive: true, force: true });
+  clip = { src: `/tapes/${id}.clip.mp4`, t: Math.round(shots[0].at - wall0) };
+}
 
 // One answer per request (the last one: the state the scene ended in).
 function dedupe(list) {
@@ -183,8 +243,10 @@ const out = {
     restore: scene.restore,
     prefetch,
     ...(exchanges.length ? { network: `/tapes/${id}.net.json` } : {}),
+    ...(socketLog ? { socket: { in: socketLog.map(([at, data]) => [Math.round(at - pageT0), data]) } } : {}),
   },
   ...tape,
+  ...(clip ? { clip } : {}),
 };
 mkdirSync(tapes, { recursive: true });
 const file = join(tapes, `${id}.json`);

@@ -95,6 +95,8 @@ export interface Tape {
   actions: Action[];
   /** The app's clock at tape time 0. */
   clock0: number;
+  /** A frame the DOM can't carry (PlaySync's YouTube player), filmed: it plays where the frame was, from tape time t. */
+  clip?: { src: string; t: number };
   css: string;
   duration: number;
 }
@@ -144,6 +146,7 @@ export class TapePlayer extends HTMLElement {
   #stop?: { t: number; done: () => void };
   /** The app's Web Animations, run again on the tape's clock: started at t, by recording id. */
   #anims = new Map<number, { t: number; a: Animation }>();
+  #clips = new Set<HTMLVideoElement>();
 
   connectedCallback() {
     players.add(this);
@@ -226,6 +229,7 @@ export class TapePlayer extends HTMLElement {
     if (this.#paused) return;
     this.#paused = true;
     cancelAnimationFrame(this.#raf);
+    this.#clips.forEach((v) => v.pause());
     this.dispatchEvent(new Event('pause'));
   }
 
@@ -308,6 +312,7 @@ export class TapePlayer extends HTMLElement {
     this.#nodes.clear();
     this.#anims.forEach(({ a }) => a.cancel());
     this.#anims.clear();
+    this.#clips.clear();
     this.#i = 0;
     this.#vt = 0;
     this.#hover = [];
@@ -334,6 +339,14 @@ export class TapePlayer extends HTMLElement {
     for (const [k, v] of Object.entries(attrs)) this.#setAttr(el, k, v);
     if (kids) for (const k of kids) el.appendChild(this.#build(k));
     this.#nodes.set(id, el);
+    if (tag === 'video' && 'data-tape-clip' in attrs && this.tape?.clip) {
+      const v = el as HTMLVideoElement;
+      v.muted = true;
+      v.playsInline = true;
+      v.preload = 'auto';
+      v.src = new URL(this.tape.clip.src, location.href).href;
+      this.#clips.add(v);
+    }
     return el;
   }
 
@@ -383,6 +396,20 @@ export class TapePlayer extends HTMLElement {
     while (this.#i < events.length && events[this.#i]![1] <= to) this.#apply(events[this.#i++]!);
     // Animations follow the tape's time, so pausing, seeking and speeding up hold for them too.
     for (const { t, a } of this.#anims.values()) a.currentTime = Math.max(0, to - t);
+    // So do clips: held on their frame while paused, playing (and corrected if they drift) otherwise.
+    const clip = this.tape!.clip;
+    for (const v of this.#clips) {
+      if (!clip || !v.isConnected) continue;
+      const at = Math.max(0, (to - clip.t) / 1000);
+      const drift = Math.abs(v.currentTime - at);
+      if (this.#paused || to < clip.t) {
+        if (!v.paused) v.pause();
+        if (drift > 0.04 && v.readyState >= 1) v.currentTime = at;
+      } else {
+        if (drift > 0.3 && v.readyState >= 1) v.currentTime = at;
+        if (v.paused) void v.play().catch(() => {});
+      }
+    }
   }
 
   #apply(e: TapeEvent) {
