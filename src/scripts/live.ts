@@ -734,7 +734,12 @@ export function initLive() {
     if (sessionStorage.getItem('live-lights-used')) used();
   } catch {}
   document.addEventListener('click', (e) => (e.target as Element).closest?.('[data-light]') && used(), true);
-  for (const plate of plates) plate.querySelector('.plate-dots')?.insertAdjacentHTML('afterend', lightsHTML('preview', nameOf(plate)));
+  for (const plate of plates) {
+    plate.querySelector('.plate-dots')?.insertAdjacentHTML('afterend', lightsHTML('preview', nameOf(plate)));
+    // In the showcase the preview sits in a link kept from assistive tech (the slide has its own links
+    // to the case study and the live site): its lights stay out of the tab order there too.
+    if (plate.closest('[aria-hidden="true"]')) plate.querySelectorAll<HTMLElement>('.light').forEach((b) => (b.tabIndex = -1));
+  }
 
   // Clicks on a preview are the app's (the plate sits in a link to the case study in the showcase, and
   // in the lightbox button on a case study: neither takes them). Only the green light opens the window.

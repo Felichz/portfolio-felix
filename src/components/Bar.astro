@@ -17,12 +17,13 @@ const { panels, home } = Astro.props;
 ---
 
 <header class="bar">
-  <a class="brand" href={home ? '#intro' : '/'} aria-label={home ? 'Felix Andersson, back to the start' : 'Felix Andersson, home'}>
+  <a class="brand" href={home ? '#intro' : '/'}>
     <span class="brand-mark" aria-hidden="true">FA</span>
     <span class="brand-text">
       <b>Felix Andersson</b>
       <small>Senior Frontend Engineer</small>
     </span>
+    <span class="visually-hidden">{home ? ', back to the start' : ', home'}</span>
   </a>
 
   <nav class="tabs" aria-label={home ? 'Sections' : 'Chapters'} data-tabs>
