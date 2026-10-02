@@ -19,8 +19,7 @@
  */
 import { loadTape, type Action, type Tape, type TapePlayer } from './tape';
 
-const FLIGHT = 620;
-const EASE = 'cubic-bezier(0.22, 0.8, 0.18, 1)';
+const FLIGHT = 620; // the window's morph, ms (its curve is in global.css, .live-vt)
 const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 const desktop = () => matchMedia('(hover: hover) and (pointer: fine)').matches && innerWidth >= 900;
 const canMove = 'moveBefore' in Element.prototype;
@@ -36,6 +35,8 @@ interface Handoff {
 declare global {
   interface Window {
     __live?: Record<string, Handoff>;
+    /** The site's theme switch (Bar.astro): a circle from a point, or opening out from a rectangle. */
+    __faTheme?: (from?: { x: number; y: number } | { rect: DOMRect }) => void;
   }
   interface Element {
     moveBefore(node: Node, child: Node | null): void;
@@ -184,6 +185,15 @@ class Session {
     await painted;
     for (const [k, v] of this.#restore) v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
     this.syncTheme();
+    // A theme the app switches itself (in its own settings) is the site's too: the site takes the
+    // other edition, opening out from the app's window to the edges. (This site, running inside
+    // itself, hands its toggle to the page around it instead: see Bar.astro.)
+    const appRoot = frame.contentDocument!.documentElement;
+    new MutationObserver(() => {
+      const theirs = appRoot.getAttribute(tape.themeAttr);
+      if (theirs && theirs === document.documentElement.dataset.theme)
+        window.__faTheme?.({ rect: (frame.closest('.thaw-window, .plate') ?? frame).getBoundingClientRect() });
+    }).observe(appRoot, { attributes: true, attributeFilter: [tape.themeAttr] });
     const win = frame.contentWindow!;
     // Where the pointer is over the app, for the window lights (they keep to the pointer's side).
     win.addEventListener('pointermove', (e) => frame.dispatchEvent(new CustomEvent('live:pointer', { bubbles: true, detail: e.clientX / win.innerWidth })), {
@@ -475,67 +485,63 @@ async function zoom(plate: HTMLElement) {
   placeLights(lights, plateLights?.dataset.side === 'right' ? 'right' : 'left');
 
   const r = plate.getBoundingClientRect();
+  const root = document.documentElement;
   const layers = pageLayers();
-  const origin = `${r.left + r.width / 2}px ${r.top + r.height / 2}px`;
-  layers.forEach((el) => (el.style.transformOrigin = origin));
-  // The page steps back: only ever scaled down, so its layers keep the raster they have.
+  // The page steps back around the plate: only ever scaled down, so it keeps the raster it has.
   const back = full ? 'scale(0.94)' : 'scale(0.96)';
   const dim = full ? 0 : 0.35;
-  const opts: KeyframeAnimationOptions = { duration: reduce.matches ? 1 : FLIGHT, easing: EASE, fill: 'both' };
+  root.style.setProperty('--live-o', `${r.left + r.width / 2}px ${r.top + r.height / 2}px`);
+  root.style.setProperty('--live-back', back);
+  root.style.setProperty('--live-dim', String(dim));
+  // A page that scrolls keeps its scrollbar's room while it can't scroll, so it doesn't shift.
+  root.classList.toggle('thawing-gutter', root.scrollHeight > root.clientHeight);
 
   /**
-   * Swaps the preview and the window, moving the preview's contents (tape, live app) between them with
-   * moveBefore, so the app keeps its state. The app is laid out once, at its new size.
+   * One side or the other: the preview's contents (tape, live app) move between the plate and the
+   * window with moveBefore, so the app keeps its state and is laid out once, at its new size; the
+   * page is set back (or forward) and can't be used (or can) while the window is open.
    */
   const swap = (open: boolean) => {
     if (open) screen.moveBefore(motion, null);
     else home.moveBefore(motion, homeNext);
     plate.style.visibility = open ? 'hidden' : '';
     overlay.style.visibility = open ? '' : 'hidden';
+    root.classList.toggle('thawing', open);
+    for (const el of layers) {
+      el.inert = open;
+      el.style.transformOrigin = open ? `${r.left + r.width / 2}px ${r.top + r.height / 2}px` : '';
+      el.style.transform = open ? back : '';
+      el.style.opacity = open ? String(dim) : '';
+    }
   };
   /**
-   * The morph between them is a view transition of the window alone (the page under it stays live):
-   * the browser grows or shrinks a picture of the app at the size it had while it fades into the app
-   * laid out at its new size. One layout, scaled on the compositor: the app is never cropped and
-   * never snaps into place at the end.
+   * The morph is one view transition: the window grows from the plate (or shrinks into it) while the
+   * page steps back (or forward) around it. The browser scales a picture of the app at the size it had
+   * while the app, laid out at its new size, takes over within a few frames: never cropped by the
+   * window, never snapping into place at the end, and all of it compositor work.
    */
-  const morph = async (open: boolean, page: Animation[]) => {
+  const morph = async (open: boolean, duration: number) => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
     if (!doc.startViewTransition || reduce.matches) return swap(open);
-    const root = document.documentElement;
-    root.classList.add('live-vt');
+    root.style.setProperty('--live-d', `${duration}ms`);
+    root.classList.add('live-vt', open ? 'live-vt-in' : 'live-vt-out');
     (open ? plate : win).classList.add('live-vt-shape');
     const vt = doc.startViewTransition(() => {
       swap(open);
       plate.classList.toggle('live-vt-shape', !open);
       win.classList.toggle('live-vt-shape', open);
     });
-    // The page steps back (or forward) with it.
-    void vt.ready.then(() => page.forEach((a) => a.play()), () => page.forEach((a) => a.play()));
     await vt.finished.catch(() => {});
-    root.classList.remove('live-vt');
+    root.classList.remove('live-vt', 'live-vt-in', 'live-vt-out');
     plate.classList.remove('live-vt-shape');
     win.classList.remove('live-vt-shape');
   };
-  const pageAnim = (forward: boolean, duration: number) =>
-    layers.map((el) => {
-      const a = el.animate(
-        forward ? [{ transform: 'none', opacity: 1 }, { transform: back, opacity: dim }] : [{ transform: back, opacity: dim }, { transform: 'none', opacity: 1 }],
-        { ...opts, duration: reduce.matches ? 1 : duration },
-      );
-      a.pause();
-      return a;
-    });
 
-  // ---- In (the page goes inert now, while the morph's first frame is being captured anyway)
-  layers.forEach((el) => (el.inert = true));
-  document.documentElement.classList.add('thawing');
+  // ---- In
   document.dispatchEvent(new CustomEvent('thaw:open'));
-  const steps = pageAnim(true, FLIGHT);
   // Not live yet (a click before the hover finished): it becomes live in the window.
   void session.goLive().then(() => session.frame.focus());
-  await morph(true, steps);
-  steps.forEach((a) => a.play());
+  await morph(true, FLIGHT);
   overlay.classList.add('landed');
 
   // ---- Leaving
@@ -548,18 +554,11 @@ async function zoom(plate: HTMLElement) {
     session.frame.contentWindow?.removeEventListener('keydown', onKey, true);
     if (!viaHistory && history.state?.liveZoom) history.back();
     overlay.classList.remove('landed');
-    layers.forEach((el) => (el.inert = false));
     // The lights land on the side they're on now, in the plate too.
     if (plateLights) placeLights(plateLights, lights.dataset.side === 'right' ? 'right' : 'left');
-    const returns = pageAnim(false, FLIGHT * 0.85);
-    steps.forEach((f) => f.cancel());
-    await morph(false, returns);
-    returns.forEach((a) => a.play());
-    await Promise.all(returns.map((a) => a.finished));
+    await morph(false, FLIGHT * 0.85);
     overlay.remove();
-    returns.forEach((f) => f.cancel());
-    layers.forEach((el) => (el.style.transformOrigin = ''));
-    document.documentElement.classList.remove('thawing');
+    root.classList.remove('thawing-gutter');
     document.dispatchEvent(new CustomEvent('thaw:close'));
     zooming = false;
   };

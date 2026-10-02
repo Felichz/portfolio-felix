@@ -183,7 +183,15 @@ const { panels, home } = Astro.props;
   const root = document.documentElement;
   const label = () => btn?.setAttribute('aria-label', `Switch to ${root.dataset.theme === 'dark' ? 'light' : 'dark'} theme`);
   label();
-  btn?.addEventListener('click', () => {
+  // (A copy of this site running inside itself gets its theme from the page around it.)
+  new MutationObserver(label).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+  /**
+   * Switches the site's theme. The new edition spreads out in a circle from `from.x`/`from.y` (the
+   * toggle, by default), or, given `from.rect`, opens out from that rectangle to the edges: how a
+   * live app on the page (src/scripts/live.ts) passes on a theme it switched itself.
+   */
+  const switchTheme = (from?: { x: number; y: number } | { rect: DOMRect }) => {
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     // Recordings hand off to the other edition's video on the same frame (src/scripts/handoff.ts);
     // the new edition shows once they're on it, or after a short cap.
@@ -208,13 +216,33 @@ const { panels, home } = Astro.props;
       apply();
       return done();
     }
-    const r = btn.getBoundingClientRect();
-    root.style.setProperty('--vt-x', `${r.left + r.width / 2}px`);
-    root.style.setProperty('--vt-y', `${r.top + r.height / 2}px`);
-    root.dataset.vt = 'theme';
+    if (from && 'rect' in from) {
+      const { top, right, bottom, left } = from.rect;
+      root.style.setProperty('--vt-inset', `${top}px ${innerWidth - right}px ${innerHeight - bottom}px ${left}px`);
+      root.dataset.vt = 'theme-rect';
+    } else {
+      const r = btn?.getBoundingClientRect();
+      root.style.setProperty('--vt-x', `${from?.x ?? (r ? r.left + r.width / 2 : innerWidth)}px`);
+      root.style.setProperty('--vt-y', `${from?.y ?? (r ? r.top + r.height / 2 : 0)}px`);
+      root.dataset.vt = 'theme';
+    }
     doc.startViewTransition(apply).finished.finally(() => {
       delete root.dataset.vt;
       done();
     });
+  };
+  window.__faTheme = switchTheme;
+
+  btn?.addEventListener('click', () => {
+    // In a copy of this site running inside itself, the switch is the page's around it: it spreads
+    // from this toggle, where it is on screen, over both.
+    const host = window !== window.top && window.frameElement ? (window.parent as Window).__faTheme : undefined;
+    if (host) {
+      const f = window.frameElement!.getBoundingClientRect();
+      const k = f.width / innerWidth;
+      const r = btn.getBoundingClientRect();
+      return host({ x: f.left + (r.left + r.width / 2) * k, y: f.top + (r.top + r.height / 2) * k });
+    }
+    switchTheme();
   });
 </script>

@@ -123,21 +123,38 @@
 /* Cross-document view transitions: the showcase screenshot grows into its case study. */
 @view-transition { navigation: auto; }
 ::view-transition-group(*) { animation-duration: 0.5s; animation-timing-function: var(--ease-out); }
-/* Theme switch: the new edition spreads out in a circle from the toggle. One snapshot of the page,
-   animated on the compositor; nothing else transitions while it runs. */
-:root[data-vt='theme']::view-transition-old(root) { animation: none; }
+/* Theme switch: the new edition spreads out in a circle from the toggle, or, when a live app switched
+   its own theme (src/scripts/live.ts), out from that app's window to the edges. One snapshot of the
+   page, animated on the compositor; nothing else transitions while it runs. */
+:root:is([data-vt='theme'], [data-vt='theme-rect'])::view-transition-old(root) { animation: none; }
 :root[data-vt='theme']::view-transition-new(root) { animation: theme-reveal 0.6s var(--ease-io); }
-:root[data-vt='theme'] * { view-transition-name: none !important; }
-/* A live preview's window (src/scripts/live.ts): only the window takes part, the page stays live. A
-   picture of the app at its old size scales with the window while the app at its new size fades in. */
-:root.live-vt, :root.live-vt :is(.bar, .plate, .slide-name, .ov-name) { view-transition-name: none !important; }
-:root.live-vt .live-vt-shape { view-transition-name: live-window !important; }
-::view-transition-group(live-window) { animation-duration: 0.62s; animation-timing-function: cubic-bezier(0.22, 0.8, 0.18, 1); }
-::view-transition-old(live-window), ::view-transition-new(live-window) { animation-duration: 0.36s; animation-timing-function: ease-out; }
+:root[data-vt='theme-rect']::view-transition-new(root) { animation: theme-reveal-rect 0.6s var(--ease-io); }
+:root:is([data-vt='theme'], [data-vt='theme-rect']) * { view-transition-name: none !important; }
 @keyframes theme-reveal {
   from { clip-path: circle(0 at var(--vt-x, 100%) var(--vt-y, 0)); }
   to { clip-path: circle(150vmax at var(--vt-x, 100%) var(--vt-y, 0)); }
 }
+@keyframes theme-reveal-rect {
+  from { clip-path: inset(var(--vt-inset) round 12px); }
+  to { clip-path: inset(0 round 0); }
+}
+/* A live preview's window (src/scripts/live.ts) morphs between the plate and its room while the page
+   steps back (in) or forward (out) around it, all in one transition: the page's final place is the
+   one captured, so nothing moves once it ends. The two pictures of the app cross over fast, each
+   filling the window's shape (cropped, never stretched), so there's no ghost of a second window. */
+:root.live-vt :is(.bar, .plate, .slide-name, .ov-name) { view-transition-name: none !important; }
+:root.live-vt .live-vt-shape { view-transition-name: live-window !important; }
+:root.live-vt::view-transition { background: var(--bg); }
+:root.live-vt::view-transition-group(live-window) { animation-duration: var(--live-d); animation-timing-function: cubic-bezier(0.22, 0.8, 0.18, 1); }
+:root.live-vt::view-transition-old(live-window),
+:root.live-vt::view-transition-new(live-window) { height: 100%; object-fit: cover; object-position: 0 0; animation-duration: 0.14s; animation-timing-function: linear; }
+:root.live-vt-in::view-transition-old(root) { animation: live-page-back var(--live-d) cubic-bezier(0.22, 0.8, 0.18, 1) both; transform-origin: var(--live-o); mix-blend-mode: normal; }
+:root.live-vt-in::view-transition-new(root) { animation: live-page-hold var(--live-d) step-end both; mix-blend-mode: normal; }
+:root.live-vt-out::view-transition-old(root) { animation: none; opacity: 0; }
+:root.live-vt-out::view-transition-new(root) { animation: live-page-forward var(--live-d) cubic-bezier(0.22, 0.8, 0.18, 1) both; transform-origin: var(--live-o); mix-blend-mode: normal; }
+@keyframes live-page-back { to { transform: var(--live-back); opacity: var(--live-dim); } }
+@keyframes live-page-forward { from { transform: var(--live-back); opacity: var(--live-dim); } }
+@keyframes live-page-hold { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
@@ -696,6 +713,8 @@ html.live-ok:not(.lights-used) .plate[data-app] .light--zoom::after {
    laid out at its own size. It morphs from and back into the plate with a view transition of the
    window alone: the page stays live under it, stepping back. */
 html.thawing { overflow: hidden; }
+/* (Its scrollbar's room stays, so the page doesn't shift sideways under the window.) */
+html.thawing.thawing-gutter { scrollbar-gutter: stable; }
 .thaw { position: fixed; inset: 0; z-index: 1000; cursor: zoom-out; }
 /* (A plate for its themed chrome and its tape rules.) */
 .thaw-window.plate {
