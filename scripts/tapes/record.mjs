@@ -133,6 +133,20 @@ const helpers = {
     await sleep(90);
     await page.mouse.up();
   },
+  /** Clicks the visible button (or link) whose text matches, the way a hand would. */
+  async clickText(re, opts) {
+    const handle = await page.evaluateHandle(
+      (src) => [...document.querySelectorAll('button, a, [role=button], [role=tab]')].find((e) => e.offsetParent !== null && new RegExp(src, 'i').test(((e.getAttribute('aria-label') ?? '') + ' ' + e.textContent).trim())),
+      re.source,
+    );
+    const box = await handle.asElement()?.boundingBox();
+    if (!box) throw new Error(`no button matching ${re}`);
+    await helpers.moveTo(box.x + box.width / 2, box.y + box.height / 2);
+    await sleep(opts?.rest ?? 180);
+    await page.mouse.down();
+    await sleep(90);
+    await page.mouse.up();
+  },
   async checkpoint(name) {
     await page.evaluate((n, keys, base, idb) => window.__tapeCheckpoint(n, keys, base, idb), name, scene.storage, scene.base, !!scene.idb);
   },
@@ -167,7 +181,7 @@ const out = {
     themeKey: scene.themeKey,
     restore: scene.restore,
     prefetch,
-    ...(exchanges.length ? { network: dedupe(exchanges) } : {}),
+    ...(exchanges.length ? { network: `/tapes/${id}.net.json` } : {}),
   },
   ...tape,
 };
@@ -175,6 +189,7 @@ mkdirSync(tapes, { recursive: true });
 const file = join(tapes, `${id}.json`);
 const json = JSON.stringify(out);
 writeFileSync(file, json);
+if (exchanges.length) writeFileSync(join(tapes, `${id}.net.json`), JSON.stringify(dedupe(exchanges)));
 const kinds = {};
 for (const e of tape.events) kinds[e[0]] = (kinds[e[0]] ?? 0) + 1;
 console.log(

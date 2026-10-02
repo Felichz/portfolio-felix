@@ -78,8 +78,11 @@ export interface Tape {
     themeKey?: string;
     restore?: string[];
     prefetch: string[];
-    /** Its backend's answers, recorded with the scene, for an app that has one. */
-    network?: Exchange[];
+    /**
+     * Its backend's answers, recorded with the scene, for an app that has one: a separate file
+     * (Exchange[]), fetched only when the live app boots, not with the preview.
+     */
+    network?: string;
     /** A real-time room the scene was in (PlaySync): what came in over the socket, and when. */
     socket?: { url: string; in: [number, string][] };
   };

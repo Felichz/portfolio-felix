@@ -210,6 +210,7 @@ class Session {
     }
     if (tape.app.themeKey) localStorage.setItem(tape.app.themeKey, theme);
     if (cp.idb) await restoreIdb(cp.idb).catch(() => {});
+    const network = tape.app.network ? await fetch(tape.app.network).then((r) => r.json() as Promise<Exchange[]>).catch(() => undefined) : undefined;
 
     let ready!: () => void;
     const painted = new Promise<void>((r) => (ready = r));
@@ -218,7 +219,7 @@ class Session {
       clock: this.#clockAt(cp.t),
       readySelector: tape.app.readySelector,
       ready: () => ready(),
-      network: tape.app.network,
+      network,
       socket: tape.app.socket,
     };
     (window.__live ??= {})[this.id] = this.handoff;

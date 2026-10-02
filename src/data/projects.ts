@@ -351,13 +351,13 @@ export const projects: Project[] = [
     palette: ['#E7E5E1', '#F2F1ED', '#0D0D0F', '#D62828', '#9A9A9A'],
     language: 'English and Spanish',
     accent: { light: '#C81E1E', dark: '#E5484D', onLight: '#FFFFFF', onDark: '#1A0606' },
-    main: moving(
-      themed(
+    main: {
+      ...themed(
         'lol-main',
         'LoLImpact match view: recent games on the left, a readout for minute 12 showing 64% win probability with a 55% to 72% likely range, and a column chart of win probability by minute with uncertainty bands.',
       ),
-      'lol-main',
-    ),
+      tape: 'lolimpact',
+    },
     callouts: [
       { x: 30.2, y: 46.5, text: 'Every probability is shown with its likely range, never alone.' },
       { x: 93.6, y: 34, text: 'Hand-built SVG column: 50% and 95% bands around each minute, keyboard navigable.' },

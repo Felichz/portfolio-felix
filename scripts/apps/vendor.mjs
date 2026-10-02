@@ -24,6 +24,12 @@ export const APPS = {
     // A few content strings point at /img/ on the site root.
     rewrite: [[/(["'(=]|\\")\/img\//g, '$1/apps/katarch/img/']],
   },
+  lolimpact: {
+    // github.com/Felichz/LoL-Impact: the Svelte frontend. Its API answers come with the tape
+    // (public/tapes/lolimpact.net.json), recorded against a local backend.
+    repo: resolve(root, '../LoLImpact/frontend'),
+    build: (out) => ['npx', ['vite', 'build', '--base', '/apps/lolimpact/', '--outDir', out, '--emptyOutDir']],
+  },
 };
 
 const walk = (dir) => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]));
