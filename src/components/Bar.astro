@@ -233,15 +233,32 @@ const { panels, home } = Astro.props;
   };
   window.__faTheme = switchTheme;
 
-  btn?.addEventListener('click', () => {
+  // Where this page's viewport sits on the screen, from the pointer: a point inside a copy of this site
+  // running inside itself maps to this page through it exactly, whatever the frame's scale and lean.
+  let screenDX: number | undefined;
+  let screenDY = 0;
+  addEventListener(
+    'pointermove',
+    (e) => {
+      screenDX = e.screenX - e.clientX;
+      screenDY = e.screenY - e.clientY;
+    },
+    { passive: true },
+  );
+  window.__faScreen = (sx: number, sy: number) => (screenDX === undefined ? undefined : { x: sx - screenDX, y: sy - screenDY });
+
+  btn?.addEventListener('click', (e) => {
     // In a copy of this site running inside itself, the switch is the page's around it: it spreads
     // from this toggle, where it is on screen, over both.
-    const host = window !== window.top && window.frameElement ? (window.parent as Window).__faTheme : undefined;
-    if (host) {
+    const host = window !== window.top && window.frameElement ? (window.parent as Window) : undefined;
+    if (host?.__faTheme) {
+      // The click's own point on the screen when there's one (the frame may be scaled and tilted);
+      // otherwise the toggle's center, mapped through the frame's box.
+      const at = e.detail > 0 ? host.__faScreen?.(e.screenX, e.screenY) : undefined;
       const f = window.frameElement!.getBoundingClientRect();
       const k = f.width / innerWidth;
       const r = btn.getBoundingClientRect();
-      return host({ x: f.left + (r.left + r.width / 2) * k, y: f.top + (r.top + r.height / 2) * k });
+      return host.__faTheme(at ?? { x: f.left + (r.left + r.width / 2) * k, y: f.top + (r.top + r.height / 2) * k });
     }
     switchTheme();
   });

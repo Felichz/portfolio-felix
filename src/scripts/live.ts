@@ -5,7 +5,7 @@
  * with its clock and timers following the recording (scripts/apps/bridge.js). So at any moment the
  * live app is in the state the tape shows.
  *
- * - Hover: the preview lifts a little and the live app takes the tape's place on the same frame. From
+ * - Hover: the live app takes the tape's place on the same frame. From
  *   there it's the app: hover states, cursors and clicks are real. Its bar has only the window lights,
  *   which keep to the pointer's side.
  * - The green light: the preview's contents (the live app itself, moved with moveBefore so it keeps
@@ -37,6 +37,8 @@ declare global {
     __live?: Record<string, Handoff>;
     /** The site's theme switch (Bar.astro): a circle from a point, or opening out from a rectangle. */
     __faTheme?: (from?: { x: number; y: number } | { rect: DOMRect }) => void;
+    /** Maps a point on the screen to this page's viewport (Bar.astro), once the pointer has moved here. */
+    __faScreen?: (screenX: number, screenY: number) => { x: number; y: number } | undefined;
   }
   interface Element {
     moveBefore(node: Node, child: Node | null): void;
@@ -370,8 +372,8 @@ function placeLights(pair: HTMLElement, side: 'left' | 'right') {
 
 /**
  * Shows the set on the side the pointer is on (`f`: its position across the window, 0 to 1, with a
- * dead band in the middle). Each set moves outward, toward its own edge, both as it comes in and as it
- * goes: the left one arrives and leaves moving left, the right one moving right.
+ * dead band in the middle). Each set comes in from its own edge, moving inward, and leaves back out
+ * toward it: the left one arrives moving right and leaves moving left, the right one the other way.
  */
 function moveLights(pair: HTMLElement | null | undefined, f: number) {
   if (!pair?.isConnected) return;
@@ -380,12 +382,12 @@ function moveLights(pair: HTMLElement | null | undefined, f: number) {
   if (side === now) return;
   placeLights(pair, side);
   if (reduce.matches) return;
-  const shift = (set: 'left' | 'right') => (set === 'left' ? -10 : 10); // the way that set moves: outward
+  const shift = (set: 'left' | 'right') => (set === 'left' ? -10 : 10); // toward that set's own edge
   const into = pair.querySelector<HTMLElement>(`.lights--${side}`)!;
   const out = pair.querySelector<HTMLElement>(`.lights--${now}`)!;
   into.animate(
     [
-      { opacity: 0, transform: `translateX(${-shift(side)}px)` },
+      { opacity: 0, transform: `translateX(${shift(side)}px)` },
       { opacity: 1, transform: 'none' },
     ],
     { duration: 300, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', delay: 60, fill: 'backwards' },

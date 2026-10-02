@@ -641,11 +641,8 @@ kbd .icon { width: 12px; height: 12px; }
   pointer-events: none;
 }
 .plate-motion .live-app.shown { opacity: 1; pointer-events: auto; transition: opacity 0.16s ease-out; }
-/* A live preview lifts a little under the pointer: it's real, and it answers. It's the app, not a
-   link or a lightbox: no zoom cursor, and only its lights on the bar (no address, no recording button). */
-.plate[data-app] { transition: scale 0.45s var(--ease-out), box-shadow 0.45s var(--ease-out); }
-.plate[data-live]:hover { scale: 1.025; box-shadow: 0 0 0 1px var(--line-2), 0 30px 70px -30px color-mix(in oklab, var(--accent, var(--ink)) 45%, transparent), var(--shadow-lg); }
-@media (prefers-reduced-motion: reduce) { .plate[data-live]:hover { scale: none; } }
+/* A live preview is the app, not a link or a lightbox: no zoom cursor, and only its lights on the bar
+   (no address, no recording button). */
 .plate[data-live] .motion-btn { display: none; }
 .lights-pair { display: none; }
 html.live-ok .plate[data-app], html.live-ok .plate[data-app] .zoom { cursor: default; }
