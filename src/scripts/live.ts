@@ -345,7 +345,10 @@ class Session {
     if (el && a.kind === 'key') press(win, el, a.key!);
     else if (el && a.kind === 'input') type(win, el, a.value ?? '');
     else if (el) click(win, el);
-    await quiet(win, doc);
+    // A click can start async work: wait for the DOM to settle (bounded: a playing video never does).
+    // Typing is synchronous, and there's a lot of it: one frame is enough.
+    if (a.kind === 'input') await frames(win, 1);
+    else await quiet(win, doc, 450);
     this.handoff.setClock?.(this.#clockAt(this.#now), false);
   }
 
@@ -765,6 +768,11 @@ export function initLive() {
       document.dispatchEvent(new CustomEvent('live:hold', { detail: true }));
       const s = sessions.get(plate);
       if (s) void s.goLive();
+    });
+    // A preview that scrolled under a resting pointer gets no pointerenter: any move over it counts.
+    plate.addEventListener('pointermove', (e) => {
+      const s = sessions.get(plate);
+      if (e.pointerType === 'mouse' && s && !s.live && desktop()) void s.goLive();
     });
     plate.addEventListener('live:pointer', (e) => moveLights(lightsOf(plate), (e as CustomEvent<number>).detail));
     plate.addEventListener('pointerleave', () => {

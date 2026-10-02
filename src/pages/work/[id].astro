@@ -166,6 +166,13 @@ const panels: PanelLink[] = [
             <p class="t-label">How it works</p>
             <h2 id="how-title" class="t-section">{dive.title}</h2>
             <p class="how-intro muted">{dive.intro}</p>
+            {
+              dive.writeup && (
+                <a class="arrow-link how-writeup" href={dive.writeup}>
+                  Read the write-up <Icon name="arrow-right" class="icon-right" />
+                </a>
+              )
+            }
           </header>
           <ol class="how-steps">
             {dive.steps.map((s, i) => (

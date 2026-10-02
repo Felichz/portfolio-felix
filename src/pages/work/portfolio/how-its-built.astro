@@ -1,0 +1,463 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Plate from '../../../components/Plate.astro';
+import Icon from '../../../components/Icon.astro';
+import { byId } from '../../../data/projects';
+
+// A write-up of how this site shows its products: the long version of the portfolio case study's
+// "How it works" chapter, written to be read top to bottom like a blog post.
+const lifeui = byId('lifeui')!;
+const playsync = byId('playsync')!;
+const self = byId('portfolio')!;
+const host = (url: string) => new URL(url).host;
+const accent = `--a-light:${self.accent.light};--a-dark:${self.accent.dark};--on-light:${self.accent.onLight};--on-dark:${self.accent.onDark}`;
+
+const sizes = [
+  { name: 'KatArch', video: '1.9 MB', tape: '72 KB' },
+  { name: 'KnowGraph', video: '2.3 MB', tape: '55 KB' },
+  { name: 'PlaySync', video: '6.6 MB', tape: '21 KB', note: '+ a 480 KB clip of its YouTube player' },
+  { name: 'LifeUI', video: '2.5 MB', tape: '42 KB' },
+  { name: 'LoLImpact', video: '4.4 MB', tape: '41 KB', note: '+ 52 KB of API answers, fetched when the app boots' },
+];
+
+const toc = [
+  ['constraints', 'What it had to do'],
+  ['tapes', 'Tapes: the DOM, not pixels'],
+  ['live', 'Going live, in the same state'],
+  ['backends', 'Products with a backend'],
+  ['window', 'A window around the app'],
+  ['themes', 'Themes, in both directions'],
+  ['cost', 'What it costs'],
+  ['left', 'What’s left'],
+];
+
+const scene = `async run(s) {
+  await s.checkpoint('step-3');
+  await s.wait(1300);
+  await s.click('.bottombar .btn--primary', { rest: 240 });
+  await s.wait(2600);
+  await s.checkpoint('step-4');
+  await s.click('.bottombar .btn--primary', { rest: 200 });
+  await s.wait(3200);
+  await s.checkpoint('step-5');
+}`;
+
+const pseudo = `// The app's stylesheet, with what a replay can't trigger mapped to attributes.
+const pseudo = /(?<!\\\\):(hover|focus-visible|focus-within|focus|active)\\b/g;
+rule.selectorText = rule.selectorText.replace(pseudo, (_, p) => \`[data-tape-\${p}]\`);`;
+
+const clock = `// Inside the app, before any of its code runs: Date and the timers follow a
+// clock the portfolio sets.
+handoff.setClock = function (ms, freeze, tick) {
+  base = ms;
+  realBase = RealDate.now();
+  frozen = !!freeze;
+  timers.forEach(schedule); // moving forward fires what fell due on the way
+};`;
+
+const replay = `async #replay(a: Action) {
+  this.handoff.setClock?.(this.#clockAt(a.t), true); // the moment it was recorded
+  const el = resolve(doc, a); // its element path, checked against a signature
+  if (a.kind === 'key') press(win, el, a.key);
+  else if (a.kind === 'input') type(win, el, a.value);
+  else click(win, el);
+  await quiet(win, doc); // until the DOM settles
+  this.handoff.setClock?.(this.#clockAt(this.#now), false); // running again
+}`;
+---
+
+<Base
+  title="The previews are the apps · Felix Andersson"
+  description="How this portfolio records its products as DOM instead of video, then hands each recording over to the running app, in the same state, without the page paying for it on load."
+  panels={[{ id: 'article', label: 'Write-up', icon: 'text' }]}
+>
+  <section id="article" class="panel" data-label="Write-up" tabindex="-1" data-accent style={accent} aria-labelledby="post-title">
+    <article class="post">
+      <header class="post-head">
+        <a class="post-back arrow-link" href="/work/portfolio/"><Icon name="arrow-left" class="icon-left" />This portfolio, case study</a>
+        <h1 id="post-title" class="post-title">The previews are the apps</h1>
+        <p class="post-dek">
+          How this portfolio records its products as DOM instead of video, then hands each recording over to the running app, in the
+          same state, without the page paying for it on load.
+        </p>
+        <p class="post-byline">
+          <span>Felix Andersson</span>
+          <span aria-hidden="true">·</span>
+          <time datetime="2026-10">October 2026</time>
+          <span aria-hidden="true">·</span>
+          <span>10 min read</span>
+        </p>
+      </header>
+
+      <div class="post-body">
+        <nav class="post-toc" aria-label="Contents">
+          <p class="t-label">Contents</p>
+          <ol>{toc.map(([id, label]) => <li><a href={`#${id}`}>{label}</a></li>)}</ol>
+        </nav>
+
+        <div class="prose-post">
+          <p class="lede">
+            Most portfolios show a product the way a store shows a TV: a screenshot, or a video on a loop. For a web app that has always
+            struck me as odd. A video of an interface is a stack of pictures of something the browser could draw itself, sharper, in
+            either theme, at any size.
+          </p>
+          <p>
+            So every product on this site is shown by the product. The preview you watch in the showcase is the app’s own DOM, replayed.
+            Once you start using the page, the real app boots underneath it and follows along; put your pointer on the preview and you’re
+            holding the app, in the state you were watching. Its green light opens it in a window at its own size. Five products work this
+            way, plus this site, which can open a copy of itself inside itself.
+          </p>
+          <p>This is how it’s built, what broke along the way, and what it costs.</p>
+
+          <figure class="post-fig wide">
+            <Plate shot={lifeui.main} chrome={host(lifeui.live)} motion="lead" sizes="(min-width: 1100px) 900px, 92vw" />
+            <figcaption>LifeUI, as the showcase shows it. Scroll it into view and move your pointer onto it: from there, it’s the app.</figcaption>
+          </figure>
+
+          <h2 id="constraints">What it had to do</h2>
+          <p>Four constraints shaped everything else.</p>
+          <ul>
+            <li>
+              <strong>The page loads as if the previews were still screenshots.</strong> Nothing heavy before you do something, and nothing at
+              all for an audit that never touches the page.
+            </li>
+            <li>
+              <strong>The app takes over in exactly the state the preview shows.</strong> The same screen, the same open dialog, the same
+              second on a running timer.
+            </li>
+            <li><strong>One recording per product, for both themes.</strong> The videos needed two.</li>
+            <li>
+              <strong>No product gets rewritten for the portfolio.</strong> Each runs its own production build, with the smallest changes I
+              could manage.
+            </li>
+          </ul>
+
+          <h2 id="tapes">Tapes: the DOM, not pixels</h2>
+          <p>
+            A tape is a product’s DOM over time. To make one, a scene drives the real build in headless Chrome, written like an end-to-end
+            test: seed the data, move a cursor the way a hand moves, click. This is KatArch’s, stepping a course chapter forward twice:
+          </p>
+          <pre><code>{scene}</code></pre>
+          <p>
+            Inside the page, a recorder takes a snapshot of the document and then writes down every change, with a timestamp. Scripts and
+            event handlers are dropped; what’s left is what the browser needs to paint the same frames again. Two choices kept it small and
+            correct. A change to a node’s children is stored as its whole new list of children, which stays right through moves and
+            reorders without tracking each insertion. And everything the DOM doesn’t carry is recorded as its own event: form values, scroll
+            offsets, the pointer, and the hover, focus and pressed states.
+          </p>
+          <p>
+            Those last ones matter because a replay has no pointer. The recorder copies the app’s stylesheet and rewrites the
+            pseudo-classes it can’t trigger into attributes; the player sets them as the recorded pointer moves, so a button lights up on
+            the tape exactly when it did in the scene.
+          </p>
+          <pre><code>{pseudo}</code></pre>
+          <p>
+            The player is a custom element. It rebuilds the snapshot in an iframe that can’t run scripts, applies each change at its time,
+            and draws the cursor. It also speaks the part of the video element’s API the showcase already used: play, pause, currentTime,
+            ended, a playing event. When the MP4s went away, the showcase that drove them didn’t change.
+          </p>
+          <p>
+            Two details took longer than the rest. Each of these apps switches theme with one attribute on its root element, so the player
+            sets it to the opposite of the site’s theme and a single tape plays in both editions. And some apps animate with
+            <code>element.animate()</code>, which changes what’s painted without touching the DOM: on KatArch’s first tape, the text of
+            each step never appeared. The recorder now wraps <code>element.animate()</code> to keep each animation’s keyframes and timing,
+            and the player creates them again, paused, setting their time from the tape’s clock, so they pause and seek with everything
+            else.
+          </p>
+
+          <div class="post-table" role="region" aria-label="Preview sizes" tabindex="0">
+            <table>
+              <caption>Each product’s preview: the two videos it had, one per theme, and the tape that replaced them, gzipped.</caption>
+              <thead><tr><th scope="col">Product</th><th scope="col">Videos</th><th scope="col">Tape</th></tr></thead>
+              <tbody>
+                {
+                  sizes.map((s) => (
+                    <tr>
+                      <th scope="row">{s.name}</th>
+                      <td class="t-num">{s.video}</td>
+                      <td class="t-num">
+                        {s.tape}
+                        {s.note && <span class="post-note">{s.note}</span>}
+                      </td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="live">Going live, in the same state</h2>
+          <p>
+            Each product’s build is copied into this site under <code>/apps/&lt;id&gt;/</code>, so it runs on the same origin. That one
+            decision makes the rest possible: the portfolio can seed the app’s storage before it boots, read its DOM, and move its frame
+            around the page.
+          </p>
+          <p>
+            The first script in each copied page is a small bridge. Outside the portfolio it does nothing. Inside it, it takes over the
+            app’s time:
+          </p>
+          <pre><code>{clock}</code></pre>
+          <p>
+            Nothing boots while the page loads. The first time you move the pointer, press a key or scroll, the preview on screen gets its
+            app (only that one, and one at a time), booted in a hidden frame under the tape from the tape’s last checkpoint: a rest point
+            where the recorder saved the app’s route, its storage and its clock. From there the app keeps up. Each action the scene
+            performed is replayed in the app when the tape reaches it, with the app’s clock frozen at the moment it was recorded:
+          </p>
+          <pre><code>{replay}</code></pre>
+          <p>
+            Clicks are found by their element path from the body, checked against a signature (tag, test id, label, text without numbers,
+            because a tab that read “Chat” in the scene can read “Chat 9” in the app). Text goes in through the input’s native value setter,
+            so the app’s framework sees it as typing. Between actions the clock runs, so a toast that had time to leave in the scene leaves,
+            and a running timer shows the second the tape does.
+          </p>
+          <p>
+            When your pointer reaches the preview, the tape steps aside for the app on the same frame. From then on hovers, cursors and
+            clicks belong to the app. The wheel doesn’t: it still scrolls the portfolio, because a preview that swallowed the page’s scroll
+            would be a trap.
+          </p>
+
+          <h2 id="backends">Products with a backend</h2>
+          <p>LifeUI and KatArch only need a browser. The other three needed more.</p>
+          <p>
+            <strong>LoLImpact</strong> reads a Python API that needs a Riot key. Its scene runs against a local backend, and the recorder
+            keeps every answer, fetching each game on the profile once so any of them opens. The answers ship in a separate file, loaded
+            only when the app boots, and the bridge’s <code>fetch</code> serves them.
+          </p>
+          <p>
+            <strong>KnowGraph</strong> keeps your study history in IndexedDB. Checkpoints dump every database to plain data, and before the
+            app boots the portfolio writes them back, which works because the frame is on the same origin.
+          </p>
+          <p>
+            <strong>PlaySync</strong> was the hard one: a room on a WebSocket server, and a YouTube player. For the room, a stand-in server
+            of about 200 lines runs inside the app. It rebuilds the room as it was at the checkpoint from the messages the scene’s socket
+            received (the playback state, the chat, who’s there), moves the recorded server clock onto the app’s, and plays the other
+            participant’s later messages at the moments they arrived. What you do gets the answers the real server would give: your
+            messages appear, play and pause stay in sync, the queue works. The scene ran against the real server with its clock pinned to
+            the page’s, so chat times read the same on the tape and in the app.
+          </p>
+          <p>
+            The YouTube player lives in a frame from another origin, which the recorder can’t read, so the scene also films it: a
+            screencast of the page during the scene, cropped to the player and encoded as a 480 KB clip that plays on the tape where the
+            frame was, on the tape’s time. In the live app the real player starts muted, which browsers let play inside a frame without a
+            tap.
+          </p>
+
+          <figure class="post-fig wide">
+            <Plate shot={playsync.main} chrome={host(playsync.live)} motion="lead" sizes="(min-width: 1100px) 900px, 92vw" />
+            <figcaption>
+              PlaySync: the video is the filmed clip until the app takes over; then it’s YouTube, and the room is the stand-in. Write in the
+              chat.
+            </figcaption>
+          </figure>
+
+          <p>
+            None of this rewrote a product. KnowGraph’s router learned the build’s base path, KnowGraph and PlaySync skip their service
+            worker inside another page, and PlaySync starts its video muted there. Each change sits on a <code>portfolio-embed</code>
+            branch of its repository. And when an app has a Content-Security-Policy, the copy step adds the bridge’s hash to it.
+          </p>
+
+          <h2 id="window">A window around the app</h2>
+          <p>
+            The green light opens the app in a window over the page, at its own size, laid out for that size like any browser window.
+            <code>moveBefore</code> makes it cheap: unlike a regular DOM move, it keeps an iframe’s document alive, so the app you were
+            using is the one that opens, mid-dialog if that’s where you were. The window’s lights stay on the side your pointer is on, and
+            red and yellow close it, as on a Mac.
+          </p>
+          <p>The animation took three attempts.</p>
+          <ol>
+            <li>
+              The first flew a 1440 by 900 copy of the window and clipped it to the plate. The app’s content was cropped on the way, then
+              snapped to its real layout at the end.
+            </li>
+            <li>
+              The second resized the app every frame, so it reflowed as the window grew. It looked right and ran at about 20 frames per
+              second on this laptop’s GPU, because every frame meant painting the whole app again.
+            </li>
+            <li>
+              The third is a view transition of the window alone. The browser takes a picture of the app at its old size and scales it on
+              the compositor, while the app, laid out once at its new size, takes over.
+            </li>
+          </ol>
+          <p>
+            Even that looked off, and at full speed I couldn’t say why. DevTools’ animation speed doesn’t apply to view transitions, so I
+            paused every animation in the transition and stepped their time by hand, with a screenshot per step. The frames showed three
+            problems. The curve covered nearly 60% of the distance in its first 100 ms, then crawled. The pictures, scaled to cover the
+            window’s shape, painted outside it with the window’s shadow, a ghost over the page. And two layouts of the app overlapped for
+            the first 140 ms.
+          </p>
+          <p>
+            The fixes: a gentler curve, the pictures clipped to the window’s box, and one picture at a time, crossing over in 48 ms while
+            the window is small. One more. On the way back, the window now lands where the preview will be once the page has stepped
+            forward again, not where it is while the page is still stepped back. That last frame used to jump.
+          </p>
+
+          <h2 id="themes">Themes, in both directions</h2>
+          <p>
+            The site’s theme switch is a view transition too: the new edition spreads in a circle from the toggle. The apps’ theme attribute
+            changes in the same frame, so the circle covers them as well.
+          </p>
+          <p>
+            It works the other way round. Switch a product’s theme in its own settings and the site takes the opposite edition, opening out
+            from the app’s window to the edges of the screen. This site’s toggle, inside the copy of itself, hands the click to the page
+            around it, so one circle covers both. Placing that circle took a detail: the frame is scaled, and tilted toward the pointer, so
+            mapping the toggle through the frame’s box put the circle a few pixels off. The click’s screen coordinates aren’t off. The
+            outer page knows where its viewport sits on the screen from any pointer event, and the circle starts within a pixel of where
+            you clicked.
+          </p>
+
+          <h2 id="cost">What it costs</h2>
+          <p>
+            Nothing here runs before your first input, and Lighthouse never gives one. On this laptop the scores move with whatever else it’s
+            doing, so I compared builds in alternating runs on the home page: with the live apps it scored 99, 99, 100 and 88 for
+            performance; the build before them, 89, 89, 69 and 100. Accessibility, best practices and SEO were 100 in every run.
+          </p>
+          <p>
+            The previews went from 17.7 MB of video to 230 KB of tapes, gzipped, plus PlaySync’s clip. The copied builds add 12.8 MB to
+            the deployment, and only the app you open is fetched.
+          </p>
+
+          <h2 id="left">What’s left</h2>
+          <ul>
+            <li>
+              Some endpoints aren’t recorded: LoLImpact’s live game and draft tool, KnowGraph’s AI mentor. In the live apps they show their
+              own error states.
+            </li>
+            <li>On phones and touch screens, previews stay tapes and links stay links.</li>
+            <li>
+              For three frames on the way in and out, two layouts of the app overlap. Interpolating between them means laying the app out
+              every frame, which is the 20 fps version.
+            </li>
+            <li>
+              When a product changes, its tape is recorded again: one command, <code>node scripts/tapes/record.mjs &lt;id&gt;</code>, with
+              the scene in the repository.
+            </li>
+          </ul>
+
+          <p class="post-end">
+            The code is on <a href={self.source} target="_blank" rel="noopener">GitHub</a>: the recorder and the scenes in
+            <code>scripts/tapes</code>, the bridge and the stand-in room in <code>scripts/apps</code>, the player and the live apps in
+            <code>src/scripts</code>.
+          </p>
+        </div>
+      </div>
+
+      <footer class="post-foot">
+        <a class="btn btn--solid" href="/work/portfolio/">Back to the case study <Icon name="arrow-right" class="icon-right" /></a>
+        <a class="btn" href="/#work">All work</a>
+      </footer>
+    </article>
+  </section>
+</Base>
+
+<style>
+  .post {
+    max-width: 1060px;
+    margin-inline: auto;
+    padding-block: clamp(20px, 5vh, 56px) 72px;
+  }
+  .post-head {
+    max-width: 720px;
+    margin: 0 auto 40px;
+  }
+  .post-back { margin-bottom: 28px; }
+  .post-title {
+    font: 800 clamp(2.4rem, 5.2vw, 4rem) / 1 var(--font);
+    font-stretch: 112%;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .post-dek {
+    margin-top: 18px;
+    font: italic 400 clamp(1.25rem, 2vw, 1.5rem) / 1.4 var(--serif);
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+  .post-byline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: 0.875rem;
+  }
+  .post-byline span:first-child { color: var(--ink); font-weight: 600; }
+
+  .post-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 720px) minmax(0, 1fr);
+    gap: 32px;
+  }
+  .prose-post { grid-column: 2; min-width: 0; }
+  .post-toc {
+    grid-column: 1;
+    grid-row: 1;
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    font-size: 0.8125rem;
+  }
+  .post-toc ol { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .post-toc a { color: var(--ink-2); text-decoration: none; }
+  .post-toc a:hover { color: var(--accent); }
+  @media (max-width: 1100px) {
+    .post-body { grid-template-columns: minmax(0, 1fr); }
+    .prose-post { grid-column: 1; width: 100%; max-width: 720px; justify-self: center; }
+    .post-toc { display: none; }
+  }
+
+  .prose-post > :is(p, ul, ol) {
+    font: 500 1.1875rem / 1.72 var(--serif);
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+  .prose-post > * + * { margin-top: 1.15em; }
+  .prose-post .lede::first-letter {
+    float: left;
+    margin: 0.08em 0.1em 0 0;
+    font: 800 3.4em / 0.8 var(--font);
+    color: var(--accent);
+  }
+  .prose-post :is(ul, ol) { padding-left: 1.2em; }
+  .prose-post li + li { margin-top: 0.5em; }
+  .prose-post strong { font-weight: 700; font-family: var(--font); font-size: 0.94em; }
+  .prose-post h2 {
+    margin-top: 2.4em;
+    font: 750 clamp(1.5rem, 2.4vw, 1.875rem) / 1.15 var(--font);
+    letter-spacing: -0.02em;
+    scroll-margin-top: 16px;
+  }
+  .prose-post a { color: var(--accent); }
+  .prose-post :not(pre) > code {
+    padding: 0.08em 0.36em;
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--ink) 7%, transparent);
+    font: 500 0.82em / 1 var(--mono);
+  }
+  .prose-post pre {
+    overflow-x: auto;
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    background: color-mix(in oklab, var(--ink) 5%, var(--bg));
+    box-shadow: inset 0 0 0 1px var(--line);
+    font: 500 0.8125rem / 1.65 var(--mono);
+    tab-size: 2;
+  }
+  .post-fig { margin-block: 2.2em; }
+  @media (min-width: 1100px) { .post-fig.wide { margin-inline: -90px; } }
+  .post-fig figcaption {
+    margin-top: 12px;
+    color: var(--ink-3);
+    font: italic 400 0.98rem / 1.5 var(--serif);
+    text-align: center;
+  }
+  .post-table { overflow-x: auto; margin-block: 2em; }
+  .post-table table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+  .post-table caption { caption-side: bottom; margin-top: 10px; color: var(--ink-3); font: italic 400 0.95rem / 1.5 var(--serif); text-align: left; }
+  .post-table :is(th, td) { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .post-table thead th { color: var(--ink-3); font-weight: 600; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .post-note { display: block; color: var(--ink-3); font-size: 0.8125rem; }
+  .post-end { margin-top: 2.4em !important; padding-top: 1.4em; border-top: 1px solid var(--line); }
+  .post-foot { display: flex; gap: 10px; justify-content: center; margin-top: 56px; }
+</style>

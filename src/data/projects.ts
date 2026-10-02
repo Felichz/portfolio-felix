@@ -76,6 +76,8 @@ export interface Project {
    */
   deepDive?: {
     title: string;
+    /** A long-form write-up of the same story, linked from the chapter. */
+    writeup?: string;
     intro: string;
     steps: { title: string; body: string }[];
     numbers: { value: string; label: string }[];
@@ -375,17 +377,17 @@ export const projects: Project[] = [
     face: 'face-archivo',
     year: '2026',
     tagline:
-      'A portfolio that opens its projects instead of linking to them: the preview you watch is the app’s own DOM, and Live starts the real app in place, on that frame.',
-    proof: 'A 40 KB tape in place of two 1.2 MB videos, and a live app under it after your first input',
+      'A portfolio that shows its products by running them: each preview is the app’s own DOM, replayed, and under your pointer it becomes the app, in the same state.',
+    proof: '17.7 MB of preview videos replaced by 230 KB of tapes, and every product live in its preview',
     live: 'https://portfolio-felix-teal.vercel.app/',
     source: 'https://github.com/Felichz/portfolio-felix',
     role: 'Solo: design, frontend and the recording pipeline',
     stack: ['Astro', 'TypeScript', 'Hand-written CSS', 'Custom elements', 'Web Animations API', 'View Transitions', 'Puppeteer and the Chrome DevTools Protocol', 'Vercel'],
-    scale: ['~6,100 lines of TypeScript, Astro and CSS', '9 components', '1 tape so far, 40 KB gzipped', 'Light and dark'],
+    scale: ['~7,900 lines of TypeScript, Astro, CSS and scripts', '9 components', '6 tapes, 230 KB gzipped for the five products', 'Light and dark'],
     story: [
       'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one fixed window, sections that move one at a time, and an ambient light that takes the color of whatever you’re looking at.',
-      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. LifeUI’s preview is now a tape instead, its own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Once you’re using the page, the real app runs under the preview and keeps up with it. Hover it and it’s the app, live, in the state you were watching, there to be used; its green light opens it in a window, still live.',
-      'So far LifeUI is the one that works this way, and this site’s own preview is a tape of its Intro. The other products still use video until their scenes are written; each one needs a scene and a way to seed its state, and that is most of the work.',
+      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. Every preview is now a tape instead, the product’s own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Once you’re using the page, the real app runs under the preview and keeps up with it. Put your pointer on it and it’s the app, in the state you were watching; its green light opens it in a window, still live.',
+      'Each product needed a scene and a way to seed its state, and three needed their backend on the tape: LoLImpact’s API answers, KnowGraph’s IndexedDB, and for PlaySync a stand-in room server and its YouTube player, filmed as a clip. The write-up tells the whole story, including what broke.',
     ],
     highlights: [
       {
@@ -403,6 +405,7 @@ export const projects: Project[] = [
     ],
     deepDive: {
       title: 'From a video of the app to the app',
+      writeup: '/work/portfolio/how-its-built/',
       intro:
         'Every product preview here used to be a pair of videos. The question was whether it could be the product itself, without paying for it in page weight or frames.',
       steps: [
@@ -412,26 +415,30 @@ export const projects: Project[] = [
         },
         {
           title: 'Replay',
-          body: 'A custom element rebuilds that DOM in an iframe that can’t run scripts, with the app’s own stylesheet, and applies each change at its time. Hover and focus come back as attributes the stylesheet was rewritten to match, and the app’s theme is one attribute, so a single tape plays in both editions. It speaks enough of the video element’s API that the showcase didn’t have to change.',
+          body: 'A custom element rebuilds that DOM in an iframe that can’t run scripts, with the app’s own stylesheet, and applies each change at its time. Hover and focus come back as attributes the stylesheet was rewritten to match, Web Animations are recreated on the tape’s clock, and the app’s theme is one attribute, so a single tape plays in both editions. It speaks enough of the video element’s API that the showcase didn’t have to change.',
         },
         {
           title: 'Go live',
-          body: 'After your first input, never during page load, the app’s build (vendored on this origin) boots under the preview with the last checkpoint’s storage. It keeps up with the tape: each recorded click is replayed in it as the tape reaches it, with the app’s clock and timers set to that recorded moment. Hovering swaps the tape for the app on the same frame; from there, hovers and clicks are the app’s own.',
+          body: 'After your first input, never during page load, the app’s build (vendored on this origin) boots under the preview from the last checkpoint: its route, storage and clock. It keeps up with the tape: each recorded click, key and typed text is replayed in it as the tape reaches it, with the app’s clock and timers set to that recorded moment. Hovering swaps the tape for the app on the same frame; from there, hovers and clicks are the app’s own.',
+        },
+        {
+          title: 'Bring the backend',
+          body: 'Three products needed more than a browser. LoLImpact’s API answers are recorded with its scene and served to its fetches; KnowGraph’s IndexedDB is dumped at checkpoints and written back before it boots; PlaySync gets a stand-in room server, rebuilt from the scene’s socket, and its YouTube player is filmed as a clip for the tape.',
         },
         {
           title: 'Open in a window',
-          body: 'The green light moves the preview’s contents into a window over the page with moveBefore, which keeps an iframe’s state where a regular move would reload it. There the same app runs at its own size, with the case study, the live site and the source under the window. Red or yellow moves it back into the preview, still live.',
+          body: 'The green light moves the preview’s contents into a window over the page with moveBefore, which keeps an iframe’s state where a regular move would reload it. There the same app runs at its own size, and the window grows out of the preview in a view transition: a picture of the app scaled on the compositor while the app, laid out once at its new size, takes over. Red or yellow moves it back, still live.',
         },
         {
           title: 'Measure',
-          body: 'Each step was checked against traces, pixels and Lighthouse. Scaling the page up behind the window made the GPU raster it again for 200 ms, so it steps back instead. Booting after the first input keeps the audit at 100 with 0 ms of blocking time.',
+          body: 'Each step was checked against traces, pixels and Lighthouse. Resizing the app every frame ran at about 20 fps, so the window is a view transition, and its frames were checked one by one by stepping the animations’ time by hand. Booting after the first input keeps page-load audits from paying for any of it.',
         },
       ],
       numbers: [
-        { value: '40 KB', label: 'LifeUI’s tape, gzipped, in place of two 1.2 MB videos' },
-        { value: '100', label: 'Lighthouse performance with live apps in place, 0 ms of blocking time' },
+        { value: '230 KB', label: 'the five products’ tapes, gzipped, in place of 17.7 MB of video' },
+        { value: '48 ms', label: 'where the window’s two pictures of the app cross over, while it’s still small' },
+        { value: '100', label: 'Lighthouse accessibility, best practices and SEO, in every run with live apps in place' },
         { value: '235 fps', label: 'with the cursor light on, after moving it off a full-window canvas (82 before)' },
-        { value: '9 of 9', label: 'frames tested where the live app opened with exactly the preview’s text, dialogs and timers included' },
       ],
     },
     typefaces: ['Archivo', 'Newsreader'],

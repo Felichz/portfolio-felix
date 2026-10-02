@@ -42,6 +42,7 @@ const chrome =
   ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome'].find(existsSync);
 const browser = await puppeteer.launch({ executablePath: chrome, headless: 'new', args: ['--lang=en-US', '--hide-scrollbars', '--font-render-hinting=none'] });
 const page = await browser.newPage();
+const browserUA = browser.userAgent().then((ua) => ua.replace('HeadlessChrome', 'Chrome'));
 const [w, h] = scene.viewport;
 await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
 
@@ -215,6 +216,13 @@ if (shots.length > 1) {
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', join(dir, 'list.txt'), '-vf', `crop=${even(w)}:${even(h)}:${x}:${y},scale=${width}:-2,fps=30`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '30', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', join(tapes, `${id}.clip.mp4`)]);
   rmSync(dir, { recursive: true, force: true });
   clip = { src: `/tapes/${id}.clip.mp4`, t: Math.round(shots[0].at - wall0) };
+}
+
+// Stylesheets from another origin (a font service) came as @import lines, which a constructed
+// stylesheet (the player's) refuses: their text goes on the tape instead, fetched as Chrome would.
+for (const [line, href] of [...tape.css.matchAll(/@import url\("([^"]+)"\);\n?/g)].map((m) => [m[0], m[1]])) {
+  const text = await fetch(href, { headers: { 'user-agent': await browserUA } }).then((r) => r.text(), () => '');
+  tape.css = tape.css.replace(line, text + '\n');
 }
 
 // One answer per request (the last one: the state the scene ended in).

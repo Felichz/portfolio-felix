@@ -57,7 +57,7 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 
 ## Details that took some care
 
-- **Tapes instead of videos.** LifeUI's preview, and this site's own, are tapes: the app's DOM recorded while a scripted scene drives it in headless Chrome, then replayed by a `<tape-player>` element in a script-less iframe with the app's real stylesheet. One 40 KB file replaces two 1.2 MB videos, plays in either theme, and stays sharp at any size.
+- **Tapes instead of videos.** Every product's preview, and this site's own, is a tape: the app's DOM recorded while a scripted scene drives it in headless Chrome, then replayed by a `<tape-player>` element in a script-less iframe with the app's real stylesheet. The five products' tapes weigh 230 KB gzipped, in place of 17.7 MB of video (two files per product, one per theme); they play in either theme and stay sharp at any size.
 - **Live previews.** After the visitor's first input (never during page load, so Lighthouse stays at 100), the app's own build, vendored under `/apps/<id>/`, boots under the preview and keeps up with the tape by replaying its recorded clicks, with its clock and timers following the recording. Hover a preview and it becomes the live app on the same frame: you can use it right there. Its window lights keep to your side of it; the green one moves the app (with `moveBefore`, state intact) into a window at its own size, with the case study, the live site and the source under it. On this site's own slide, the preview is the site, live, inside itself.
 
 - One navigation model for wheel, trackpad, touch, keys, tabs and links. A wheel gesture moves one section, unless it started by scrolling something inside the section.
@@ -77,13 +77,23 @@ Astro 7, TypeScript, hand-written CSS with custom properties. Deployed as a stat
 
 ## Tapes and live apps
 
+The full story is in the write-up, [The previews are the apps](https://portfolio-felix-teal.vercel.app/work/portfolio/how-its-built/).
+
 ```bash
-node scripts/apps/vendor.mjs lifeui      # build LifeUI for /apps/lifeui/ (needs ../life-ui-embed)
-node scripts/tapes/record.mjs lifeui     # record public/tapes/lifeui.json from its scene
+node scripts/apps/vendor.mjs <id>        # build a product for /apps/<id>/ (its repo checked out next to this one)
+node scripts/tapes/record.mjs <id>       # record public/tapes/<id>.json from its scene
 node scripts/tapes/record.mjs portfolio  # this site's Intro, from dist/ (build first)
 ```
 
-Scenes live in `scripts/tapes/scenes/`. The player is `src/scripts/tape.ts`, the live previews and their window `src/scripts/live.ts`, and the clock bridge inlined into vendored apps `scripts/apps/bridge.js`.
+| Product | Built from | Recording needs |
+| --- | --- | --- |
+| KatArch | `../katarch/v2` | nothing |
+| KnowGraph | `../learning-embed` (branch `portfolio-embed`: base-aware routes, no service worker in a frame) | nothing; its study history is restored from the repo's fixture and kept as IndexedDB |
+| PlaySync | `../rave2-embed` (branch `portfolio-embed`: no service worker, video muted in a frame) | the real server, clock pinned: `PIN=15:24 PORT=3099 npx tsx --import ../portfolio/scripts/tapes/pin-clock.mjs server/index.ts` |
+| LifeUI | `../life-ui-embed` (branch `portfolio-embed`: router basename) | nothing |
+| LoLImpact | `../LoLImpact/frontend` | its backend: `python -m uvicorn app.main:app --port 8010` in `backend/` |
+
+Scenes live in `scripts/tapes/scenes/`. The player is `src/scripts/tape.ts`, the live previews and their window `src/scripts/live.ts`, the bridge inlined into vendored apps `scripts/apps/bridge.js` (clock and timers, recorded API answers, the route), and PlaySync's stand-in room `scripts/apps/playsync-room.js`.
 
 ## Running it
 
