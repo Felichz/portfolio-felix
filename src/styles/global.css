@@ -138,23 +138,30 @@
   from { clip-path: inset(var(--vt-inset) round 12px); }
   to { clip-path: inset(0 round 0); }
 }
-/* A live preview's window (src/scripts/live.ts) morphs between the plate and its room while the page
-   steps back (in) or forward (out) around it, all in one transition: the page's final place is the
-   one captured, so nothing moves once it ends. The two pictures of the app cross over fast, each
-   filling the window's shape (cropped, never stretched), so there's no ghost of a second window. */
-:root.live-vt :is(.bar, .plate, .slide-name, .ov-name) { view-transition-name: none !important; }
+/* A live preview's window (src/scripts/live.ts): a view transition of the window alone, while the page,
+   live under it, steps back (or forward) on the same curve. Only one picture of the app shows at a
+   time, filling the window's shape (cropped, never stretched): they cross over in a few frames while
+   the window is small, at the start on the way in and at the end on the way back, so the app's layout
+   changes where it's least visible and there's never a ghost of a second window. */
+:root.live-vt, :root.live-vt :is(.bar, .plate, .slide-name, .ov-name) { view-transition-name: none !important; }
 :root.live-vt .live-vt-shape { view-transition-name: live-window !important; }
-:root.live-vt::view-transition { background: var(--bg); }
-:root.live-vt::view-transition-group(live-window) { animation-duration: var(--live-d); animation-timing-function: cubic-bezier(0.22, 0.8, 0.18, 1); }
+:root.live-vt::view-transition-group(live-window) {
+  animation-duration: var(--live-d);
+  animation-timing-function: var(--live-ease);
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 1px var(--line-2), var(--shadow-lg);
+}
+/* The pictures are clipped to the window's box: scaled to cover it, they'd otherwise paint past it,
+   with the window's own shadow, as a ghost over the page. The box carries the shadow instead. */
+:root.live-vt::view-transition-image-pair(live-window) { overflow: hidden; border-radius: inherit; }
 :root.live-vt::view-transition-old(live-window),
-:root.live-vt::view-transition-new(live-window) { height: 100%; object-fit: cover; object-position: 0 0; animation-duration: 0.14s; animation-timing-function: linear; }
-:root.live-vt-in::view-transition-old(root) { animation: live-page-back var(--live-d) cubic-bezier(0.22, 0.8, 0.18, 1) both; transform-origin: var(--live-o); mix-blend-mode: normal; }
-:root.live-vt-in::view-transition-new(root) { animation: live-page-hold var(--live-d) step-end both; mix-blend-mode: normal; }
-:root.live-vt-out::view-transition-old(root) { animation: none; opacity: 0; }
-:root.live-vt-out::view-transition-new(root) { animation: live-page-forward var(--live-d) cubic-bezier(0.22, 0.8, 0.18, 1) both; transform-origin: var(--live-o); mix-blend-mode: normal; }
-@keyframes live-page-back { to { transform: var(--live-back); opacity: var(--live-dim); } }
-@keyframes live-page-forward { from { transform: var(--live-back); opacity: var(--live-dim); } }
-@keyframes live-page-hold { from { opacity: 0; } to { opacity: 1; } }
+:root.live-vt::view-transition-new(live-window) { height: 100%; object-fit: cover; object-position: 0 0; mix-blend-mode: plus-lighter; }
+:root.live-vt::view-transition-old(live-window) { animation: live-pic-out 48ms linear both; }
+:root.live-vt::view-transition-new(live-window) { animation: live-pic-in 48ms linear both; }
+:root.live-vt-out::view-transition-old(live-window),
+:root.live-vt-out::view-transition-new(live-window) { animation-delay: calc(var(--live-d) - 48ms); }
+@keyframes live-pic-out { to { opacity: 0; } }
+@keyframes live-pic-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }

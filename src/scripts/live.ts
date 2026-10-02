@@ -19,7 +19,9 @@
  */
 import { loadTape, type Action, type Tape, type TapePlayer } from './tape';
 
-const FLIGHT = 620; // the window's morph, ms (its curve is in global.css, .live-vt)
+const FLIGHT = 560; // the window's morph, ms
+/** Its curve: a gentle start and a long settle, shared by the window and the page behind it. */
+const CURVE = 'cubic-bezier(0.45, 0, 0.15, 1)';
 const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 const desktop = () => matchMedia('(hover: hover) and (pointer: fine)').matches && innerWidth >= 900;
 const canMove = 'moveBefore' in Element.prototype;
@@ -490,18 +492,27 @@ async function zoom(plate: HTMLElement) {
   const root = document.documentElement;
   const layers = pageLayers();
   // The page steps back around the plate: only ever scaled down, so it keeps the raster it has.
-  const back = full ? 'scale(0.94)' : 'scale(0.96)';
+  const sc = full ? 0.94 : 0.96;
+  const back = `scale(${sc})`;
   const dim = full ? 0 : 0.35;
-  root.style.setProperty('--live-o', `${r.left + r.width / 2}px ${r.top + r.height / 2}px`);
-  root.style.setProperty('--live-back', back);
-  root.style.setProperty('--live-dim', String(dim));
+  const ox = r.left + r.width / 2;
+  const oy = r.top + r.height / 2;
+  layers.forEach((el) => (el.style.transformOrigin = `${ox}px ${oy}px`));
   // A page that scrolls keeps its scrollbar's room while it can't scroll, so it doesn't shift.
   root.classList.toggle('thawing-gutter', root.scrollHeight > root.clientHeight);
+  const stepping = (forward: boolean, duration: number) =>
+    layers.map((el) => {
+      const a = el.animate(
+        forward ? [{ transform: 'none', opacity: 1 }, { transform: back, opacity: dim }] : [{ transform: back, opacity: dim }, { transform: 'none', opacity: 1 }],
+        { duration: reduce.matches ? 1 : duration, easing: CURVE, fill: 'both' },
+      );
+      a.pause(); // (held on its first frame until the morph starts)
+      return a;
+    });
 
   /**
    * One side or the other: the preview's contents (tape, live app) move between the plate and the
-   * window with moveBefore, so the app keeps its state and is laid out once, at its new size; the
-   * page is set back (or forward) and can't be used (or can) while the window is open.
+   * window with moveBefore, so the app keeps its state and is laid out once, at its new size.
    */
   const swap = (open: boolean) => {
     if (open) screen.moveBefore(motion, null);
@@ -509,23 +520,25 @@ async function zoom(plate: HTMLElement) {
     plate.style.visibility = open ? 'hidden' : '';
     overlay.style.visibility = open ? '' : 'hidden';
     root.classList.toggle('thawing', open);
-    for (const el of layers) {
-      el.inert = open;
-      el.style.transformOrigin = open ? `${r.left + r.width / 2}px ${r.top + r.height / 2}px` : '';
-      el.style.transform = open ? back : '';
-      el.style.opacity = open ? String(dim) : '';
-    }
+    layers.forEach((el) => (el.inert = open));
   };
   /**
-   * The morph is one view transition: the window grows from the plate (or shrinks into it) while the
-   * page steps back (or forward) around it. The browser scales a picture of the app at the size it had
-   * while the app, laid out at its new size, takes over within a few frames: never cropped by the
-   * window, never snapping into place at the end, and all of it compositor work.
+   * The morph is a view transition of the window alone, while the page, live under it, steps back
+   * (or forward) with its own animation on the same curve. The browser scales a picture of the app at
+   * the size it had while the app, laid out at its new size, takes over within a few frames: never
+   * cropped by the window, never snapping into place, all of it compositor work. On the way back the
+   * window lands where the plate will be once the page is forward again, not where it is when the
+   * transition starts (still stepped back), so nothing moves when it ends.
    */
-  const morph = async (open: boolean, duration: number) => {
+  const morph = async (open: boolean, duration: number, page: Animation[], land?: DOMRect) => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
-    if (!doc.startViewTransition || reduce.matches) return swap(open);
+    if (!doc.startViewTransition || reduce.matches) {
+      swap(open);
+      page.forEach((a) => a.play());
+      return;
+    }
     root.style.setProperty('--live-d', `${duration}ms`);
+    root.style.setProperty('--live-ease', CURVE);
     root.classList.add('live-vt', open ? 'live-vt-in' : 'live-vt-out');
     (open ? plate : win).classList.add('live-vt-shape');
     const vt = doc.startViewTransition(() => {
@@ -533,6 +546,19 @@ async function zoom(plate: HTMLElement) {
       plate.classList.toggle('live-vt-shape', !open);
       win.classList.toggle('live-vt-shape', open);
     });
+    await vt.ready.catch(() => {});
+    page.forEach((a) => a.play());
+    if (land) {
+      const group = document
+        .getAnimations()
+        .find((a) => (a.effect as KeyframeEffect | null)?.pseudoElement === '::view-transition-group(live-window)' && /group-anim/.test((a as CSSAnimation).animationName ?? ''));
+      const effect = group?.effect as KeyframeEffect | undefined;
+      if (effect) {
+        const frames = effect.getKeyframes();
+        Object.assign(frames[frames.length - 1]!, { transform: `matrix(1, 0, 0, 1, ${land.left}, ${land.top})`, width: `${land.width}px`, height: `${land.height}px` });
+        effect.setKeyframes(frames);
+      }
+    }
     await vt.finished.catch(() => {});
     root.classList.remove('live-vt', 'live-vt-in', 'live-vt-out');
     plate.classList.remove('live-vt-shape');
@@ -543,7 +569,8 @@ async function zoom(plate: HTMLElement) {
   document.dispatchEvent(new CustomEvent('thaw:open'));
   // Not live yet (a click before the hover finished): it becomes live in the window.
   void session.goLive().then(() => session.frame.focus());
-  await morph(true, FLIGHT);
+  const steps = stepping(true, FLIGHT);
+  await morph(true, FLIGHT, steps);
   overlay.classList.add('landed');
 
   // ---- Leaving
@@ -558,7 +585,15 @@ async function zoom(plate: HTMLElement) {
     overlay.classList.remove('landed');
     // The lights land on the side they're on now, in the plate too.
     if (plateLights) placeLights(plateLights, lights.dataset.side === 'right' ? 'right' : 'left');
-    await morph(false, FLIGHT * 0.85);
+    // Where the plate will be with the page forward again: undo the step back around its origin.
+    const p = plate.getBoundingClientRect();
+    const land = new DOMRect(ox + (p.left - ox) / sc, oy + (p.top - oy) / sc, p.width / sc, p.height / sc);
+    const returns = stepping(false, FLIGHT * 0.85);
+    steps.forEach((a) => a.cancel());
+    await morph(false, FLIGHT * 0.85, returns, land);
+    await Promise.all(returns.map((a) => a.finished));
+    returns.forEach((a) => a.cancel());
+    layers.forEach((el) => (el.style.transformOrigin = ''));
     overlay.remove();
     root.classList.remove('thawing-gutter');
     document.dispatchEvent(new CustomEvent('thaw:close'));
