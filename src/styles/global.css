@@ -128,6 +128,12 @@
 :root[data-vt='theme']::view-transition-old(root) { animation: none; }
 :root[data-vt='theme']::view-transition-new(root) { animation: theme-reveal 0.6s var(--ease-io); }
 :root[data-vt='theme'] * { view-transition-name: none !important; }
+/* A live preview's window (src/scripts/live.ts): only the window takes part, the page stays live. A
+   picture of the app at its old size scales with the window while the app at its new size fades in. */
+:root.live-vt, :root.live-vt :is(.bar, .plate, .slide-name, .ov-name) { view-transition-name: none !important; }
+:root.live-vt .live-vt-shape { view-transition-name: live-window !important; }
+::view-transition-group(live-window) { animation-duration: 0.62s; animation-timing-function: cubic-bezier(0.22, 0.8, 0.18, 1); }
+::view-transition-old(live-window), ::view-transition-new(live-window) { animation-duration: 0.36s; animation-timing-function: ease-out; }
 @keyframes theme-reveal {
   from { clip-path: circle(0 at var(--vt-x, 100%) var(--vt-y, 0)); }
   to { clip-path: circle(150vmax at var(--vt-x, 100%) var(--vt-y, 0)); }
@@ -666,44 +672,43 @@ html.live-ok .plate[data-app] .lights-pair, .thaw .lights-pair { display: block;
 .lights:hover .light:not(:disabled) svg, .light:focus-visible svg { opacity: 1; }
 .light:not(:disabled):hover { scale: 1.15; }
 .light:focus-visible { outline: 2px solid var(--chrome-ink); outline-offset: 2px; }
+/* Until a visitor has used the lights, the green one in a preview calls for a look: a ring that keeps
+   rippling out of it (transform and opacity only). */
+.light--zoom { position: relative; }
+html.live-ok:not(.lights-used) .plate[data-app] .light--zoom::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--l), 0 0 8px 1px var(--l);
+  pointer-events: none;
+  animation: light-call 1.6s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
+}
+@keyframes light-call {
+  0% { transform: scale(1); opacity: 0.9; }
+  75%, 100% { transform: scale(2.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.live-ok:not(.lights-used) .plate[data-app] .light--zoom::after { animation: none; transform: scale(1.5); opacity: 0.6; }
+}
 
-/* The window a preview opens in (src/scripts/live.ts), built at its landed size, where the app runs
-   at its own size, and flown as one piece. It starts clipped to the plate, with the plate's own bar,
-   and opens up as it lands, where a thin toolbar has taken the bar's place over the risen screen. */
+/* The window a preview opens in (src/scripts/live.ts), at the room the screen has, where the app is
+   laid out at its own size. It morphs from and back into the plate with a view transition of the
+   window alone: the page stays live under it, stepping back. */
 html.thawing { overflow: hidden; }
 .thaw { position: fixed; inset: 0; z-index: 1000; cursor: zoom-out; }
-/* (A plate for its themed chrome and its tape rules, but none of its own box.) */
+/* (A plate for its themed chrome and its tape rules.) */
 .thaw-window.plate {
   position: absolute;
   top: 0;
   left: 0;
-  background: none;
-  box-shadow: none;
-  border-radius: 0;
-  transform-origin: 0 0;
-  will-change: transform;
+  overflow: hidden;
+  contain: strict;
   cursor: auto;
 }
-.thaw-shade {
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: var(--win-r);
-  box-shadow: 0 0 0 1px var(--line-2), var(--shadow-lg);
-  transform-origin: 0 0;
-}
-.thaw-clip { position: absolute; inset: 0; background: var(--chrome-bg); }
-.thaw-chrome {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 30px;
-  transform-origin: 0 0;
-  pointer-events: none;
-}
-.thaw-bar { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
-.thaw-screen { position: absolute; left: 0; top: 0; overflow: hidden; }
-/* In the window the app fills the screen at its own size, no longer the recorded 1440x900. */
+.thaw-bar { position: absolute; top: 0; left: 0; right: 0; }
+.thaw-screen { position: absolute; left: 0; overflow: hidden; transform-origin: 0 0; }
+/* In the window the app fills the screen, laid out at the screen's size, no longer the recorded 1440x900. */
 .thaw-screen .live-app { width: 100%; height: 100%; transform: none; }
 /* The way on and the way back, under the window, in the site's own edition. They arrive once it has
    landed. */

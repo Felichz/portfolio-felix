@@ -360,8 +360,8 @@ function placeLights(pair: HTMLElement, side: 'left' | 'right') {
 
 /**
  * Shows the set on the side the pointer is on (`f`: its position across the window, 0 to 1, with a
- * dead band in the middle). Each set comes in from its own edge and leaves toward the middle: the left
- * one arrives moving right and leaves moving right, the right one the other way round.
+ * dead band in the middle). Each set moves outward, toward its own edge, both as it comes in and as it
+ * goes: the left one arrives and leaves moving left, the right one moving right.
  */
 function moveLights(pair: HTMLElement | null | undefined, f: number) {
   if (!pair?.isConnected) return;
@@ -370,7 +370,7 @@ function moveLights(pair: HTMLElement | null | undefined, f: number) {
   if (side === now) return;
   placeLights(pair, side);
   if (reduce.matches) return;
-  const shift = (set: 'left' | 'right') => (set === 'left' ? 10 : -10); // the way that set moves
+  const shift = (set: 'left' | 'right') => (set === 'left' ? -10 : 10); // the way that set moves: outward
   const into = pair.querySelector<HTMLElement>(`.lights--${side}`)!;
   const out = pair.querySelector<HTMLElement>(`.lights--${now}`)!;
   into.animate(
@@ -435,32 +435,14 @@ async function zoom(plate: HTMLElement) {
   const full = !caseStudy; // on a case study the window takes the screen
 
   // ---- Geometry. The window takes the room the screen has, and the app runs in it at its own size
-  // (1:1, scaled down only below 1100px wide), laid out for that size like any browser window. The
-  // window is built at that final size and flown with one uniform scale: at the start it covers the
-  // plate and is clipped to it, so the frame you clicked is where it was; the clip opens as it lands.
-  // Only the bar changes on the way: the plate's 30px chrome gives way to a thin toolbar.
-  const r = plate.getBoundingClientRect();
+  // (1:1, scaled down only below 1100px wide), laid out for that size like any browser window.
   const BAR = 34;
   const [mx, top, bottom] = full ? [12, 12, 62] : [24, 18, 66];
   const availW = innerWidth - 2 * mx;
   const availH = innerHeight - top - bottom - BAR;
   const k = Math.min(1, availW / 1100);
-  const vw = availW / k;
-  const vh = availH / k;
-  const s0 = Math.max(r.width / vw, (r.height - 30) / vh);
-  const hEnd = BAR / k + vh; // the window's height, landed
-  const hWin = Math.max(hEnd, r.height / s0);
-  const lift = `translate(${r.left}px, ${r.top}px) scale(${s0})`;
-  const land = `translate(${mx}px, ${top}px) scale(${k})`;
-  const clip0 = `inset(0 ${vw - r.width / s0}px ${hWin - r.height / s0}px 0 round ${(parseFloat(getComputedStyle(plate).borderTopLeftRadius) || 12) / s0}px)`;
-  const radius = 12 / k;
-  const clip1 = `inset(0 0 ${hWin - hEnd}px 0 round ${radius}px)`;
-  const shade0 = `scale(${r.width / s0 / vw}, ${r.height / s0 / hEnd})`;
-  // The screen starts under the plate's bar (30px at the plate's scale) and ends under the toolbar.
-  const drop0 = `translateY(${30 / s0}px)`;
-  const drop1 = `translateY(${BAR / k}px)`;
 
-  // ---- The window: the plate rebuilt at the app's 1440×900, with the portfolio's toolbar.
+  // ---- The window, at its landed size; hidden until the morph swaps it in.
   const overlay = document.createElement('div');
   overlay.className = 'thaw';
   overlay.setAttribute('role', 'dialog');
@@ -472,12 +454,8 @@ async function zoom(plate: HTMLElement) {
   const action = (a: HTMLAnchorElement | null, label: string, i: string) =>
     a ? `<a class="btn btn--sm" href="${a.href}"${a.target === '_blank' ? ' target="_blank" rel="noopener"' : ''}>${i}${label}</a>` : '';
   overlay.innerHTML = `<div class="thaw-window plate plate--chrome" data-state="playing">
-      <div class="thaw-shade"></div>
-      <div class="thaw-clip">
-        <div class="thaw-chrome"></div>
-        <div class="thaw-bar">${lightsHTML('window', name)}</div>
-        <div class="thaw-screen"></div>
-      </div>
+      <div class="thaw-bar">${lightsHTML('window', name)}</div>
+      <div class="thaw-screen"></div>
     </div>
     <div class="thaw-actions">
       ${action(caseStudy, 'Case study', ICONS.doc)}${action(live, 'Live site', ICONS.out)}${action(source, 'Source', ICONS.code)}
@@ -485,23 +463,18 @@ async function zoom(plate: HTMLElement) {
     </div>`;
   const win = overlay.querySelector<HTMLElement>('.thaw-window')!;
   const screen = overlay.querySelector<HTMLElement>('.thaw-screen')!;
-  const bar = overlay.querySelector<HTMLElement>('.thaw-bar')!;
-  const oldBar = overlay.querySelector<HTMLElement>('.thaw-chrome')!;
-  const clip = overlay.querySelector<HTMLElement>('.thaw-clip')!;
-  const shade = overlay.querySelector<HTMLElement>('.thaw-shade')!;
-  win.style.cssText = `width:${vw}px;height:${hWin}px;--win-r:${radius}px`;
-  shade.style.cssText = `width:${vw}px;height:${hEnd}px`;
-  oldBar.style.cssText = `width:${r.width}px;transform:scale(${1 / s0})`;
-  bar.style.cssText = `width:${availW}px;height:${BAR}px;transform:scale(${1 / k})`;
-  screen.style.cssText = `width:${vw}px;height:${vh}px`;
+  win.style.cssText = `transform:translate(${mx}px, ${top}px);width:${availW}px;height:${BAR + availH}px`;
+  overlay.querySelector<HTMLElement>('.thaw-bar')!.style.height = `${BAR}px`;
+  screen.style.cssText = `top:${BAR}px;width:${availW / k}px;height:${availH / k}px;transform:scale(${k})`;
   overlay.querySelector<HTMLElement>('.thaw-actions')!.style.top = `${top + BAR + availH + 14}px`;
-  // The plate's own bar, as it is on that frame, to start from.
-  const chrome = plate.querySelector('.plate-chrome')?.cloneNode(true) as HTMLElement | undefined;
-  if (chrome) oldBar.append(chrome);
+  overlay.style.visibility = 'hidden';
   document.body.append(overlay);
   // The lights start on the side they were on in the preview.
-  const lights = bar.querySelector<HTMLElement>('.lights-pair')!;
-  placeLights(lights, plate.querySelector<HTMLElement>('.lights-pair')?.dataset.side === 'right' ? 'right' : 'left');
+  const plateLights = plate.querySelector<HTMLElement>('.lights-pair');
+  const lights = win.querySelector<HTMLElement>('.lights-pair')!;
+  placeLights(lights, plateLights?.dataset.side === 'right' ? 'right' : 'left');
+
+  const r = plate.getBoundingClientRect();
   const layers = pageLayers();
   const origin = `${r.left + r.width / 2}px ${r.top + r.height / 2}px`;
   layers.forEach((el) => (el.style.transformOrigin = origin));
@@ -510,33 +483,59 @@ async function zoom(plate: HTMLElement) {
   const dim = full ? 0 : 0.35;
   const opts: KeyframeAnimationOptions = { duration: reduce.matches ? 1 : FLIGHT, easing: EASE, fill: 'both' };
 
-  // ---- The move: the preview's contents (tape, live app) go into the window as they are.
-  screen.moveBefore(motion, null);
-  plate.style.visibility = 'hidden';
+  /**
+   * Swaps the preview and the window, moving the preview's contents (tape, live app) between them with
+   * moveBefore, so the app keeps its state. The app is laid out once, at its new size.
+   */
+  const swap = (open: boolean) => {
+    if (open) screen.moveBefore(motion, null);
+    else home.moveBefore(motion, homeNext);
+    plate.style.visibility = open ? 'hidden' : '';
+    overlay.style.visibility = open ? '' : 'hidden';
+  };
+  /**
+   * The morph between them is a view transition of the window alone (the page under it stays live):
+   * the browser grows or shrinks a picture of the app at the size it had while it fades into the app
+   * laid out at its new size. One layout, scaled on the compositor: the app is never cropped and
+   * never snaps into place at the end.
+   */
+  const morph = async (open: boolean, page: Animation[]) => {
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
+    if (!doc.startViewTransition || reduce.matches) return swap(open);
+    const root = document.documentElement;
+    root.classList.add('live-vt');
+    (open ? plate : win).classList.add('live-vt-shape');
+    const vt = doc.startViewTransition(() => {
+      swap(open);
+      plate.classList.toggle('live-vt-shape', !open);
+      win.classList.toggle('live-vt-shape', open);
+    });
+    // The page steps back (or forward) with it.
+    void vt.ready.then(() => page.forEach((a) => a.play()), () => page.forEach((a) => a.play()));
+    await vt.finished.catch(() => {});
+    root.classList.remove('live-vt');
+    plate.classList.remove('live-vt-shape');
+    win.classList.remove('live-vt-shape');
+  };
+  const pageAnim = (forward: boolean, duration: number) =>
+    layers.map((el) => {
+      const a = el.animate(
+        forward ? [{ transform: 'none', opacity: 1 }, { transform: back, opacity: dim }] : [{ transform: back, opacity: dim }, { transform: 'none', opacity: 1 }],
+        { ...opts, duration: reduce.matches ? 1 : duration },
+      );
+      a.pause();
+      return a;
+    });
+
+  // ---- In (the page goes inert now, while the morph's first frame is being captured anyway)
+  layers.forEach((el) => (el.inert = true));
   document.documentElement.classList.add('thawing');
   document.dispatchEvent(new CustomEvent('thaw:open'));
-  // The plate's bar fades as the screen rises into the toolbar's place.
-  // (Keyframes reversed by hand on the way back, so they share the window's easing.)
-  const bars = (forward: boolean, o: KeyframeAnimationOptions) => {
-    const way = (frames: Keyframe[]) =>
-      forward ? frames : frames.map((f) => ('offset' in f ? { ...f, offset: 1 - Number(f.offset) } : f)).reverse();
-    return [
-      screen.animate(way([{ transform: drop0 }, { transform: drop1 }]), o),
-      clip.animate(way([{ clipPath: clip0 }, { clipPath: clip1 }]), o),
-      shade.animate(way([{ transform: shade0 }, { transform: 'none' }]), o),
-      oldBar.animate(way([{ opacity: 1 }, { opacity: 0, offset: 0.45 }, { opacity: 0 }]), o),
-      bar.animate(way([{ opacity: 0 }, { opacity: 0, offset: 0.3 }, { opacity: 1 }]), o),
-    ];
-  };
-  const flights = [
-    win.animate([{ transform: lift }, { transform: land }], opts),
-    ...bars(true, opts),
-    ...layers.map((el) => el.animate([{ transform: 'none', opacity: 1 }, { transform: back, opacity: dim }], opts)),
-  ];
+  const steps = pageAnim(true, FLIGHT);
   // Not live yet (a click before the hover finished): it becomes live in the window.
   void session.goLive().then(() => session.frame.focus());
-  await Promise.all(flights.map((f) => f.finished));
-  layers.forEach((el) => (el.inert = true));
+  await morph(true, steps);
+  steps.forEach((a) => a.play());
   overlay.classList.add('landed');
 
   // ---- Leaving
@@ -550,16 +549,13 @@ async function zoom(plate: HTMLElement) {
     if (!viaHistory && history.state?.liveZoom) history.back();
     overlay.classList.remove('landed');
     layers.forEach((el) => (el.inert = false));
-    const ret: KeyframeAnimationOptions = { duration: reduce.matches ? 1 : FLIGHT * 0.85, easing: EASE, fill: 'both' };
-    const returns = [
-      win.animate([{ transform: land }, { transform: lift }], ret),
-      ...bars(false, ret),
-      ...layers.map((el) => el.animate([{ transform: back, opacity: dim }, { transform: 'none', opacity: 1 }], ret)),
-    ];
-    flights.forEach((f) => f.cancel());
-    await Promise.all(returns.map((f) => f.finished));
-    home.moveBefore(motion, homeNext);
-    plate.style.visibility = '';
+    // The lights land on the side they're on now, in the plate too.
+    if (plateLights) placeLights(plateLights, lights.dataset.side === 'right' ? 'right' : 'left');
+    const returns = pageAnim(false, FLIGHT * 0.85);
+    steps.forEach((f) => f.cancel());
+    await morph(false, returns);
+    returns.forEach((a) => a.play());
+    await Promise.all(returns.map((a) => a.finished));
     overlay.remove();
     returns.forEach((f) => f.cancel());
     layers.forEach((el) => (el.style.transformOrigin = ''));
@@ -603,7 +599,18 @@ export function initLive() {
   mark();
   addEventListener('resize', mark, { passive: true });
 
-  // A preview is the app: its bar has only the lights, and the green one opens it in a window.
+  // A preview is the app: its bar has only the lights, and the green one opens it in a window. Until
+  // the visitor has used a light on this visit, the green one calls for a look.
+  const used = () => {
+    document.documentElement.classList.add('lights-used');
+    try {
+      sessionStorage.setItem('live-lights-used', '1');
+    } catch {}
+  };
+  try {
+    if (sessionStorage.getItem('live-lights-used')) used();
+  } catch {}
+  document.addEventListener('click', (e) => (e.target as Element).closest?.('[data-light]') && used(), true);
   for (const plate of plates) plate.querySelector('.plate-dots')?.insertAdjacentHTML('afterend', lightsHTML('preview', nameOf(plate)));
 
   // Clicks on a preview are the app's (the plate sits in a link to the case study in the showcase, and
