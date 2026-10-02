@@ -26,13 +26,44 @@ export interface Checkpoint {
   clock: number;
   route: string;
   storage: Record<string, string>;
+  /** The app's IndexedDB databases at that moment, for apps that keep their state there. */
+  idb?: IdbDump[];
 }
 
-/** A recorded click, addressed by its element-child path from <body>, with a signature to check it. */
+/** An IndexedDB database as plain data: its stores' shapes and records. */
+export interface IdbDump {
+  name: string;
+  version: number;
+  stores: {
+    name: string;
+    keyPath: string | string[] | null;
+    autoIncrement: boolean;
+    indexes: { name: string; keyPath: string | string[]; unique: boolean; multiEntry: boolean }[];
+    records: [unknown, unknown][];
+  }[];
+}
+
+/**
+ * Something the scene did, which the live app replays to catch up with the tape: a click, a key (on
+ * the focused element), or text typed into a field. Elements are addressed by their element-child path
+ * from <body>, with a signature to check it.
+ */
 export interface Action {
   t: number;
+  kind?: 'click' | 'key' | 'input';
   path: number[];
   sig: { tag: string; testid?: string; role?: string; label?: string; text: string };
+  key?: string;
+  value?: string;
+}
+
+/** A response the scene got from the app's backend, served again to the live app (scripts/apps/bridge.js). */
+export interface Exchange {
+  m: string;
+  u: string;
+  s: number;
+  h: string;
+  b: string;
 }
 
 export interface Tape {
@@ -40,7 +71,18 @@ export interface Tape {
   id: string;
   viewport: [number, number];
   themeAttr: string;
-  app: { entry: string; readySelector: string; storage: string[]; themeKey?: string; restore?: string[]; prefetch: string[] };
+  app: {
+    entry: string;
+    readySelector: string;
+    storage: string[];
+    themeKey?: string;
+    restore?: string[];
+    prefetch: string[];
+    /** Its backend's answers, recorded with the scene, for an app that has one. */
+    network?: Exchange[];
+    /** A real-time room the scene was in (PlaySync): what came in over the socket, and when. */
+    socket?: { url: string; in: [number, string][] };
+  };
   snapshot: TapeNode;
   events: TapeEvent[];
   checkpoints: Checkpoint[];
@@ -95,6 +137,8 @@ export class TapePlayer extends HTMLElement {
   #mounted?: Promise<void>;
   #resize?: ResizeObserver;
   #stop?: { t: number; done: () => void };
+  /** The app's Web Animations, run again on the tape's clock: started at t, by recording id. */
+  #anims = new Map<number, { t: number; a: Animation }>();
 
   connectedCallback() {
     players.add(this);
@@ -257,6 +301,8 @@ export class TapePlayer extends HTMLElement {
     const doc = this.#doc!;
     const tape = this.tape!;
     this.#nodes.clear();
+    this.#anims.forEach(({ a }) => a.cancel());
+    this.#anims.clear();
     this.#i = 0;
     this.#vt = 0;
     this.#hover = [];
@@ -330,6 +376,8 @@ export class TapePlayer extends HTMLElement {
   #advance(to: number) {
     const events = this.tape!.events;
     while (this.#i < events.length && events[this.#i]![1] <= to) this.#apply(events[this.#i++]!);
+    // Animations follow the tape's time, so pausing, seeking and speeding up hold for them too.
+    for (const { t, a } of this.#anims.values()) a.currentTime = Math.max(0, to - t);
   }
 
   #apply(e: TapeEvent) {
@@ -371,6 +419,20 @@ export class TapePlayer extends HTMLElement {
         }
         return;
       }
+      case 'w': {
+        const el = node(e[2]) as Element | undefined;
+        if (!el) return;
+        try {
+          const a = el.animate(e[3] as Keyframe[], e[4] as KeyframeEffectOptions);
+          a.pause();
+          this.#anims.set(e[5] as number, { t: e[1], a });
+        } catch {}
+        return;
+      }
+      case 'W':
+        this.#anims.get(e[2] as number)?.a.cancel();
+        this.#anims.delete(e[2] as number);
+        return;
       case 'h':
         this.#hover = this.#chain(this.#hover, node(e[2]) as Element | undefined, 'data-tape-hover');
         if (this.#pressed) this.#hover.forEach((el) => el.setAttribute('data-tape-active', ''));

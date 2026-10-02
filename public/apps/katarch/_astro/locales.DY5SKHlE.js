@@ -1,0 +1,1 @@
+var e=[`en`,`es`],t=`katarch:lang`,n={en:`English`,es:`Español`},r=t=>typeof t==`string`&&e.includes(t),i=e=>e===`en`?``:`${e}/`,a={en:`step`,es:`paso`},o=(e,t)=>`#${a[e]}-${t}`;function s(e){let t=e.match(/^#(?:step|paso)-(\d+)$/);return t?parseInt(t[1],10):null}export{i as a,r as i,e as n,s as o,n as r,o as s,t};

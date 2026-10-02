@@ -10,8 +10,11 @@
  * - form values, scroll offsets, and the interaction state CSS can't see in a replay (hover, focus,
  *   pressed), which the player turns into attributes that the rewritten stylesheet matches;
  * - the pointer, so the replay has a cursor;
- * - checkpoints: rest points where the scene is idle, with the app's storage and clock, so a replay
- *   paused there can be thawed into the live app in exactly that state.
+ * - Web Animations the app starts with element.animate() (which leave no trace in the DOM), as their
+ *   keyframes and timing, so the replay runs them too;
+ * - the scene's actions (clicks, keys, typed text), which the live app replays to keep up;
+ * - checkpoints: rest points where the scene is idle, with the app's route, storage (and IndexedDB, for
+ *   apps that keep their state there) and clock, so the live app can boot into exactly that state.
  */
 (() => {
   const SVG = 'http://www.w3.org/2000/svg';
@@ -29,6 +32,7 @@
 
   // Scenes can leave parts of the page out of the tape (window.__tapeIgnore, a selector).
   const ignore = window.__tapeIgnore;
+  const actions = [];
   const skip = (n) => n.nodeType === 8 || (n.nodeType === 1 && (SKIP.has(n.tagName) || (ignore && n.matches(ignore))));
   const fixUrl = (name, value) => {
     if (!URL_ATTRS.has(name) || !value || /^(data:|blob:|#|mailto:|tel:|javascript:)/i.test(value)) return value;
@@ -97,6 +101,7 @@
     dirtyKids.clear();
     dirtyAttrs.clear();
     dirtyText.clear();
+    flushAnims();
   };
   const observer = new MutationObserver((records) => {
     for (const r of records) {
@@ -110,11 +115,41 @@
   });
   observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
 
+  // ---- Web Animations: element.animate() changes what's painted without touching the DOM. Each one is
+  // kept with its keyframes and timing (and its cancellation), once its element is on the tape.
+  const pendingAnims = [];
+  let animSeq = 0;
+  const realAnimate = Element.prototype.animate;
+  Element.prototype.animate = function (keyframes, options) {
+    const anim = realAnimate.call(this, keyframes, options);
+    try {
+      const k = ++animSeq;
+      const frames = anim.effect.getKeyframes().map((f) => {
+        const o = { ...f };
+        delete o.computedOffset;
+        return o;
+      });
+      const timing = anim.effect.getTiming();
+      if (timing.iterations === Infinity) timing.iterations = 1e9;
+      pendingAnims.push(['w', T(), this, frames, timing, k]);
+      anim.addEventListener('cancel', () => pendingAnims.push(['W', T(), null, k]));
+    } catch {}
+    return anim;
+  };
+  const flushAnims = () => {
+    for (const p of pendingAnims.splice(0)) {
+      if (p[0] === 'W') emit(['W', p[1], p[3]]);
+      else if (ids.has(p[2])) emit(['w', p[1], ids.get(p[2]), p[3], p[4], p[5]]);
+    }
+  };
+
   // ---- State the DOM doesn't carry
   const idOf = (el) => (el && ids.has(el) ? ids.get(el) : 0);
   const on = (type, fn) => document.addEventListener(type, fn, { capture: true, passive: true });
   on('input', (e) => {
     const el = e.target;
+    if (el instanceof Element && document.body.contains(el) && (el.matches('input:not([type=checkbox]):not([type=radio]), textarea') || el.isContentEditable))
+      actions.push({ t: T(), kind: 'input', path: pathOf(el), sig: sigOf(el), value: el.isContentEditable ? el.textContent : el.value });
     if (!ids.has(el)) return;
     if (el.type === 'checkbox' || el.type === 'radio') emit(['k', T(), idOf(el), el.checked ? 1 : 0]);
     else if ('value' in el) emit(['v', T(), idOf(el), el.value]);
@@ -141,10 +176,9 @@
     }
   });
   on('pointerdown', () => emit(['d', T(), 1]));
-  // Clicks, addressed by structure: the live app renders the same DOM for the same build and state, so
-  // the path of element-child indices from <body> finds the same node there. The thaw replays these to
-  // bring the live app to the frame the preview was on.
-  const actions = [];
+  // Clicks, keys and typed text, addressed by structure: the live app renders the same DOM for the same
+  // build and state, so the path of element-child indices from <body> finds the same node there. The
+  // live app replays these to keep up with the tape.
   const pathOf = (el) => {
     const path = [];
     for (let x = el; x && x !== document.body; x = x.parentElement) path.unshift([...x.parentElement.children].indexOf(x));
@@ -164,6 +198,14 @@
     const el = e.target.closest('button, a, [role], input, label, summary') ?? e.target;
     actions.push({ t: T(), path: pathOf(el), sig: sigOf(el) });
   });
+  // Keys, on whatever has focus. Characters typed into a field are its input actions instead.
+  on('keydown', (e) => {
+    const el = document.activeElement && document.body.contains(document.activeElement) ? document.activeElement : document.body;
+    const typing = el.matches('input, textarea, select') || el.isContentEditable;
+    if (e.key.length === 1 && typing) return;
+    if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
+    actions.push({ t: T(), kind: 'key', path: pathOf(el), sig: sigOf(el), key: e.key });
+  });
   on('pointerup', () => emit(['d', T(), 0]));
   on('focusin', (e) => emit(['f', T(), idOf(e.target), e.target.matches(':focus-visible') ? 1 : 0]));
   on('focusout', (e) => {
@@ -172,7 +214,38 @@
 
   // ---- Checkpoints and the end
   const checkpoints = [];
-  window.__tapeCheckpoint = (name, keys, base) => {
+  // Every IndexedDB database of the app, as plain data (structured-cloneable values, which JSON keeps
+  // for the plain objects, arrays and strings these apps store).
+  const dumpIdb = async () => {
+    const out = [];
+    for (const { name, version } of await indexedDB.databases()) {
+      const db = await new Promise((ok, no) => {
+        const r = indexedDB.open(name);
+        r.onsuccess = () => ok(r.result);
+        r.onerror = () => no(r.error);
+      });
+      const stores = [];
+      for (const s of db.objectStoreNames) {
+        const store = db.transaction(s).objectStore(s);
+        const all = (req) => new Promise((ok) => (req.onsuccess = () => ok(req.result)));
+        const [keys, values] = await Promise.all([all(store.getAllKeys()), all(store.getAll())]);
+        stores.push({
+          name: s,
+          keyPath: store.keyPath,
+          autoIncrement: store.autoIncrement,
+          indexes: [...store.indexNames].map((i) => {
+            const x = store.index(i);
+            return { name: i, keyPath: x.keyPath, unique: x.unique, multiEntry: x.multiEntry };
+          }),
+          records: keys.map((k, i) => [k, values[i]]),
+        });
+      }
+      db.close();
+      out.push({ name, version, stores });
+    }
+    return out;
+  };
+  window.__tapeCheckpoint = async (name, keys, base, idb) => {
     flush();
     const storage = {};
     for (const k of keys) {
@@ -180,8 +253,8 @@
       if (v !== null) storage[k] = v;
     }
     let route = location.pathname.startsWith(base) ? '/' + location.pathname.slice(base.length) : location.pathname;
-    route += location.search;
-    checkpoints.push({ name, t: T(), clock: Date.now(), route, storage });
+    route += location.search + location.hash;
+    checkpoints.push({ name, t: T(), clock: Date.now(), route, storage, ...(idb ? { idb: await dumpIdb() } : {}) });
   };
 
   window.__tapeStop = () => {

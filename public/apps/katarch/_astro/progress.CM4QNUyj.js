@@ -1,0 +1,1 @@
+var e=`katarch:v2:progress`;function t(){try{return JSON.parse(localStorage.getItem(e)||`{}`)}catch{return{}}}function n(n,r,i){try{let a=t(),o=a[n]??{max:0,total:i,done:!1};a[n]={max:Math.max(o.max,r),total:i,done:o.done||r===i-1},localStorage.setItem(e,JSON.stringify(a))}catch{}}export{n,t};

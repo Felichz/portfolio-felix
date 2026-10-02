@@ -17,7 +17,7 @@
  * and only one app runs at a time: it's dropped when its preview leaves the screen. Desktop pointers
  * only; on touch screens previews stay tapes and links stay links.
  */
-import { loadTape, type Action, type Tape, type TapePlayer } from './tape';
+import { loadTape, type Action, type Exchange, type IdbDump, type Tape, type TapePlayer } from './tape';
 
 const FLIGHT = 560; // the window's morph, ms
 /** Its curve: a gentle start and a long settle, shared by the window and the page behind it. */
@@ -31,6 +31,10 @@ interface Handoff {
   clock: number;
   readySelector: string;
   ready: () => void;
+  /** The backend's recorded answers, which the bridge serves to the app's fetches. */
+  network?: Exchange[];
+  /** A recorded real-time room, which the bridge plays to the app's WebSocket. */
+  socket?: Tape['app']['socket'];
   /** Installed by the bridge: sets the app's clock, frozen or running; its timers follow it. */
   setClock?: (ms: number, freeze?: boolean, tick?: boolean) => void;
 }
@@ -68,9 +72,55 @@ function resolve(doc: Document, a: Action) {
     (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) === a.sig.text;
   let el: Element | undefined = doc.body;
   for (const i of a.path) el = el?.children[i];
+  if (!a.path.length && a.sig.tag === 'body') return doc.body;
   if (matches(el)) return el;
   // A portal that only existed while recording (a tooltip) can shift the path: find it by signature.
   return [...doc.querySelectorAll(a.sig.tag)].find(matches) as HTMLElement | undefined;
+}
+
+/** A key pressed on an element (keydown, then keyup), in the app's own realm. */
+function press(win: Window & typeof globalThis, el: HTMLElement, key: string) {
+  const at = { key, bubbles: true, cancelable: true, composed: true, view: win };
+  el.dispatchEvent(new win.KeyboardEvent('keydown', at));
+  el.dispatchEvent(new win.KeyboardEvent('keyup', at));
+}
+
+/** Text in a field, set the way typing sets it (through the native setter, so frameworks see it). */
+function type(win: Window & typeof globalThis, el: HTMLElement, value: string) {
+  if (el.isContentEditable) el.textContent = value;
+  else {
+    const proto = el instanceof win.HTMLTextAreaElement ? win.HTMLTextAreaElement.prototype : win.HTMLInputElement.prototype;
+    Object.getOwnPropertyDescriptor(proto, 'value')?.set?.call(el, value);
+  }
+  el.focus();
+  el.dispatchEvent(new win.InputEvent('input', { bubbles: true, composed: true, data: value, inputType: 'insertText' }));
+}
+
+/** Puts IndexedDB databases back as a checkpoint recorded them (same origin: the app reads them). */
+async function restoreIdb(dumps: IdbDump[]) {
+  const done = (r: IDBRequest | IDBTransaction) =>
+    new Promise<void>((ok, no) => {
+      if (r instanceof IDBTransaction) (r.oncomplete = () => ok()), (r.onerror = () => no(r.error));
+      else (r.onsuccess = () => ok()), (r.onerror = () => no(r.error));
+    });
+  for (const dump of dumps) {
+    await done(indexedDB.deleteDatabase(dump.name)).catch(() => {});
+    const open = indexedDB.open(dump.name, dump.version);
+    open.onupgradeneeded = () => {
+      for (const s of dump.stores) {
+        const store = open.result.createObjectStore(s.name, { keyPath: s.keyPath ?? undefined, autoIncrement: s.autoIncrement });
+        for (const i of s.indexes) store.createIndex(i.name, i.keyPath, { unique: i.unique, multiEntry: i.multiEntry });
+      }
+    };
+    await done(open);
+    const db = open.result;
+    if (dump.stores.length) {
+      const tx = db.transaction(dump.stores.map((s) => s.name), 'readwrite');
+      for (const s of dump.stores) for (const [k, v] of s.records) s.keyPath === null ? tx.objectStore(s.name).put(v, k as IDBValidKey) : tx.objectStore(s.name).put(v);
+      await done(tx);
+    }
+    db.close();
+  }
 }
 
 /** A pointer click the way a hand makes one, dispatched in the app's own realm. */
@@ -159,10 +209,18 @@ class Session {
       else localStorage.removeItem(key);
     }
     if (tape.app.themeKey) localStorage.setItem(tape.app.themeKey, theme);
+    if (cp.idb) await restoreIdb(cp.idb).catch(() => {});
 
     let ready!: () => void;
     const painted = new Promise<void>((r) => (ready = r));
-    this.handoff = { app: this.id, clock: this.#clockAt(cp.t), readySelector: tape.app.readySelector, ready: () => ready() };
+    this.handoff = {
+      app: this.id,
+      clock: this.#clockAt(cp.t),
+      readySelector: tape.app.readySelector,
+      ready: () => ready(),
+      network: tape.app.network,
+      socket: tape.app.socket,
+    };
     (window.__live ??= {})[this.id] = this.handoff;
 
     const frame = document.createElement('iframe');
@@ -188,17 +246,31 @@ class Session {
     }, 50);
     await painted;
     for (const [k, v] of this.#restore) v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
+    this.#attach();
+    // An app of several pages gets the same hooks on each page it goes to.
+    frame.addEventListener('load', () => this.#attach());
+    this.#follow();
+  }
+
+  #attached = new WeakSet<Document>();
+  /** Hooks into the app's current page: the theme both ways, the pointer (for the lights), the wheel. */
+  #attach() {
+    const frame = this.frame;
+    const win = frame.contentWindow;
+    const doc = frame.contentDocument;
+    if (!win || !doc || this.#attached.has(doc)) return;
+    this.#attached.add(doc);
+    const tape = this.tape;
     this.syncTheme();
     // A theme the app switches itself (in its own settings) is the site's too: the site takes the
     // other edition, opening out from the app's window to the edges. (This site, running inside
     // itself, hands its toggle to the page around it instead: see Bar.astro.)
-    const appRoot = frame.contentDocument!.documentElement;
+    const appRoot = doc.documentElement;
     new MutationObserver(() => {
       const theirs = appRoot.getAttribute(tape.themeAttr);
       if (theirs && theirs === document.documentElement.dataset.theme)
         window.__faTheme?.({ rect: (frame.closest('.thaw-window, .plate') ?? frame).getBoundingClientRect() });
     }).observe(appRoot, { attributes: true, attributeFilter: [tape.themeAttr] });
-    const win = frame.contentWindow!;
     // Where the pointer is over the app, for the window lights (they keep to the pointer's side).
     win.addEventListener('pointermove', (e) => frame.dispatchEvent(new CustomEvent('live:pointer', { bubbles: true, detail: e.clientX / win.innerWidth })), {
       passive: true,
@@ -216,7 +288,6 @@ class Session {
       },
       { passive: false },
     );
-    this.#follow();
   }
 
   /**
@@ -257,7 +328,9 @@ class Session {
     this.handoff.setClock?.(this.#clockAt(a.t), true);
     let el: HTMLElement | undefined;
     for (let tries = 0; !(el = resolve(doc, a)) && tries < 40; tries++) await frames(win, 1);
-    if (el) click(win, el);
+    if (el && a.kind === 'key') press(win, el, a.key!);
+    else if (el && a.kind === 'input') type(win, el, a.value ?? '');
+    else if (el) click(win, el);
     await quiet(win, doc);
     this.handoff.setClock?.(this.#clockAt(this.#now), false);
   }

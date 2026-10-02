@@ -1,0 +1,173 @@
+<!DOCTYPE html><html lang="es" data-theme="dark"><head>
+    <script data-app="katarch">/*
+ * Portfolio bridge, inlined at the top of each vendored app's index.html (scripts/apps/vendor.mjs).
+ * Inert unless the app runs inside the portfolio (src/scripts/live.ts), which leaves a handoff for it in
+ * `window.__live[<app>]` before creating its frame. Then, before any of the app's code runs, the
+ * app's time belongs to the portfolio:
+ * - Date reads a clock the portfolio sets: frozen at the checkpoint's recorded moment while the app
+ *   boots, moved to each recorded click's moment while the scene's clicks are replayed, and released at
+ *   the frame the preview froze on as the app appears, running from there.
+ * - setTimeout and setInterval run on that clock. Moving it forward fires what fell due, the way the
+ *   recording lived through it (a toast that had time to leave leaves); while it's frozen, nothing
+ *   timed fires early.
+ * - Its backend answers as it did while the scene was recorded: fetches the scene made get the
+ *   recorded responses (anything else goes to the network as usual).
+ * - Once the app has painted its first screen, the portfolio is told.
+ * The app's own state (localStorage) was already seeded by the portfolio, same origin.
+ */
+(function () {
+  var handoff;
+  try {
+    handoff = window.parent !== window && window.parent.__live && window.parent.__live[document.currentScript.dataset.app];
+  } catch (e) {}
+  if (!handoff) return;
+
+  // ---- The clock
+  var RealDate = Date;
+  var base = handoff.clock;
+  var realBase = RealDate.now();
+  var frozen = true;
+  // A later page of an app of several pages picks up the clock where the last one left it, running.
+  if (handoff.running) {
+    base = realBase + handoff.offset;
+    frozen = false;
+  }
+  var now = function () {
+    return frozen ? base : base + (RealDate.now() - realBase);
+  };
+  class ShiftedDate extends RealDate {
+    constructor() {
+      if (arguments.length === 0) super(now());
+      else super(...arguments);
+    }
+    static now() {
+      return now();
+    }
+  }
+  // `Date()` called without `new` returns a string.
+  window.Date = new Proxy(ShiftedDate, {
+    apply: function () {
+      return new ShiftedDate().toString();
+    },
+  });
+
+  // ---- Timers on that clock
+  var realSetTimeout = window.setTimeout.bind(window);
+  var realClearTimeout = window.clearTimeout.bind(window);
+  var timers = new Map();
+  var seq = 1e6;
+  var schedule = function (t) {
+    if (t.real !== null) realClearTimeout(t.real);
+    var wait = t.due - now();
+    // Frozen time doesn't bring anything due; it waits for the clock to move.
+    t.real = frozen && wait > 0 ? null : realSetTimeout(fire, Math.max(0, wait), t);
+  };
+  var fire = function (t) {
+    if (!timers.has(t.id)) return;
+    if (t.every) {
+      t.due += t.every;
+      if (t.due < now()) t.due = now() + t.every;
+      schedule(t);
+    } else timers.delete(t.id);
+    if (typeof t.fn === 'function') t.fn.apply(window, t.args);
+  };
+  var add = function (fn, delay, args, every) {
+    var t = { id: ++seq, fn: fn, args: args, every: every, due: now() + Math.max(0, Number(delay) || 0), real: null };
+    timers.set(t.id, t);
+    schedule(t);
+    return t.id;
+  };
+  var drop = function (id) {
+    var t = timers.get(id);
+    if (!t) return;
+    if (t.real !== null) realClearTimeout(t.real);
+    timers.delete(id);
+  };
+  window.setTimeout = function (fn, delay) {
+    return add(fn, delay, Array.prototype.slice.call(arguments, 2), 0);
+  };
+  window.setInterval = function (fn, delay) {
+    return add(fn, delay, Array.prototype.slice.call(arguments, 2), Math.max(1, Number(delay) || 0));
+  };
+  window.clearTimeout = window.clearInterval = drop;
+
+  /**
+   * Sets the clock to `ms`, frozen or running; moving forward fires whatever fell due on the way. With
+   * `tick`, every interval runs once now, so anything that shows the time redraws at the new time.
+   */
+  handoff.setClock = function (ms, freeze, tick) {
+    base = ms;
+    realBase = RealDate.now();
+    frozen = !!freeze;
+    handoff.running = !freeze;
+    handoff.offset = ms - realBase;
+    timers.forEach(schedule);
+    if (tick)
+      timers.forEach(function (t) {
+        if (t.every && typeof t.fn === 'function') t.fn.apply(window, t.args);
+      });
+  };
+
+  // ---- The backend, as the scene got it
+  if (handoff.network && handoff.network.length) {
+    var answers = {};
+    handoff.network.forEach(function (x) {
+      answers[x.m + ' ' + x.u] = x;
+    });
+    var keyOf = function (method, url) {
+      var u = new URL(url, location.href);
+      return method.toUpperCase() + ' ' + (u.origin === location.origin ? u.pathname + u.search : u.href);
+    };
+    var realFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      var req = typeof Request !== 'undefined' && input instanceof Request ? input : null;
+      var method = (init && init.method) || (req && req.method) || 'GET';
+      var x = answers[keyOf(method, req ? req.url : String(input))];
+      if (!x) return realFetch(input, init);
+      return Promise.resolve(new Response(x.b, { status: x.s, headers: { 'content-type': x.h } }));
+    };
+  }
+
+  // ---- Ready: the first screen is in the DOM, its fonts are loaded, and it has been painted.
+  var report = function () {
+    document.fonts.ready.then(function () {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          handoff.ready();
+        });
+      });
+    });
+  };
+  var check = function () {
+    if (!document.querySelector(handoff.readySelector)) return false;
+    report();
+    return true;
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    if (check()) return;
+    var watch = new MutationObserver(function () {
+      if (check()) watch.disconnect();
+    });
+    watch.observe(document.body, { childList: true, subtree: true });
+  });
+})();
+</script><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>02 · El dilema del podio · KatArch</title><meta name="description" content="Curso guiado de arquitectura de software a partir del caso real Farmacy Food (O'Reilly Architecture Kata, otoño 2020)."><link rel="canonical" href="https://katarch.vercel.app/apps/katarch/es/podio/"><link rel="alternate" hreflang="en" href="https://katarch.vercel.app/apps/katarch/podium/"><link rel="alternate" hreflang="es" href="https://katarch.vercel.app/apps/katarch/es/podio/"><link rel="alternate" hreflang="x-default" href="https://katarch.vercel.app/apps/katarch/podium/"><link rel="icon" type="image/svg+xml" href="/apps/katarch/favicon.svg"><script>(function(){const locale = "es";
+const alternates = {"en":"/apps/katarch/podium/","es":"/apps/katarch/es/podio/"};
+const key = "katarch:lang";
+
+      // A reader who picked a language with the switcher gets that language on later visits.
+      // First visits have no stored choice and stay on the page they asked for (English at the root).
+      try {
+        const pref = localStorage.getItem(key);
+        if (pref && pref !== locale && alternates[pref]) {
+          const m = location.hash.match(/^#(?:step|paso)-(\d+)$/);
+          const hash = m ? (pref === 'es' ? '#paso-' : '#step-') + m[1] : location.hash;
+          location.replace(alternates[pref] + hash);
+        }
+      } catch (e) {}
+    })();</script><script>
+      try {
+        const t = localStorage.getItem('katarch:theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script><link rel="stylesheet" href="/apps/katarch/_astro/LangSwitch.DNZliBQ7.css"></head><body><style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();</script><script>(()=>{var g=Object.defineProperty;var w=(a,s,c)=>s in a?g(a,s,{enumerable:!0,configurable:!0,writable:!0,value:c}):a[s]=c;var l=(a,s,c)=>w(a,typeof s!="symbol"?s+"":s,c);var E=new Set(["__proto__","constructor","prototype"]);{let a={0:t=>y(t),1:t=>c(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(c(t)),5:t=>new Set(c(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>Number.POSITIVE_INFINITY*t},s=t=>{let[p,e]=t;return p in a?a[p](e):void 0},c=t=>t.map(s),y=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([p,e])=>[p,s(e)]));class f extends HTMLElement{constructor(){super(...arguments);l(this,"Component");l(this,"hydrator");l(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let r=this.querySelectorAll("astro-slot"),n={},d=this.querySelectorAll("template[data-astro-template]");for(let o of d){let i=o.closest(this.tagName);i!=null&&i.isSameNode(this)&&(n[o.getAttribute("data-astro-template")||"default"]=o.innerHTML,o.remove())}for(let o of r){let i=o.closest(this.tagName);i!=null&&i.isSameNode(this)&&(n[o.getAttribute("name")||"default"]=o.innerHTML)}let u;try{u=this.hasAttribute("props")?y(JSON.parse(this.getAttribute("props"))):{}}catch(o){let i=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(i+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${i}`,this.getAttribute("props"),o),o}let h;await this.hydrator(this)(this.Component,u,n,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});l(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),r.disconnect(),this.childrenConnectedCallback()},r=new MutationObserver(()=>{var n;((n=this.lastChild)==null?void 0:n.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});r.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}getRetryImportUrl(e){let r=new URL(e,document.baseURI);return r.searchParams.set("astro-retry",Date.now().toString()),r.toString()}async importWithRetry(e){try{return await import(e)}catch(r){return await new Promise(n=>setTimeout(n,1e3)),import(this.getRetryImportUrl(e))}}handleHydrationError(e){let r=this.getAttribute("component-url"),n=new CustomEvent("astro:hydration-error",{cancelable:!0,bubbles:!0,composed:!0,detail:{error:e,componentUrl:r}});this.dispatchEvent(n)&&console.error(`[astro-island] Error hydrating ${r}`,e)}async start(){let e=JSON.parse(this.getAttribute("opts")),r=this.getAttribute("client");if(Astro[r]===void 0){window.addEventListener(`astro:${r}`,()=>this.start(),{once:!0});return}try{await Astro[r](async()=>{let n=this.getAttribute("renderer-url");try{let[d,{default:u}]=await Promise.all([this.importWithRetry(this.getAttribute("component-url")),n?this.importWithRetry(n):Promise.resolve({default:()=>()=>{}})]),h=this.getAttribute("component-export")||"default";if(h.includes(".")){this.Component=d;for(let m of h.split(".")){if(E.has(m)||!this.Component||typeof this.Component!="object"&&typeof this.Component!="function"||!Object.hasOwn(this.Component,m))throw new Error(`Invalid component export path: ${h}`);this.Component=this.Component[m]}}else{if(E.has(h))throw new Error(`Invalid component export path: ${h}`);this.Component=d[h]}return this.hydrator=u,this.hydrate}catch(d){return this.handleHydrationError(d),()=>{}}},e,this)}catch(n){this.handleHydrationError(n)}}attributeChangedCallback(){this.hydrate()}}l(f,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",f)}})();</script><astro-island uid="ZzIKuv" prefix="r1" component-url="/apps/katarch/_astro/Player.D6XxCHa9.js" component-export="default" renderer-url="/apps/katarch/_astro/client.BpY5R_rx.js" props="{&quot;chapter&quot;:[0,{&quot;id&quot;:[0,&quot;podio&quot;],&quot;number&quot;:[0,2],&quot;phase&quot;:[0,&quot;El problema&quot;],&quot;title&quot;:[0,&quot;El dilema del podio&quot;],&quot;subtitle&quot;:[0,&quot;Diez equipos, el mismo pliego. Tres finalistas con respuestas opuestas a una sola pregunta, y la vara real con la que los midió el jurado.&quot;],&quot;minutes&quot;:[0,7],&quot;learn&quot;:[1,[[0,&quot;Comparar las tres posturas finalistas como respuestas distintas a la &lt;strong&gt;misma pregunta económica&lt;/strong&gt;.&quot;],[0,&quot;Explicar por qué ninguna de las tres es “la correcta” (primera ley).&quot;],[0,&quot;Nombrar los siete criterios con los que el jurado evaluó cada propuesta.&quot;]]],&quot;steps&quot;:[1,[[0,{&quot;id&quot;:[0,&quot;cover&quot;],&quot;layout&quot;:[0,&quot;cover&quot;],&quot;title&quot;:[0,&quot;El dilema del podio&quot;],&quot;blocks&quot;:[1,[[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Con el número del capítulo anterior en la mano (menos de una petición por segundo), toca ver qué hicieron con él los equipos que compitieron. Este capítulo es una bisagra: cierra el problema y abre la pregunta de cómo se piensa.&quot;]}]]]}],[0,{&quot;id&quot;:[0,&quot;pregunta&quot;],&quot;kicker&quot;:[0,&quot;La pregunta&quot;],&quot;title&quot;:[0,&quot;Diez equipos, un mismo pliego&quot;],&quot;visual&quot;:[0,{&quot;scene&quot;:[0,&quot;teams&quot;]}],&quot;blocks&quot;:[1,[[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Diez equipos recibieron exactamente el pliego que acabás de recorrer. Las soluciones finalistas se repartieron en &lt;strong&gt;tres posturas opuestas&lt;/strong&gt; sobre la misma pregunta.&quot;]}],[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;No es una pregunta técnica: es económica. ¿Cuánta maquinaria comprar hoy para un negocio que hoy vende 42 comidas al día?&quot;]}]]]}],[0,{&quot;id&quot;:[0,&quot;archcolider&quot;],&quot;kicker&quot;:[0,&quot;Tres posturas&quot;],&quot;title&quot;:[0,&quot;ArchColider: barato hoy, partible mañana&quot;],&quot;visual&quot;:[0,{&quot;scene&quot;:[0,&quot;styles&quot;],&quot;state&quot;:[0,&quot;arch&quot;]}],&quot;describe&quot;:[0,&quot;&lt;p&gt;Cinco módulos (catálogo, órdenes, pagos, lealtad, reportes) dentro de una sola aplicación, separados por fronteras estrictas, sobre una sola base de datos y pocas máquinas de AWS.&lt;/p&gt;&quot;],&quot;blocks&quot;:[1,[[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;El equipo que después ganó concluyó que montar infraestructura distribuida para ese volumen era tirar plata y tiempo.&quot;]}],[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Propuso un &lt;a class=\&quot;concept-chip\&quot; data-concept=\&quot;monolito-modular\&quot; role=\&quot;button\&quot; tabindex=\&quot;0\&quot;&gt;monolito dividido en módulos con fronteras estrictas&lt;/a&gt;, en pocas máquinas de AWS: barato hoy, fácil de partir mañana si hace falta.&quot;]}],[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Mirá el diagrama: los mismos cinco módulos van a reorganizarse en las dos pantallas siguientes.&quot;]}]]]}],[0,{&quot;id&quot;:[0,&quot;myagis&quot;],&quot;kicker&quot;:[0,&quot;Tres posturas&quot;],&quot;title&quot;:[0,&quot;Myagis-Forest: microservicios desde el día uno&quot;],&quot;visual&quot;:[0,{&quot;scene&quot;:[0,&quot;styles&quot;],&quot;state&quot;:[0,&quot;forest&quot;]}],&quot;describe&quot;:[0,&quot;&lt;p&gt;Los mismos cinco módulos, ahora como microservicios independientes: cada uno con su contenedor, su base de datos y su despliegue, comunicándose por la red.&lt;/p&gt;&quot;],&quot;blocks&quot;:[1,[[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;El segundo puesto argumentó exactamente lo contrario: partir un monolito después significa &lt;strong&gt;hacer el trabajo dos veces&lt;/strong&gt;.&quot;]}],[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Montó microservicios desde el primer día, con un modelado de dominio impecable. El precio: un costo fijo de operación mucho más alto para una startup que recién valida su mercado.&quot;]}]]]}],[0,{&quot;id&quot;:[0,&quot;jedis&quot;],&quot;kicker&quot;:[0,&quot;Tres posturas&quot;],&quot;title&quot;:[0,&quot;Jedis: todo pasa por un bus de eventos&quot;],&quot;visual&quot;:[0,{&quot;scene&quot;:[0,&quot;styles&quot;],&quot;state&quot;:[0,&quot;jedis&quot;]}],&quot;describe&quot;:[0,&quot;&lt;p&gt;Los mismos cinco módulos, conectados a un bus de eventos (Kafka) por el que circula en tiempo real cada movimiento de stock y cada compra.&lt;/p&gt;&quot;],&quot;blocks&quot;:[1,[[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;El tercer puesto apostó a la analítica futura: una plataforma centrada en un &lt;strong&gt;bus de eventos&lt;/strong&gt; que registra en tiempo real cada movimiento de stock y cada compra.&quot;]}],[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Habilita recomendaciones y datos en vivo, sosteniendo una plataforma de mensajería sobredimensionada durante los primeros meses.&quot;]}]]]}],[0,{&quot;id&quot;:[0,&quot;compensacion&quot;],&quot;kicker&quot;:[0,&quot;Ninguna es la correcta&quot;],&quot;title&quot;:[0,&quot;Tres apuestas, tres precios&quot;],&quot;visual&quot;:[0,{&quot;scene&quot;:[0,&quot;bets&quot;]}],&quot;blocks&quot;:[1,[[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Ninguna de las tres es “la correcta”. Cada postura decide qué &lt;strong&gt;no&lt;/strong&gt; pagar hoy, y acepta un precio distinto a cambio.&quot;]}],[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Es la primera ley de Richards &amp;amp; Ford, que los propios jueces repiten en cada kata: &lt;em&gt;en arquitectura no hay decisiones correctas o incorrectas, todo es una compensación&lt;/em&gt;.&quot;]}],[0,{&quot;t&quot;:[0,&quot;callout&quot;],&quot;tone&quot;:[0,&quot;note&quot;],&quot;title&quot;:[0,&quot;Todavía sin veredicto&quot;],&quot;html&quot;:[0,&quot;Por qué convenció la primera postura se ve con números dos capítulos más adelante. Antes hay que entender cómo razonó el equipo.&quot;]}]]]}],[0,{&quot;id&quot;:[0,&quot;jurado&quot;],&quot;kicker&quot;:[0,&quot;La vara del jurado&quot;],&quot;title&quot;:[0,&quot;¿Qué premió el jurado?&quot;],&quot;visual&quot;:[0,{&quot;scene&quot;:[0,&quot;rubric&quot;],&quot;state&quot;:[0,&quot;hidden&quot;],&quot;props&quot;:[0,{&quot;correct&quot;:[0,3]}]}],&quot;blocks&quot;:[1,[[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;El jurado de semifinales reunió a cuatro arquitectos de primer nivel. Su deck de evaluación está en el repositorio del equipo, con la rúbrica por escrito.&quot;]}],[0,{&quot;t&quot;:[0,&quot;predict&quot;],&quot;question&quot;:[0,&quot;¿Qué te parece que midió el jurado en cada propuesta?&quot;],&quot;options&quot;:[1,[[0,{&quot;label&quot;:[0,&quot;Qué tan moderna era la tecnología elegida&quot;],&quot;feedback&quot;:[0,&quot;Ninguno de los siete criterios habla de modernidad.&quot;]}],[0,{&quot;label&quot;:[0,&quot;El diagrama más vistoso&quot;],&quot;feedback&quot;:[0,&quot;Los diagramas cuentan, pero por su claridad y completitud, no por lo vistosos.&quot;]}],[0,{&quot;label&quot;:[0,&quot;La solución más barata&quot;],&quot;feedback&quot;:[0,&quot;El costo importa, pero no hay un criterio de “gana la más barata”.&quot;]}],[0,{&quot;label&quot;:[0,&quot;Si el razonamiento se puede seguir, del negocio a la decisión&quot;],&quot;correct&quot;:[0,true],&quot;feedback&quot;:[0,&quot;&lt;strong&gt;Eso.&lt;/strong&gt; La rúbrica mide trazabilidad: entender el problema, justificar cada decisión y contarlo con claridad.&quot;]}]]]}]]]}],[0,{&quot;id&quot;:[0,&quot;rubrica&quot;],&quot;kicker&quot;:[0,&quot;La vara del jurado&quot;],&quot;title&quot;:[0,&quot;Siete criterios por escrito&quot;],&quot;visual&quot;:[0,{&quot;scene&quot;:[0,&quot;rubric&quot;],&quot;state&quot;:[0,&quot;full&quot;]}],&quot;describe&quot;:[0,&quot;&lt;ol&gt;&lt;li&gt;Claridad de narrativa, organización y documentación de apoyo.&lt;/li&gt;&lt;li&gt;Entendimiento de los requerimientos y completitud de la solución.&lt;/li&gt;&lt;li&gt;Identificación de las características arquitectónicas de soporte.&lt;/li&gt;&lt;li&gt;Diagramas: tipos, nivel de detalle y completitud.&lt;/li&gt;&lt;li&gt;Arquitectura general del sistema.&lt;/li&gt;&lt;li&gt;Integración con los sistemas de terceros requeridos.&lt;/li&gt;&lt;li&gt;ADRs: documentación y justificación de las decisiones.&lt;/li&gt;&lt;/ol&gt;&quot;],&quot;blocks&quot;:[1,[[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;“Calidad del razonamiento” no era una impresión vaga. El tercer criterio pide identificar los &lt;a class=\&quot;concept-chip\&quot; data-concept=\&quot;quality-attributes\&quot; role=\&quot;button\&quot; tabindex=\&quot;0\&quot;&gt;atributos de calidad&lt;/a&gt; que importan; el último, justificar cada decisión.&quot;]}],[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Abrí cada criterio en el diagrama. El jurado no premiaba el dibujo más vistoso sino la &lt;strong&gt;trazabilidad completa&lt;/strong&gt;: del negocio a la decisión, y de la decisión a su costo.&quot;]}],[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Es la misma vara con la que se puede medir cualquier propuesta de arquitectura, dentro o fuera de un concurso.&quot;]}]]]}],[0,{&quot;id&quot;:[0,&quot;checkpoint&quot;],&quot;kicker&quot;:[0,&quot;Checkpoint&quot;],&quot;title&quot;:[0,&quot;Tres preguntas antes de seguir&quot;],&quot;visual&quot;:[0,{&quot;scene&quot;:[0,&quot;quiz&quot;],&quot;props&quot;:[0,{&quot;questions&quot;:[1,[[0,{&quot;q&quot;:[0,&quot;¿Qué pregunta respondieron de formas opuestas los tres finalistas?&quot;],&quot;options&quot;:[1,[[0,&quot;Qué lenguaje de programación usar&quot;],[0,&quot;Qué nube elegir&quot;],[0,&quot;Cuánta maquinaria comprar hoy para un negocio de 42 comidas al día&quot;],[0,&quot;Cómo diseñar la app móvil&quot;]]],&quot;answer&quot;:[0,2],&quot;why&quot;:[0,&quot;Las tres posturas son tres respuestas a la misma pregunta económica: cuánto sistema construir hoy, y qué se deja para después.&quot;]}],[0,{&quot;q&quot;:[0,&quot;Myagis-Forest eligió microservicios desde el día uno. ¿Cuál fue su argumento?&quot;],&quot;options&quot;:[1,[[0,&quot;Que partir un monolito después es hacer el trabajo dos veces&quot;],[0,&quot;Que eran más baratos de operar&quot;],[0,&quot;Que el jurado los prefería&quot;],[0,&quot;Que Kafka los exigía&quot;]]],&quot;answer&quot;:[0,0],&quot;why&quot;:[0,&quot;Es un argumento serio. El precio que aceptó fue un costo fijo de operación más alto mientras el negocio se valida.&quot;]}],[0,{&quot;q&quot;:[0,&quot;¿Qué dice la primera ley de la arquitectura de software?&quot;],&quot;options&quot;:[1,[[0,&quot;El porqué importa más que el cómo&quot;],[0,&quot;Los microservicios siempre escalan mejor&quot;],[0,&quot;La solución más simple siempre gana&quot;],[0,&quot;Todo es una compensación: no hay decisiones correctas o incorrectas&quot;]]],&quot;answer&quot;:[0,3],&quot;why&quot;:[0,&quot;“El porqué importa más que el cómo” es la segunda ley, y aparece en el próximo capítulo.&quot;]}]]]}]}],&quot;blocks&quot;:[1,[[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Repasá lo esencial antes de seguir.&quot;]}],[0,{&quot;t&quot;:[0,&quot;p&quot;],&quot;html&quot;:[0,&quot;Para entender por qué el razonamiento de ArchColider convenció, hay que retroceder un paso: antes de dibujar una sola caja, el equipo se fijó &lt;strong&gt;reglas de juego propias&lt;/strong&gt;. Eso es lo próximo.&quot;]}]]]}]]]}],&quot;concepts&quot;:[0,{&quot;monolito-modular&quot;:[0,{&quot;title&quot;:[0,&quot;Monolito modular vs. microservicios&quot;],&quot;body&quot;:[0,&quot;&lt;p&gt;Un &lt;strong&gt;monolito&lt;/strong&gt; es una aplicación que se despliega como una sola pieza: un único programa corriendo en un servidor. Un &lt;strong&gt;microservicio&lt;/strong&gt; es lo opuesto: decenas de programas pequeños, cada uno desplegado por separado, que se comunican por red.&lt;/p&gt;\n&lt;p&gt;El problema del monolito clásico es que con el tiempo todo el código se mezcla con todo (el famoso \&quot;plato de espaguetis\&quot;). El problema de los microservicios es que pagas una multa permanente: más servidores, más complejidad de despliegue, más cosas que pueden fallar al comunicarse.&lt;/p&gt;\n&lt;p&gt;Un &lt;strong&gt;monolito modular&lt;/strong&gt; toma lo mejor de ambos: se despliega como una sola pieza (barato y simple), pero su interior está dividido en módulos con fronteras estrictas, como los compartimentos de un cajón de herramientas. Si algún día un módulo necesita crecer por su cuenta, se extrae sin desarmar el resto.&lt;/p&gt;&quot;]}],&quot;quality-attributes&quot;:[0,{&quot;title&quot;:[0,&quot;Los atributos de calidad, en lenguaje llano&quot;],&quot;body&quot;:[0,&quot;&lt;p&gt;Cualquier sistema se puede describir por lo que &lt;strong&gt;hace&lt;/strong&gt; (sus funciones: vender comidas, cobrar, avisar) y por &lt;strong&gt;qué tan bien lo hace&lt;/strong&gt;: ¿está disponible siempre? ¿responde rápido? ¿se puede cambiar sin romper todo? ¿es seguro? Esas propiedades (disponibilidad, performance, modificabilidad, seguridad, usabilidad) son los &lt;strong&gt;atributos de calidad&lt;/strong&gt;. En el libro canónico se llaman \&quot;características arquitectónicas\&quot;, y casi todas terminan en \&quot;-idad\&quot;: los &lt;em&gt;ilities&lt;/em&gt; en inglés.&lt;/p&gt;\n&lt;p&gt;La analogía del auto: las funciones son \&quot;te lleva de A a B\&quot;; los atributos de calidad son el consumo, la seguridad, la comodidad y la confiabilidad. Y como en el auto, &lt;strong&gt;no se puede maximizar todo a la vez&lt;/strong&gt;: blindarlo lo hace pesado y torpe. Cada atributo cuesta dinero y complejidad, y varios se pisan entre sí.&lt;/p&gt;\n&lt;p&gt;Por eso son el verdadero moldeador de una arquitectura: las funciones cambian el &lt;em&gt;código&lt;/em&gt;; los atributos de calidad cambian la &lt;em&gt;forma estructural&lt;/em&gt; del sistema. El primer trabajo de un arquitecto es preguntar cuáles importan de verdad en este negocio, y descartar el resto sin culpa. Es exactamente lo que el jurado de este kata evaluaba cuando miraba \&quot;la identificación de las características de soporte\&quot;.&lt;/p&gt;&quot;]}]}],&quot;docs&quot;:[0,{}],&quot;decisions&quot;:[0,{}],&quot;next&quot;:[0,{&quot;href&quot;:[0,&quot;/apps/katarch/es/principios/&quot;],&quot;title&quot;:[0,&quot;Las reglas antes del primer diagrama&quot;],&quot;available&quot;:[0,true]}],&quot;locale&quot;:[0,&quot;es&quot;],&quot;home&quot;:[0,&quot;/apps/katarch/es/&quot;],&quot;alt&quot;:[0,{&quot;en&quot;:[0,&quot;/apps/katarch/podium/&quot;],&quot;es&quot;:[0,&quot;/apps/katarch/es/podio/&quot;]}]}" ssr client="load" opts="{&quot;name&quot;:&quot;Player&quot;,&quot;value&quot;:true}" await-children><div class="app app--cover"><header class="topbar"><a class="brand" href="/apps/katarch/es/" aria-label="KatArch, mapa del curso"><span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 20V4h4v6l6-6h5l-7.5 7.5L20 20h-5l-5.5-6L8 16v4z" fill="currentColor"></path></svg></span><span class="brand__name">KatArch</span></a><button type="button" class="chapter-btn" aria-haspopup="dialog"><span class="chapter-btn__n mono">Cap. 02</span><span class="chapter-btn__t">El dilema del podio</span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button><div class="rail" aria-hidden="true"><span class="rail__seg  is-current"></span><span class="rail__seg  "></span><span class="rail__seg  "></span><span class="rail__seg  "></span><span class="rail__seg  "></span><span class="rail__seg  "></span><span class="rail__seg  "></span><span class="rail__seg  "></span><span class="rail__seg  "></span></div><nav class="lang" aria-label="Idioma"><a class="lang__opt" href="/apps/katarch/podium/#step-1" hrefLang="en" lang="en"><span aria-hidden="true">EN</span><span class="sr-only">Read in English</span></a><span class="lang__opt" aria-current="true" lang="es"><span aria-hidden="true">ES</span><span class="sr-only">Español</span></span></nav><button type="button" class="icon-btn" aria-label="Cambiar a tema claro"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></button></header><main class="main"><div class="cover"><div class="cover__main" style="transform:translateY(14px)"><p class="cover__phase mono">El problema</p><div class="cover__num mono" aria-hidden="true">02</div><h1 class="cover__title">El dilema del podio</h1><p class="cover__sub">Diez equipos, el mismo pliego. Tres finalistas con respuestas opuestas a una sola pregunta, y la vara real con la que los midió el jurado.</p><div class="cover__meta"><span><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg> <!-- -->7 min</span><span><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-footprints" aria-hidden="true"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></svg> <!-- -->8 pasos</span></div><div class="prose cover__intro"><p>Con el número del capítulo anterior en la mano (menos de una petición por segundo), toca ver qué hicieron con él los equipos que compitieron. Este capítulo es una bisagra: cierra el problema y abre la pregunta de cómo se piensa.</p></div><button type="button" class="btn btn--primary cover__cta">Empezar el capítulo<!-- --> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button></div><aside class="cover__side" style="transform:translateX(18px)"><h2 class="cover__side-title mono">Al terminar vas a poder</h2><ul class="cover__learn"><li>Comparar las tres posturas finalistas como respuestas distintas a la <strong>misma pregunta económica</strong>.</li><li>Explicar por qué ninguna de las tres es “la correcta” (primera ley).</li><li>Nombrar los siete criterios con los que el jurado evaluó cada propuesta.</li></ul><h2 class="cover__side-title mono">Recorrido</h2><ol class="cover__route"><li><button type="button"><span class="cover__route-dot" aria-hidden="true"></span><span>La pregunta</span></button></li><li><button type="button"><span class="cover__route-dot" aria-hidden="true"></span><span>Tres posturas</span><span class="cover__route-n mono">3</span></button></li><li><button type="button"><span class="cover__route-dot" aria-hidden="true"></span><span>Ninguna es la correcta</span></button></li><li><button type="button"><span class="cover__route-dot" aria-hidden="true"></span><span>La vara del jurado</span><span class="cover__route-n mono">2</span></button></li><li><button type="button"><span class="cover__route-dot" aria-hidden="true"></span><span>Checkpoint</span></button></li></ol></aside></div></main><footer class="bottombar"><button type="button" class="btn" disabled="" aria-label="Paso anterior"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg> <span class="hide-sm">Anterior</span></button><button type="button" class="counter"><span class="mono">01<span class="counter__of"> / <!-- -->09</span></span><span class="counter__t hide-sm">El dilema del podio</span><span class="counter__keys hide-sm" aria-hidden="true"><kbd>←</kbd><kbd>→</kbd></span></button><button type="button" class="btn btn--primary" aria-label="Paso siguiente"><span class="hide-sm">Empezar</span> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button></footer><div class="sr-only" aria-live="polite"></div></div><!--astro:end--></astro-island></body></html>

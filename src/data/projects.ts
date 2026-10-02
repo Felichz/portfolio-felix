@@ -127,13 +127,13 @@ export const projects: Project[] = [
     palette: ['#0B0E13', '#FF7A45', '#6EA2FF', '#3FD694', '#B69BFF'],
     language: 'English and Spanish',
     accent: { light: '#C2410C', dark: '#FF7A45', onLight: '#FFFFFF', onDark: '#1A0D06' },
-    main: moving(
-      themed(
+    main: {
+      ...themed(
         'katarch-main',
         'KatArch, chapter 5, step 5: the Menu Catalog service diagram. Kitchen, loyalty and point-of-sale systems enter through an anti-corruption layer that translates their formats; the domain emits a stock-updated event to cart, recommendations, reviews and filtering.',
       ),
-      'katarch-main',
-    ),
+      tape: 'katarch',
+    },
     callouts: [
       { x: 51.6, y: 36.4, text: 'The anti-corruption layer: third-party formats are translated at the border, so the domain only sees its own model.' },
       { x: 66.4, y: 48.6, text: 'One legend across every diagram: commands in blue, events in green, the domain in orange.' },

@@ -20,7 +20,7 @@ const pub = resolve(root, scene.root ?? 'public');
 const tapes = resolve(root, 'public', 'tapes');
 
 // ---- Static server over public/, with the app's routes falling back to its index.html
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon', '.woff': 'font/woff', '.txt': 'text/plain', '.mp4': 'video/mp4', '.webm': 'video/webm', '.wasm': 'application/wasm' };
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   let file = join(pub, path);
@@ -63,7 +63,28 @@ if (scene.clock !== null) await page.evaluateOnNewDocument((pin) => {
   window.Date = new Proxy(PinnedDate, { apply: () => new PinnedDate().toString() });
 }, scene.clock ?? [15, 24]);
 
-await page.goto(origin + scene.base, { waitUntil: 'networkidle0' });
+// The app's backend, for apps that have one: requests can be pointed elsewhere while recording
+// (scene.network.rewrite), and what comes back is kept, so the live app gets the same answers.
+const exchanges = [];
+if (scene.network) {
+  await page.setRequestInterception(true);
+  page.on('request', (r) => {
+    const to = scene.network.rewrite?.(r.url());
+    if (to) r.continue({ url: to });
+    else r.continue();
+  });
+  page.on('requestfinished', async (r) => {
+    if (!scene.network.match.test(r.url())) return;
+    const res = r.response();
+    if (!res) return;
+    const u = new URL(r.url());
+    try {
+      exchanges.push({ m: r.method(), u: u.origin === origin ? u.pathname + u.search : u.href, s: res.status(), h: res.headers()['content-type'] ?? '', b: await res.text() });
+    } catch {}
+  });
+}
+
+await page.goto(origin + scene.base + (scene.start ?? ''), { waitUntil: 'networkidle0' });
 await scene.setup(page);
 await page.waitForSelector(scene.readySelector);
 await page.evaluate(() => document.fonts.ready);
@@ -113,7 +134,7 @@ const helpers = {
     await page.mouse.up();
   },
   async checkpoint(name) {
-    await page.evaluate((n, keys, base) => window.__tapeCheckpoint(n, keys, base), name, scene.storage, scene.base);
+    await page.evaluate((n, keys, base, idb) => window.__tapeCheckpoint(n, keys, base, idb), name, scene.storage, scene.base, !!scene.idb);
   },
 };
 
@@ -122,7 +143,14 @@ const tape = await page.evaluate(() => window.__tapeStop());
 await browser.close();
 server.close();
 
-// Everything the player and the thaw need, in one file.
+// One answer per request (the last one: the state the scene ended in).
+function dedupe(list) {
+  const seen = new Map();
+  for (const x of list) seen.set(`${x.m} ${x.u}`, x);
+  return [...seen.values()];
+}
+
+// Everything the player and the live app need, in one file.
 const index = readFileSync(join(pub, scene.base, 'index.html'), 'utf8');
 // Files to prefetch on intent. Not for this site's own tape: it is already loaded, and its hashed
 // file names change with every build.
@@ -132,7 +160,15 @@ const out = {
   id,
   viewport: scene.viewport,
   themeAttr: scene.themeAttr,
-  app: { entry: scene.base, readySelector: scene.readySelector, storage: scene.storage, themeKey: scene.themeKey, restore: scene.restore, prefetch },
+  app: {
+    entry: scene.base,
+    readySelector: scene.readySelector,
+    storage: scene.storage,
+    themeKey: scene.themeKey,
+    restore: scene.restore,
+    prefetch,
+    ...(exchanges.length ? { network: dedupe(exchanges) } : {}),
+  },
   ...tape,
 };
 mkdirSync(tapes, { recursive: true });

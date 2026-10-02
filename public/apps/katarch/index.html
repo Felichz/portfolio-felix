@@ -1,0 +1,173 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head>
+    <script data-app="katarch">/*
+ * Portfolio bridge, inlined at the top of each vendored app's index.html (scripts/apps/vendor.mjs).
+ * Inert unless the app runs inside the portfolio (src/scripts/live.ts), which leaves a handoff for it in
+ * `window.__live[<app>]` before creating its frame. Then, before any of the app's code runs, the
+ * app's time belongs to the portfolio:
+ * - Date reads a clock the portfolio sets: frozen at the checkpoint's recorded moment while the app
+ *   boots, moved to each recorded click's moment while the scene's clicks are replayed, and released at
+ *   the frame the preview froze on as the app appears, running from there.
+ * - setTimeout and setInterval run on that clock. Moving it forward fires what fell due, the way the
+ *   recording lived through it (a toast that had time to leave leaves); while it's frozen, nothing
+ *   timed fires early.
+ * - Its backend answers as it did while the scene was recorded: fetches the scene made get the
+ *   recorded responses (anything else goes to the network as usual).
+ * - Once the app has painted its first screen, the portfolio is told.
+ * The app's own state (localStorage) was already seeded by the portfolio, same origin.
+ */
+(function () {
+  var handoff;
+  try {
+    handoff = window.parent !== window && window.parent.__live && window.parent.__live[document.currentScript.dataset.app];
+  } catch (e) {}
+  if (!handoff) return;
+
+  // ---- The clock
+  var RealDate = Date;
+  var base = handoff.clock;
+  var realBase = RealDate.now();
+  var frozen = true;
+  // A later page of an app of several pages picks up the clock where the last one left it, running.
+  if (handoff.running) {
+    base = realBase + handoff.offset;
+    frozen = false;
+  }
+  var now = function () {
+    return frozen ? base : base + (RealDate.now() - realBase);
+  };
+  class ShiftedDate extends RealDate {
+    constructor() {
+      if (arguments.length === 0) super(now());
+      else super(...arguments);
+    }
+    static now() {
+      return now();
+    }
+  }
+  // `Date()` called without `new` returns a string.
+  window.Date = new Proxy(ShiftedDate, {
+    apply: function () {
+      return new ShiftedDate().toString();
+    },
+  });
+
+  // ---- Timers on that clock
+  var realSetTimeout = window.setTimeout.bind(window);
+  var realClearTimeout = window.clearTimeout.bind(window);
+  var timers = new Map();
+  var seq = 1e6;
+  var schedule = function (t) {
+    if (t.real !== null) realClearTimeout(t.real);
+    var wait = t.due - now();
+    // Frozen time doesn't bring anything due; it waits for the clock to move.
+    t.real = frozen && wait > 0 ? null : realSetTimeout(fire, Math.max(0, wait), t);
+  };
+  var fire = function (t) {
+    if (!timers.has(t.id)) return;
+    if (t.every) {
+      t.due += t.every;
+      if (t.due < now()) t.due = now() + t.every;
+      schedule(t);
+    } else timers.delete(t.id);
+    if (typeof t.fn === 'function') t.fn.apply(window, t.args);
+  };
+  var add = function (fn, delay, args, every) {
+    var t = { id: ++seq, fn: fn, args: args, every: every, due: now() + Math.max(0, Number(delay) || 0), real: null };
+    timers.set(t.id, t);
+    schedule(t);
+    return t.id;
+  };
+  var drop = function (id) {
+    var t = timers.get(id);
+    if (!t) return;
+    if (t.real !== null) realClearTimeout(t.real);
+    timers.delete(id);
+  };
+  window.setTimeout = function (fn, delay) {
+    return add(fn, delay, Array.prototype.slice.call(arguments, 2), 0);
+  };
+  window.setInterval = function (fn, delay) {
+    return add(fn, delay, Array.prototype.slice.call(arguments, 2), Math.max(1, Number(delay) || 0));
+  };
+  window.clearTimeout = window.clearInterval = drop;
+
+  /**
+   * Sets the clock to `ms`, frozen or running; moving forward fires whatever fell due on the way. With
+   * `tick`, every interval runs once now, so anything that shows the time redraws at the new time.
+   */
+  handoff.setClock = function (ms, freeze, tick) {
+    base = ms;
+    realBase = RealDate.now();
+    frozen = !!freeze;
+    handoff.running = !freeze;
+    handoff.offset = ms - realBase;
+    timers.forEach(schedule);
+    if (tick)
+      timers.forEach(function (t) {
+        if (t.every && typeof t.fn === 'function') t.fn.apply(window, t.args);
+      });
+  };
+
+  // ---- The backend, as the scene got it
+  if (handoff.network && handoff.network.length) {
+    var answers = {};
+    handoff.network.forEach(function (x) {
+      answers[x.m + ' ' + x.u] = x;
+    });
+    var keyOf = function (method, url) {
+      var u = new URL(url, location.href);
+      return method.toUpperCase() + ' ' + (u.origin === location.origin ? u.pathname + u.search : u.href);
+    };
+    var realFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      var req = typeof Request !== 'undefined' && input instanceof Request ? input : null;
+      var method = (init && init.method) || (req && req.method) || 'GET';
+      var x = answers[keyOf(method, req ? req.url : String(input))];
+      if (!x) return realFetch(input, init);
+      return Promise.resolve(new Response(x.b, { status: x.s, headers: { 'content-type': x.h } }));
+    };
+  }
+
+  // ---- Ready: the first screen is in the DOM, its fonts are loaded, and it has been painted.
+  var report = function () {
+    document.fonts.ready.then(function () {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          handoff.ready();
+        });
+      });
+    });
+  };
+  var check = function () {
+    if (!document.querySelector(handoff.readySelector)) return false;
+    report();
+    return true;
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    if (check()) return;
+    var watch = new MutationObserver(function () {
+      if (check()) watch.disconnect();
+    });
+    watch.observe(document.body, { childList: true, subtree: true });
+  });
+})();
+</script><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>KatArch · The Farmacy Food case</title><meta name="description" content="A guided software architecture course built on a real case: Farmacy Food (O'Reilly Architecture Kata, Fall 2020)."><link rel="canonical" href="https://katarch.vercel.app/apps/katarch/"><link rel="alternate" hreflang="en" href="https://katarch.vercel.app/apps/katarch/"><link rel="alternate" hreflang="es" href="https://katarch.vercel.app/apps/katarch/es/"><link rel="alternate" hreflang="x-default" href="https://katarch.vercel.app/apps/katarch/"><link rel="icon" type="image/svg+xml" href="/apps/katarch/favicon.svg"><script>(function(){const locale = "en";
+const alternates = {"en":"/apps/katarch/","es":"/apps/katarch/es/"};
+const key = "katarch:lang";
+
+      // A reader who picked a language with the switcher gets that language on later visits.
+      // First visits have no stored choice and stay on the page they asked for (English at the root).
+      try {
+        const pref = localStorage.getItem(key);
+        if (pref && pref !== locale && alternates[pref]) {
+          const m = location.hash.match(/^#(?:step|paso)-(\d+)$/);
+          const hash = m ? (pref === 'es' ? '#paso-' : '#step-') + m[1] : location.hash;
+          location.replace(alternates[pref] + hash);
+        }
+      } catch (e) {}
+    })();</script><script>
+      try {
+        const t = localStorage.getItem('katarch:theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script><link rel="stylesheet" href="/apps/katarch/_astro/LangSwitch.DNZliBQ7.css"></head><body><div class="hub" data-locale="en" data-done="complete" data-resume="Continue where you left off →"><header class="hub__top"><a class="brand" href="/apps/katarch/"><span class="brand__mark" aria-hidden><svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 20V4h4v6l6-6h5l-7.5 7.5L20 20h-5l-5.5-6L8 16v4z" fill="currentColor"></path></svg></span><span class="brand__name">KatArch</span></a><a class="hub__repo" href="https://github.com/TheKataLog/ArchColider" target="_blank" rel="noopener noreferrer">Winning team’s repository ↗</a><style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();</script><script>(()=>{var g=Object.defineProperty;var w=(a,s,c)=>s in a?g(a,s,{enumerable:!0,configurable:!0,writable:!0,value:c}):a[s]=c;var l=(a,s,c)=>w(a,typeof s!="symbol"?s+"":s,c);var E=new Set(["__proto__","constructor","prototype"]);{let a={0:t=>y(t),1:t=>c(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(c(t)),5:t=>new Set(c(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>Number.POSITIVE_INFINITY*t},s=t=>{let[p,e]=t;return p in a?a[p](e):void 0},c=t=>t.map(s),y=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([p,e])=>[p,s(e)]));class f extends HTMLElement{constructor(){super(...arguments);l(this,"Component");l(this,"hydrator");l(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let r=this.querySelectorAll("astro-slot"),n={},d=this.querySelectorAll("template[data-astro-template]");for(let o of d){let i=o.closest(this.tagName);i!=null&&i.isSameNode(this)&&(n[o.getAttribute("data-astro-template")||"default"]=o.innerHTML,o.remove())}for(let o of r){let i=o.closest(this.tagName);i!=null&&i.isSameNode(this)&&(n[o.getAttribute("name")||"default"]=o.innerHTML)}let u;try{u=this.hasAttribute("props")?y(JSON.parse(this.getAttribute("props"))):{}}catch(o){let i=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(i+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${i}`,this.getAttribute("props"),o),o}let h;await this.hydrator(this)(this.Component,u,n,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});l(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),r.disconnect(),this.childrenConnectedCallback()},r=new MutationObserver(()=>{var n;((n=this.lastChild)==null?void 0:n.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});r.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}getRetryImportUrl(e){let r=new URL(e,document.baseURI);return r.searchParams.set("astro-retry",Date.now().toString()),r.toString()}async importWithRetry(e){try{return await import(e)}catch(r){return await new Promise(n=>setTimeout(n,1e3)),import(this.getRetryImportUrl(e))}}handleHydrationError(e){let r=this.getAttribute("component-url"),n=new CustomEvent("astro:hydration-error",{cancelable:!0,bubbles:!0,composed:!0,detail:{error:e,componentUrl:r}});this.dispatchEvent(n)&&console.error(`[astro-island] Error hydrating ${r}`,e)}async start(){let e=JSON.parse(this.getAttribute("opts")),r=this.getAttribute("client");if(Astro[r]===void 0){window.addEventListener(`astro:${r}`,()=>this.start(),{once:!0});return}try{await Astro[r](async()=>{let n=this.getAttribute("renderer-url");try{let[d,{default:u}]=await Promise.all([this.importWithRetry(this.getAttribute("component-url")),n?this.importWithRetry(n):Promise.resolve({default:()=>()=>{}})]),h=this.getAttribute("component-export")||"default";if(h.includes(".")){this.Component=d;for(let m of h.split(".")){if(E.has(m)||!this.Component||typeof this.Component!="object"&&typeof this.Component!="function"||!Object.hasOwn(this.Component,m))throw new Error(`Invalid component export path: ${h}`);this.Component=this.Component[m]}}else{if(E.has(h))throw new Error(`Invalid component export path: ${h}`);this.Component=d[h]}return this.hydrator=u,this.hydrate}catch(d){return this.handleHydrationError(d),()=>{}}},e,this)}catch(n){this.handleHydrationError(n)}}attributeChangedCallback(){this.hydrate()}}l(f,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",f)}})();</script><astro-island uid="Ju6Y" prefix="r2" component-url="/apps/katarch/_astro/LangSwitch.C9po4lH4.js" component-export="LangSwitch" renderer-url="/apps/katarch/_astro/client.BpY5R_rx.js" props="{&quot;locale&quot;:[0,&quot;en&quot;],&quot;href&quot;:[0,{&quot;en&quot;:[0,&quot;/apps/katarch/&quot;],&quot;es&quot;:[0,&quot;/apps/katarch/es/&quot;]}]}" ssr client="load" opts="{&quot;name&quot;:&quot;LangSwitch&quot;,&quot;value&quot;:true}" await-children><nav class="lang" aria-label="Language"><span class="lang__opt" aria-current="true" lang="en"><span aria-hidden="true">EN</span><span class="sr-only">English</span></span><a class="lang__opt" href="/apps/katarch/es/" hrefLang="es" lang="es"><span aria-hidden="true">ES</span><span class="sr-only">Leer en español</span></a></nav><!--astro:end--></astro-island><astro-island uid="ZhUmse" prefix="r3" component-url="/apps/katarch/_astro/ThemeToggle.BeuIBBbv.js" component-export="ThemeToggle" renderer-url="/apps/katarch/_astro/client.BpY5R_rx.js" props="{&quot;locale&quot;:[0,&quot;en&quot;]}" ssr client="load" opts="{&quot;name&quot;:&quot;ThemeToggle&quot;,&quot;value&quot;:true}" await-children><button type="button" class="icon-btn" aria-label="Switch to light theme"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></button><!--astro:end--></astro-island></header><main class="hub__main"><section class="hub__hero"><p class="hub__kicker mono">O&#39;Reilly Software Architecture Kata · Fall 2020</p><h1 class="hub__title">The Farmacy Food case</h1><p class="hub__sub">How real architecture decisions get made, rebuilt step by step from the winning team’s repository.</p><p class="hub__intro">A guided course for developers with no architecture experience. Eleven chapters, one idea per screen, and every diagram built for you to walk through.</p><div class="hub__cta"><a class="btn btn--primary hub__go" id="hub-go" href="/apps/katarch/terrain/">Start with chapter 1 →</a></div><ul class="hub__how"><li><strong>One idea per screen.</strong> Move forward with the arrow keys or by swiping.</li><li><strong>Diagrams that assemble.</strong> Every figure from the team, redrawn so you can walk through it step by step.</li><li><strong>Evidence one click away.</strong> The original from the repository, the documents and the decisions are always available.</li></ul></section><nav class="hub__map" aria-label="Course chapters"><div class="hub__phase"><p class="hub__phase-t mono">The problem</p><ol><li><a class="station" href="/apps/katarch/terrain/" data-ch="terreno"><span class="station__dot" aria-hidden></span><span class="station__n mono">01</span><span class="station__b"><span class="station__t">The playing field</span><span class="station__d">The business, its physical pieces and the number that governs the whole case.</span></span><span class="station__st mono" data-status></span></a></li><li><a class="station" href="/apps/katarch/podium/" data-ch="podio"><span class="station__dot" aria-hidden></span><span class="station__n mono">02</span><span class="station__b"><span class="station__t">The podium’s dilemma</span><span class="station__d">Three finalists, three opposite answers, and the jury’s actual rubric.</span></span><span class="station__st mono" data-status></span></a></li></ol></div><div class="hub__phase"><p class="hub__phase-t mono">The decision framework</p><ol><li><a class="station" href="/apps/katarch/principles/" data-ch="principios"><span class="station__dot" aria-hidden></span><span class="station__n mono">03</span><span class="station__b"><span class="station__t">The rules before the first diagram</span><span class="station__d">Questions for the client, guiding principles and the decision log.</span></span><span class="station__st mono" data-status></span></a></li><li><a class="station" href="/apps/katarch/style/" data-ch="estilo"><span class="station__dot" aria-hidden></span><span class="station__n mono">04</span><span class="station__b"><span class="station__t">How much machinery to buy</span><span class="station__d">The Entity Trap, the traffic arithmetic and the modular monolith.</span></span><span class="station__st mono" data-status></span></a></li></ol></div><div class="hub__phase"><p class="hub__phase-t mono">The design</p><ol><li><a class="station" href="/apps/katarch/domain/" data-ch="dominio"><span class="station__dot" aria-hidden></span><span class="station__n mono">05</span><span class="station__b"><span class="station__t">What to build and what to rent</span><span class="station__d">Domains, an anti-corruption layer, a payment facade and a metamodel.</span></span><span class="station__st mono" data-status></span></a></li><li><a class="station" href="/apps/katarch/concurrency/" data-ch="concurrencia"><span class="station__dot" aria-hidden></span><span class="station__n mono">06</span><span class="station__b"><span class="station__t">The physical world</span><span class="station__d">Fridges, money and unstable connections: three real problems, three trade-offs.</span></span><span class="station__st mono" data-status></span></a></li><li><a class="station" href="/apps/katarch/subscriber/" data-ch="suscriptor"><span class="station__dot" aria-hidden></span><span class="station__n mono">07</span><span class="station__b"><span class="station__t">A meal’s journey</span><span class="station__d">From the calendar to the fridge: the subscriber cycle as events.</span></span><span class="station__st mono" data-status></span></a></li><li><a class="station" href="/apps/katarch/infrastructure/" data-ch="infraestructura"><span class="station__dot" aria-hidden></span><span class="station__n mono">08</span><span class="station__b"><span class="station__t">Landing in the cloud</span><span class="station__d">Private network, identity at the edge, vertical scaling and module extraction.</span></span><span class="station__st mono" data-status></span></a></li></ol></div><div class="hub__phase"><p class="hub__phase-t mono">The economic reality</p><ol><li><a class="station" href="/apps/katarch/costs/" data-ch="costos"><span class="station__dot" aria-hidden></span><span class="station__n mono">09</span><span class="station__b"><span class="station__t">The yearly bill</span><span class="station__d">Volume estimates, three cost scenarios and why paid monitoring won.</span></span><span class="station__st mono" data-status></span></a></li><li><a class="station" href="/apps/katarch/map/" data-ch="mapa"><span class="station__dot" aria-hidden></span><span class="station__n mono">10</span><span class="station__b"><span class="station__t">The decision map</span><span class="station__d">The ten structural decisions in three pillars.</span></span><span class="station__st mono" data-status></span></a></li></ol></div><div class="hub__phase"><p class="hub__phase-t mono">Takeaways</p><ol><li><a class="station" href="/apps/katarch/guide/" data-ch="guia"><span class="station__dot" aria-hidden></span><span class="station__n mono">11</span><span class="station__b"><span class="station__t">Field guide</span><span class="station__d">The method in four steps, for your next system.</span></span><span class="station__st mono" data-status></span></a></li></ol></div></nav></main></div><script type="module" src="/apps/katarch/_astro/HubPage.astro_astro_type_script_index_0_lang.BAowp9xi.js"></script></body></html>
