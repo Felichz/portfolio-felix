@@ -4,6 +4,7 @@
 //
 // Usage: node scripts/apps/vendor.mjs [id]   (each app's repo must be checked out next to this one)
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +24,12 @@ export const APPS = {
     build: (out) => ['npx', ['astro', 'build', '--base', '/apps/katarch/', '--outDir', out]],
     // A few content strings point at /img/ on the site root.
     rewrite: [[/(["'(=]|\\")\/img\//g, '$1/apps/katarch/img/']],
+  },
+  knowgraph: {
+    // A worktree of github.com/Felichz/KnowGraph on the portfolio-embed branch, which makes its routes
+    // and service worker follow the base path.
+    repo: resolve(root, '../learning-embed'),
+    build: (out) => ['npx', ['vite', 'build', '--base', '/apps/knowgraph/', '--outDir', out, '--emptyOutDir']],
   },
   lolimpact: {
     // github.com/Felichz/LoL-Impact: the Svelte frontend. Its API answers come with the tape
@@ -49,7 +56,12 @@ for (const [id, app] of Object.entries(APPS)) {
     let text = readFileSync(file, 'utf8');
     const before = text;
     for (const [from, to] of app.rewrite ?? []) text = text.replace(from, to);
-    if (ext === '.html') text = text.replace(/<head>/, `<head>\n    <script data-app="${id}">${bridge}</script>`);
+    if (ext === '.html') {
+      text = text.replace(/<head>/, `<head>\n    <script data-app="${id}">${bridge}</script>`);
+      // An app with a Content-Security-Policy allows the bridge by its hash, like its own inline scripts.
+      const hash = `'sha256-${createHash('sha256').update(bridge).digest('base64')}'`;
+      text = text.replace(/(http-equiv="Content-Security-Policy"\s+content="[^"]*script-src [^;"]*)/, `$1 ${hash}`);
+    }
     if (text !== before) writeFileSync(file, text);
   }
 

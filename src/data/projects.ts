@@ -185,13 +185,13 @@ export const projects: Project[] = [
     palette: ['#100E0C', '#EEECE7', '#909CF5', '#74C692', '#E8BE62'],
     language: 'English and Spanish',
     accent: { light: '#5B67D8', dark: '#909CF5', onLight: '#FFFFFF', onDark: '#100E0C' },
-    main: moving(
-      themed(
+    main: {
+      ...themed(
         'knowgraph-main',
         'KnowGraph map view: a sidebar of focus areas with progress counts, the suggested next concept, and concept cards, some scored 105 and 115 out of 120.',
       ),
-      'knowgraph-main',
-    ),
+      tape: 'knowgraph',
+    },
     callouts: [
       { x: 18.4, y: 22.4, text: 'The suggested route: the next concept you’re ready for, and what it unlocks.' },
       { x: 26.6, y: 64.4, text: 'Scores above 100 land in the gold excellence tier.' },

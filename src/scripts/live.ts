@@ -31,6 +31,8 @@ interface Handoff {
   clock: number;
   readySelector: string;
   ready: () => void;
+  /** For a single-page app: the URL it should see, set by the bridge before its code runs. */
+  route?: string;
   /** The backend's recorded answers, which the bridge serves to the app's fetches. */
   network?: Exchange[];
   /** A recorded real-time room, which the bridge plays to the app's WebSocket. */
@@ -221,6 +223,7 @@ class Session {
       ready: () => ready(),
       network,
       socket: tape.app.socket,
+      route: tape.app.spa ? tape.app.entry.replace(/\/$/, '') + cp.route : undefined,
     };
     (window.__live ??= {})[this.id] = this.handoff;
 
@@ -228,7 +231,9 @@ class Session {
     frame.className = 'live-app';
     frame.title = `${nameOf(this.plate)}, live`;
     frame.tabIndex = -1;
-    frame.src = tape.app.entry.replace(/\/$/, '') + cp.route;
+    // A single-page app loads its index.html (a real file on any server) and the bridge gives it the
+    // route; an app of several pages loads the page itself.
+    frame.src = tape.app.spa ? tape.app.entry : tape.app.entry.replace(/\/$/, '') + cp.route;
     this.frame = frame;
     this.motion?.append(frame);
     // The app runs at the recorded 1440x900 and is scaled to its container, like the tape.

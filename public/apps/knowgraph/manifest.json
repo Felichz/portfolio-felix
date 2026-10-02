@@ -1,0 +1,17 @@
+﻿{
+  "name": "Learning Workspace: React and Rails interview maps",
+  "short_name": "KnowGraph",
+  "description": "Knowledge graph for React and Rails technical interviews",
+  "lang": "en",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d13",
+  "theme_color": "#0b0d13",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

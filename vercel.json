@@ -1,4 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [{ "source": "/apps/lifeui/:path*", "destination": "/apps/lifeui/index.html" }]
+  "rewrites": [
+    {
+      "source": "/apps/lifeui/:path*",
+      "destination": "/apps/lifeui/index.html"
+    },
+    {
+      "source": "/apps/knowgraph/:path*",
+      "destination": "/apps/knowgraph/index.html"
+    }
+  ]
 }

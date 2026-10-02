@@ -1,4 +1,7 @@
-/*
+<!doctype html>
+<html lang="en">
+  <head>
+    <script data-app="knowgraph">/*
  * Portfolio bridge, inlined at the top of each vendored app's index.html (scripts/apps/vendor.mjs).
  * Inert unless the app runs inside the portfolio (src/scripts/live.ts), which leaves a handoff for it in
  * `window.__live[<app>]` before creating its frame. Then, before any of the app's code runs, the
@@ -156,3 +159,22 @@
     watch.observe(document.body, { childList: true, subtree: true });
   });
 })();
+</script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#100E0C" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nAgG2qaMj2XnOa3PlVQtkNpsKC0fR6RgfoDloObDbiI=' 'sha256-HDFgHhJdQCZ8siXa8FqQ4TeG/28zPn53IiBSx3/b8TY='; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <!-- Theme before first paint: saved choice (localStorage "knowgraph:theme") or the system setting. The CSP allows this exact script by hash; tests/logic/theme.mjs checks it. -->
+    <script>(function(){var t;try{t=localStorage.getItem("knowgraph:theme")}catch(e){}if(t!=="light"&&t!=="dark")t=window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#F7F4EF":"#100E0C"})()</script>
+    <style>html{background:#100E0C;color-scheme:dark}html[data-theme="light"]{background:#F7F4EF;color-scheme:light}</style>
+    <link rel="manifest" href="/apps/knowgraph/manifest.json" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><circle cx=%2232%22 cy=%2232%22 r=%2228%22 fill=%22%230b0d13%22 stroke=%22%2361dafb%22 stroke-width=%224%22/><circle cx=%2232%22 cy=%2232%22 r=%226%22 fill=%22%2361dafb%22/></svg>" />
+    <meta name="description" content="Study workspace for senior React and Rails interviews: a concept dependency graph, study cards and an AI mentor that grades your explanations." />
+    <title>Learning Workspace: React and Rails interview maps</title>
+    <script type="module" crossorigin src="/apps/knowgraph/assets/index-BHFdpvl5.js"></script>
+    <link rel="stylesheet" crossorigin href="/apps/knowgraph/assets/index-STLaw7IX.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

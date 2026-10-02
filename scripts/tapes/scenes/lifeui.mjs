@@ -86,6 +86,7 @@ function seed() {
 
 export default {
   base: '/apps/lifeui/',
+  spa: true,
   viewport: [1440, 900],
   clock: [15, 24],
   themeAttr: 'data-theme',

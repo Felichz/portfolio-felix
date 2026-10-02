@@ -74,6 +74,8 @@ export interface Tape {
   app: {
     entry: string;
     readySelector: string;
+    /** A single-page app: it boots from its index.html at any route (the bridge sets the route). */
+    spa?: boolean;
     storage: string[];
     themeKey?: string;
     restore?: string[];

@@ -177,6 +177,7 @@ const out = {
   app: {
     entry: scene.base,
     readySelector: scene.readySelector,
+    spa: scene.spa,
     storage: scene.storage,
     themeKey: scene.themeKey,
     restore: scene.restore,

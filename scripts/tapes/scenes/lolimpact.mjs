@@ -10,6 +10,7 @@ const PROFILE = '/api/profile?riot_id=' + encodeURIComponent('LP Felix#LAS') + '
 export default {
   base: '/apps/lolimpact/',
   start: '?rid=LP%20Felix%23LAS&region=LAS#/partidas/LA2_1626772172',
+  spa: true,
   viewport: [1440, 900],
   clock: [15, 24],
   themeAttr: 'data-theme',
