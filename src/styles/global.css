@@ -624,21 +624,26 @@ kbd .icon { width: 12px; height: 12px; }
 .plate[data-live]:hover { scale: 1.025; box-shadow: 0 0 0 1px var(--line-2), 0 30px 70px -30px color-mix(in oklab, var(--accent, var(--ink)) 45%, transparent), var(--shadow-lg); }
 @media (prefers-reduced-motion: reduce) { .plate[data-live]:hover { scale: none; } }
 .plate[data-live] .motion-btn { display: none; }
-.lights { display: none; }
+.lights-pair { display: none; }
 html.live-ok .plate[data-app], html.live-ok .plate[data-app] .zoom { cursor: default; }
 html.live-ok .plate[data-app] .plate-chrome { position: relative; }
 html.live-ok .plate[data-app] :is(.plate-dots, .motion-btn) { display: none; }
-html.live-ok .plate[data-app] .lights, .thaw .lights { display: flex; }
+html.live-ok .plate[data-app] .lights-pair, .thaw .lights-pair { display: block; }
 
 /* Window lights (src/scripts/live.ts), as on a Mac: red closes, yellow minimizes, green zooms; the ones
-   that can't act are grey. They show their marks under the pointer, and move with transform only. */
+   that can't act are grey, and they show their marks under the pointer. A set in each corner; only
+   the one on the pointer's side shows. */
+.lights-pair { position: absolute; inset: 0; pointer-events: none; }
 .lights {
   position: absolute;
   top: calc(50% - 6px);
   left: 12px;
+  display: flex;
   gap: 8px;
-  will-change: transform;
+  pointer-events: auto;
 }
+.lights--right { left: auto; right: 12px; }
+.lights-pair[data-side='left'] .lights--right, .lights-pair[data-side='right'] .lights--left { opacity: 0; pointer-events: none; }
 .light {
   display: grid;
   place-items: center;
@@ -657,7 +662,7 @@ html.live-ok .plate[data-app] .lights, .thaw .lights { display: flex; }
 .light--min { --l: #febc2e; }
 .light--zoom { --l: #28c840; }
 .light:disabled { --l: color-mix(in oklab, var(--chrome-ink) 26%, transparent); box-shadow: none; cursor: default; }
-.light svg { width: 8px; height: 8px; opacity: 0; transition: opacity 0.15s; }
+.light svg { width: 9px; height: 9px; opacity: 0; transition: opacity 0.15s; }
 .lights:hover .light:not(:disabled) svg, .light:focus-visible svg { opacity: 1; }
 .light:not(:disabled):hover { scale: 1.15; }
 .light:focus-visible { outline: 2px solid var(--chrome-ink); outline-offset: 2px; }

@@ -323,9 +323,9 @@ const sessionFor = (plate: HTMLElement) => {
 
 // ---------------------------------------------------------------------------------------------------
 // Window lights: the only controls on a live preview's bar, as on a Mac. In the preview the green one
-// opens the app in a window; in the window, red and yellow light up and take it back. They keep to
-// the side of the window the pointer is on, so they're always at hand, and that they move at all
-// says they're real.
+// opens the app in a window; in the window, red and yellow light up and take it back. There's a set
+// in each corner of the bar and only the one on the pointer's side shows, so they're always at hand,
+// and that they answer the pointer at all says they're real.
 // ---------------------------------------------------------------------------------------------------
 
 const glyph = (d: string) =>
@@ -333,58 +333,59 @@ const glyph = (d: string) =>
 const GLYPHS = {
   close: glyph('<path d="m7 7 10 10M17 7 7 17"/>'),
   min: glyph('<path d="M6 12h12"/>'),
-  zoom: glyph('<path d="M6.5 17.5v-7l7 7zM17.5 6.5v7l-7-7z" fill="currentColor" stroke="none"/>'),
-  unzoom: glyph('<path d="M11 13H4l7 7zM13 11h7l-7-7z" fill="currentColor" stroke="none"/>'),
+  // Two corners pointing out (zoom) or in (back), as on a Mac.
+  zoom: glyph('<path d="M6 6h9l-9 9zM18 18H9l9-9z" fill="currentColor" stroke="none"/>'),
+  unzoom: glyph('<path d="M11.5 11.5H3.5l8-8zM12.5 12.5h8l-8 8z" fill="currentColor" stroke="none"/>'),
 };
 
 function lightsHTML(mode: 'preview' | 'window', name: string) {
   const open = mode === 'window';
   const b = (kind: 'close' | 'min' | 'zoom', label: string, on: boolean, g = GLYPHS[kind]) =>
     `<button class="light light--${kind}" type="button" data-light="${kind}" aria-label="${label}"${on ? '' : ' disabled'}>${g}</button>`;
-  return `<span class="lights" data-side="left">${b('close', `Close ${name}`, open)}${b('min', `Minimize ${name}`, open)}${
-    open ? b('zoom', `Restore ${name}`, true, GLYPHS.unzoom) : b('zoom', `Open ${name} in a window`, true)
-  }</span>`;
+  const set = (side: 'left' | 'right') =>
+    `<span class="lights lights--${side}"${side === 'right' ? ' inert' : ''}>${b('close', `Close ${name}`, open)}${b('min', `Minimize ${name}`, open)}${
+      open ? b('zoom', `Restore ${name}`, true, GLYPHS.unzoom) : b('zoom', `Open ${name} in a window`, true)
+    }</span>`;
+  return `<span class="lights-pair" data-side="left">${set('left')}${set('right')}</span>`;
 }
 
-const LIGHTS_PAD = 12;
-const lightsSpan = (lights: HTMLElement) => (lights.parentElement?.clientWidth ?? 0) - lights.offsetWidth - 2 * LIGHTS_PAD;
-
-/** Puts the lights in a corner at once. */
-function placeLights(lights: HTMLElement, side: 'left' | 'right') {
-  lights.getAnimations().forEach((a) => a.cancel());
-  lights.dataset.side = side;
-  lights.style.transform = side === 'right' ? `translateX(${lightsSpan(lights)}px)` : '';
+/** Shows the set in one corner at once. */
+function placeLights(pair: HTMLElement, side: 'left' | 'right') {
+  pair.dataset.side = side;
+  pair.querySelectorAll<HTMLElement>('.lights').forEach((set) => {
+    set.getAnimations().forEach((a) => a.cancel());
+    set.inert = !set.classList.contains(`lights--${side}`);
+  });
 }
 
 /**
- * Sends the lights to the side the pointer is on (`f`: its position across the window, 0 to 1, with a
- * dead band in the middle). They speed up as they go, stretched by the speed, hit the far corner,
- * squash against it and settle with a small bounce.
+ * Shows the set on the side the pointer is on (`f`: its position across the window, 0 to 1, with a
+ * dead band in the middle). Each set comes in from its own edge and leaves toward the middle: the left
+ * one arrives moving right and leaves moving right, the right one the other way round.
  */
-function moveLights(lights: HTMLElement | null | undefined, f: number) {
-  if (!lights?.isConnected) return;
-  const now = lights.dataset.side === 'right' ? 'right' : 'left';
+function moveLights(pair: HTMLElement | null | undefined, f: number) {
+  if (!pair?.isConnected) return;
+  const now = pair.dataset.side === 'right' ? 'right' : 'left';
   const side = f > 0.56 ? 'right' : f < 0.44 ? 'left' : now;
   if (side === now) return;
-  const bar = lights.parentElement!;
-  const k = bar.getBoundingClientRect().width / bar.clientWidth || 1;
-  const from = (lights.getBoundingClientRect().left - bar.getBoundingClientRect().left) / k - LIGHTS_PAD;
-  placeLights(lights, side);
-  const to = side === 'right' ? lightsSpan(lights) : 0;
-  if (reduce.matches || Math.abs(to - from) < 1) return;
-  const dir = Math.sign(to - from);
-  // Scaled from the leading edge: the stretch trails behind, and the squash keeps it on the wall.
-  lights.style.transformOrigin = dir > 0 ? '100% 50%' : '0 50%';
-  const at = (x: number, sx = 1, sy = 1) => `translateX(${x}px) scale(${sx}, ${sy})`;
-  lights.animate(
+  placeLights(pair, side);
+  if (reduce.matches) return;
+  const shift = (set: 'left' | 'right') => (set === 'left' ? 10 : -10); // the way that set moves
+  const into = pair.querySelector<HTMLElement>(`.lights--${side}`)!;
+  const out = pair.querySelector<HTMLElement>(`.lights--${now}`)!;
+  into.animate(
     [
-      { transform: at(from), easing: 'cubic-bezier(0.55, 0, 0.9, 0.45)' },
-      { offset: 0.5, transform: at(from + (to - from) * 0.58, 1.5, 0.8), easing: 'cubic-bezier(0.2, 0.4, 0.5, 1)' },
-      { offset: 0.72, transform: at(to, 0.78, 1.15), easing: 'cubic-bezier(0.3, 0, 0.35, 1)' },
-      { offset: 0.87, transform: at(to - dir * 3, 1.05, 0.96), easing: 'ease-in-out' },
-      { transform: at(to) },
+      { opacity: 0, transform: `translateX(${-shift(side)}px)` },
+      { opacity: 1, transform: 'none' },
     ],
-    { duration: 600 },
+    { duration: 300, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', delay: 60, fill: 'backwards' },
+  );
+  out.animate(
+    [
+      { opacity: 1, transform: 'none' },
+      { opacity: 0, transform: `translateX(${shift(now)}px)` },
+    ],
+    { duration: 220, easing: 'cubic-bezier(0.4, 0, 1, 1)' },
   );
 }
 
@@ -499,8 +500,8 @@ async function zoom(plate: HTMLElement) {
   if (chrome) oldBar.append(chrome);
   document.body.append(overlay);
   // The lights start on the side they were on in the preview.
-  const lights = bar.querySelector<HTMLElement>('.lights')!;
-  placeLights(lights, plate.querySelector<HTMLElement>('.lights')?.dataset.side === 'right' ? 'right' : 'left');
+  const lights = bar.querySelector<HTMLElement>('.lights-pair')!;
+  placeLights(lights, plate.querySelector<HTMLElement>('.lights-pair')?.dataset.side === 'right' ? 'right' : 'left');
   const layers = pageLayers();
   const origin = `${r.left + r.width / 2}px ${r.top + r.height / 2}px`;
   layers.forEach((el) => (el.style.transformOrigin = origin));
@@ -621,9 +622,8 @@ export function initLive() {
     true,
   );
 
-  // Hover: the preview lifts and the live app takes its place; the showcase holds while it's hovered,
-  // and the lights keep to the pointer's side of it.
-  const lightsOf = (plate: HTMLElement) => plate.querySelector<HTMLElement>('.lights');
+  // Hover: the preview lifts and the live app takes its place; the showcase holds while it's hovered.
+  const lightsOf = (plate: HTMLElement) => plate.querySelector<HTMLElement>('.lights-pair');
   for (const plate of plates) {
     plate.addEventListener('pointerenter', (e) => {
       if (e.pointerType !== 'mouse' || !desktop()) return;
@@ -631,19 +631,10 @@ export function initLive() {
       const s = sessions.get(plate);
       if (s) void s.goLive();
     });
-    plate.addEventListener('pointermove', (e) => {
-      if (e.target instanceof HTMLIFrameElement) return; // the app reports its own (live:pointer)
-      const r = plate.getBoundingClientRect();
-      moveLights(lightsOf(plate), (e.clientX - r.left) / r.width);
-    });
     plate.addEventListener('live:pointer', (e) => moveLights(lightsOf(plate), (e as CustomEvent<number>).detail));
     plate.addEventListener('pointerleave', () => {
       // (Moving into the app's frame isn't leaving.)
-      requestAnimationFrame(() => {
-        if (plate.matches(':hover')) return;
-        document.dispatchEvent(new CustomEvent('live:hold', { detail: false }));
-        moveLights(lightsOf(plate), 0);
-      });
+      requestAnimationFrame(() => !plate.matches(':hover') && document.dispatchEvent(new CustomEvent('live:hold', { detail: false })));
     });
   }
   // A preview booted under the pointer becomes live at once.
@@ -693,6 +684,25 @@ export function initLive() {
     { threshold: [0, 0.6] },
   );
   plates.forEach((p) => seen.observe(p));
+  // The lights of the previews on screen keep to the pointer's side of them, wherever it is on the page
+  // (over an app, the app reports it: live:pointer). Read once a frame.
+  let px = -1;
+  let queued = 0;
+  addEventListener(
+    'pointermove',
+    (e) => {
+      px = e.clientX;
+      queued ||= requestAnimationFrame(() => {
+        queued = 0;
+        if (!ok() || zooming) return;
+        for (const p of visible) {
+          const r = p.getBoundingClientRect();
+          moveLights(lightsOf(p), (px - r.left) / r.width);
+        }
+      });
+    },
+    { passive: true },
+  );
   // The theme switch reaches the live apps (it reaches the tapes in tape.ts).
   new MutationObserver(() => sessions.forEach((s) => s.syncTheme())).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   new MutationObserver(() => plates.forEach(update)).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['inert'] });
