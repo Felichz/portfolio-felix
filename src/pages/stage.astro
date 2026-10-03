@@ -54,8 +54,10 @@
       .tape-cursor.down svg { transform: scale(0.84); }
 
       /* The live app: it runs under the tape at the recorded 1440x900, scaled like the tape, invisible
-         until it takes over — and not rendered either (content-visibility): a booting, hidden app costs
-         parse and script, not paint. In a window it's laid out at the stage's own size. */
+         until it takes over. (Tried content-visibility: hidden while unseen — a booting app would cost
+         parse and script, not paint — but a non-rendered document never fires its frames, and the app's
+         readiness is reported from two of them: every boot hung. The opacity stays; the paint is what
+         the boot's quarter pace keeps cheap.) In a window it's laid out at the stage's own size. */
       .live-app {
         position: absolute;
         top: 0;
@@ -67,9 +69,8 @@
         transform: scale(var(--live-k, 1));
         opacity: 0;
         pointer-events: none;
-        content-visibility: hidden;
       }
-      .live-app.shown { opacity: 1; pointer-events: auto; content-visibility: visible; transition: opacity 0.16s ease-out; }
+      .live-app.shown { opacity: 1; pointer-events: auto; transition: opacity 0.16s ease-out; }
       html[data-window] .live-app { width: 100%; height: 100%; transform: none; }
       @media (prefers-reduced-motion: reduce) {
         .live-app.shown { transition: none; }
