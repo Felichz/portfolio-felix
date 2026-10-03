@@ -12,6 +12,8 @@
  * - setTimeout and setInterval run on that clock. Moving it forward fires what fell due, the way the
  *   recording lived through it (a toast that had time to leave leaves); while it's frozen, nothing
  *   timed fires early.
+ * - Its backend answers as it did while the scene was recorded: fetches the scene made get the
+ *   recorded responses (anything else goes to the network as usual).
  * - Once the app has painted its first screen, the portfolio is told.
  * The app's own state (localStorage) was already seeded by the portfolio, same origin.
  */
@@ -22,11 +24,22 @@
   } catch (e) {}
   if (!handoff) return;
 
+  // ---- The route, for a single-page app loaded from its index.html: set once, before its code runs.
+  if (handoff.route) {
+    history.replaceState(history.state, '', handoff.route);
+    handoff.route = undefined;
+  }
+
   // ---- The clock
   var RealDate = Date;
   var base = handoff.clock;
   var realBase = RealDate.now();
   var frozen = true;
+  // A later page of an app of several pages picks up the clock where the last one left it, running.
+  if (handoff.running) {
+    base = realBase + handoff.offset;
+    frozen = false;
+  }
   var now = function () {
     return frozen ? base : base + (RealDate.now() - realBase);
   };
@@ -94,12 +107,55 @@
     base = ms;
     realBase = RealDate.now();
     frozen = !!freeze;
+    handoff.running = !freeze;
+    handoff.offset = ms - realBase;
     timers.forEach(schedule);
     if (tick)
       timers.forEach(function (t) {
         if (t.every && typeof t.fn === 'function') t.fn.apply(window, t.args);
       });
   };
+
+  /**
+   * Holds the clock where it is (nothing timed fires) while nobody can see the app, or lets it run on
+   * from there; a clock that was frozen stays frozen.
+   */
+  var heldFrozen = null;
+  handoff.hold = function (on) {
+    if (on) {
+      if (heldFrozen !== null) return;
+      heldFrozen = frozen;
+      base = now();
+      realBase = RealDate.now();
+      frozen = true;
+    } else {
+      if (heldFrozen === null) return;
+      realBase = RealDate.now();
+      frozen = heldFrozen;
+      heldFrozen = null;
+    }
+    timers.forEach(schedule);
+  };
+
+  // ---- The backend, as the scene got it
+  if (handoff.network && handoff.network.length) {
+    var answers = {};
+    handoff.network.forEach(function (x) {
+      answers[x.m + ' ' + x.u] = x;
+    });
+    var keyOf = function (method, url) {
+      var u = new URL(url, location.href);
+      return method.toUpperCase() + ' ' + (u.origin === location.origin ? u.pathname + u.search : u.href);
+    };
+    var realFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      var req = typeof Request !== 'undefined' && input instanceof Request ? input : null;
+      var method = (init && init.method) || (req && req.method) || 'GET';
+      var x = answers[keyOf(method, req ? req.url : String(input))];
+      if (!x) return realFetch(input, init);
+      return Promise.resolve(new Response(x.b, { status: x.s, headers: { 'content-type': x.h } }));
+    };
+  }
 
   // ---- Ready: the first screen is in the DOM, its fonts are loaded, and it has been painted.
   var report = function () {

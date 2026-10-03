@@ -113,6 +113,27 @@
       });
   };
 
+  /**
+   * Holds the clock where it is (nothing timed fires) while nobody can see the app, or lets it run on
+   * from there; a clock that was frozen stays frozen.
+   */
+  var heldFrozen = null;
+  handoff.hold = function (on) {
+    if (on) {
+      if (heldFrozen !== null) return;
+      heldFrozen = frozen;
+      base = now();
+      realBase = RealDate.now();
+      frozen = true;
+    } else {
+      if (heldFrozen === null) return;
+      realBase = RealDate.now();
+      frozen = heldFrozen;
+      heldFrozen = null;
+    }
+    timers.forEach(schedule);
+  };
+
   // ---- The backend, as the scene got it
   if (handoff.network && handoff.network.length) {
     var answers = {};

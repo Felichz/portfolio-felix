@@ -50,7 +50,30 @@ export const APPS = {
 
 const walk = (dir) => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]));
 
-const only = process.argv[2];
+const only = process.argv.slice(2).find((a) => !a.startsWith('--'));
+
+// With --bridge, the built apps stay as they are and only get the current bridge (and its hash), in
+// place of the one they have: for a bridge change, without rebuilding every app from its repo.
+if (process.argv.includes('--bridge')) {
+  const bridge = readFileSync(resolve(here, 'bridge.js'), 'utf8');
+  const hash = `'sha256-${createHash('sha256').update(bridge).digest('base64')}'`;
+  for (const id of Object.keys(APPS)) {
+    if (only && only !== id) continue;
+    for (const file of walk(resolve(root, 'public/apps', id))) {
+      if (extname(file) !== '.html') continue;
+      const text = readFileSync(file, 'utf8');
+      const start = text.indexOf(`<script data-app="${id}">`);
+      const end = text.indexOf('</script>', start);
+      if (start < 0) continue;
+      const old = text.slice(start + `<script data-app="${id}">`.length, end);
+      const oldHash = `'sha256-${createHash('sha256').update(old).digest('base64')}'`;
+      writeFileSync(file, text.slice(0, start) + `<script data-app="${id}">${bridge}` + text.slice(end).replace(oldHash, hash));
+    }
+    console.log(`bridge updated in public/apps/${id}/`);
+  }
+  process.exit(0);
+}
+
 for (const [id, app] of Object.entries(APPS)) {
   if (only && only !== id) continue;
   const out = resolve(root, 'public/apps', id);
