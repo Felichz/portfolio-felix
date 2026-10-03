@@ -100,6 +100,8 @@ Stages load from `PUBLIC_STAGE_ORIGIN` when it's set at build time: another regi
 
 ```bash
 node scripts/perf/check.mjs              # every preview plays, goes live, and the stage is out of process
+node scripts/perf/live.mjs [label]       # fps of every interaction: the cycle, hover to live, the window
+node scripts/perf/scroll.mjs             # fps of scrolling the portfolio: slow down, fast back up
 node scripts/perf/trace.mjs <label>      # traces of the showcase's moments, summarized per process
 node scripts/perf/ab.mjs base,noshadow   # one thing switched off at a time, alternating runs
 ```

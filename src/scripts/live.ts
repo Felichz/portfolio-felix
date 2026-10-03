@@ -399,6 +399,9 @@ async function zoom(plate: HTMLElement) {
   // this with the resize the move brings, on that frame).
   player.send({ k: 'mode', window: true });
   app.inWindow = true;
+  // The overlay settles into its first layout on a frame of its own, so the one the morph captures
+  // doesn't also pay for a subtree the page has never laid out.
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
   const steps = stepping(true, FLIGHT);
   await morph(true, FLIGHT, steps);
   overlay.classList.add('landed');

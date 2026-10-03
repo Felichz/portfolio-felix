@@ -76,12 +76,27 @@ export function initDeck() {
     if (opts.focus) panels[j]!.focus({ preventScroll: true });
   };
 
-  // Scroll: the active section changes once the next one is past the middle.
+  // Scroll: the active section changes once the next one is past the middle. While the page is being
+  // flung, the ambient light steps between its colors instead of drifting: a drift repaints the whole
+  // fixed background on every frame for the better part of a second, panel after panel at that speed.
+  // At rest and at reading speed it drifts as usual.
   let raf = 0;
   let settle = 0;
+  let fast = 0;
+  let lastTop = stage.scrollTop;
+  let lastAt = 0;
   stage.addEventListener(
     'scroll',
     () => {
+      const now = performance.now();
+      const v = Math.abs(stage.scrollTop - lastTop) / Math.max(1, now - lastAt);
+      lastTop = stage.scrollTop;
+      lastAt = now;
+      if (v > 1.1) {
+        root.classList.add('deck-fast');
+        clearTimeout(fast);
+        fast = window.setTimeout(() => root.classList.remove('deck-fast'), 160);
+      }
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => setActive(nearest()));
       clearTimeout(settle);

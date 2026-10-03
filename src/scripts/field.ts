@@ -45,6 +45,15 @@ export function initField() {
   let sample = false;
   let sampledAt = 0;
   let raf = 0;
+  // While a live app's window is open, the light rests: the pointer is in the app's own process, and
+  // the page under the window is inert; there is nothing for it to follow there.
+  let held = false;
+  document.addEventListener('thaw:open', () => {
+    held = true;
+    want = 0;
+    kick();
+  });
+  document.addEventListener('thaw:close', () => (held = false));
 
   const resize = () => {
     dpr = Math.min(devicePixelRatio || 1, 2);
@@ -150,7 +159,7 @@ export function initField() {
   addEventListener(
     'pointermove',
     (e) => {
-      if (e.pointerType !== 'mouse' || !fine.matches || reduce.matches) return;
+      if (e.pointerType !== 'mouse' || !fine.matches || reduce.matches || held) return;
       // First move: start the light where the pointer is, instead of sliding in from a corner.
       if (want === 0 && on < 0.01) {
         pos.x = e.clientX;

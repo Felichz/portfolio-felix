@@ -269,6 +269,9 @@ a:hover { text-decoration-thickness: 2px; }
   opacity: var(--grain);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
+/* While the page is being flung (src/scripts/deck.ts), the light steps between panels' colors
+   instead of drifting: a drift repaints this whole fixed layer on every frame, panel after panel. */
+:root.deck-fast .ambient { transition: none; }
 /* The cursor light (src/scripts/field.ts): a soft pool and a small canvas of dots around the pointer,
    both moved with transforms, so a frame only touches that area. They sit outside .ambient so the
    static layers there never repaint. */

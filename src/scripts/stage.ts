@@ -74,6 +74,9 @@ addEventListener('message', (e: MessageEvent<ToStage>) => {
       return;
     case 'load':
       core.preload = 'auto';
+      // Warmed means built, not just fetched: the snapshot, its fonts and a filmed clip are ready
+      // before the preview is turned to, so activating it only starts the clock.
+      void core.ready();
       return;
     case 'play':
       // A live app is the preview now: its tape stays where it stopped.
