@@ -179,6 +179,7 @@ export class TapePlayer extends HTMLElement {
     // The live app inside may play media (PlaySync's YouTube player) and go full screen.
     frame.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
     frame.src = `${this.origin}/stage/#${encodeURIComponent(this.tapeId)}`;
+    performance.mark(`live:mount:${this.tapeId}:start`);
     this.#frame = frame;
     this.append(frame);
     // Another site that doesn't answer (a local server listening on one name only, say) isn't worth a
@@ -196,6 +197,7 @@ export class TapePlayer extends HTMLElement {
     switch (m.k) {
       case 'hello': {
         this.#hello = true;
+        performance.mark(`live:mount:${this.tapeId}:end`);
         const queue = this.#queue;
         this.#queue = [];
         const name = this.closest('[data-slide], section')?.querySelector('.slide-name, #cs-name')?.textContent?.replace(/\s+/g, ' ').trim() ?? this.tapeId;

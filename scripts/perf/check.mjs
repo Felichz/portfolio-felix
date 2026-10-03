@@ -1,5 +1,13 @@
 // Functional check of the showcase's live previews: countdown, tape, hover to live, window. Screenshots
 // go to scripts/perf/out/check-*.png.
+//
+//   node scripts/perf/check.mjs                     # functional only
+//   IDS=lifeui,lolimpact node scripts/perf/check.mjs --gate          # + frame budgets, exit 1 on breach
+//   IDS=lifeui node scripts/perf/check.mjs --gate --throttle         # budgets at 2x CPU throttling
+//
+// Gate budgets, per interaction phase: frame-interval p99 <= 16.7 ms and no gap over 100 ms (the
+// arrive phase — the slide turning over — is reported but not gated). The page's black box (`__bb`)
+// is read for any freeze dumps it caught along the way.
 import puppeteer from 'puppeteer-core';
 import { mkdtempSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -10,6 +18,8 @@ const out = join(here, 'out');
 mkdirSync(out, { recursive: true });
 const BASE = process.env.BASE ?? 'http://localhost:4391';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const gate = process.argv.includes('--gate');
+const throttle = process.argv.includes('--throttle');
 const browser = await puppeteer.launch({
   executablePath: ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome'].find(existsSync),
   headless: false, defaultViewport: null, userDataDir: mkdtempSync(join(tmpdir(), 'perf-check-')),
@@ -20,20 +30,40 @@ const [page] = await browser.pages();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+await page.evaluateOnNewDocument(() => {
+  if (window !== window.top) return;
+  const F = (window.__frames = []);
+  const tick = (t) => { F.push(t); requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+});
+if (throttle) await page.emulateCPUThrottling(2);
 const ids = (process.env.IDS ?? 'lifeui').split(',');
 await page.goto(BASE + '/', { waitUntil: 'load' });
 await sleep(1500);
 await page.mouse.move(700, 400, { steps: 5 });
 await page.keyboard.press('ArrowDown');
 await sleep(2000);
+
+const now = () => page.evaluate(() => performance.now());
+const phases = [];
+const phase = async (name, fn) => {
+  const t0 = await now();
+  const extra = (await fn()) ?? {};
+  const t1 = await now();
+  phases.push({ name, t0, t1, ...extra });
+  process.stdout.write(`  ${name}\n`);
+};
+
 for (const id of ids) {
   await page.mouse.move(1530, 770);
-  await page.evaluate((id) => {
-    const i = [...document.querySelectorAll('[data-slide]')].findIndex((s) => s.dataset.id === id);
-    document.querySelectorAll('[data-go]')[i]?.click();
-  }, id);
-  await page.mouse.move(1530, 770);
-  await sleep(4000);
+  await phase(`${id}:arrive`, async () => {
+    await page.evaluate((id) => {
+      const i = [...document.querySelectorAll('[data-slide]')].findIndex((s) => s.dataset.id === id);
+      document.querySelectorAll('[data-go]')[i]?.click();
+    }, id);
+    await page.mouse.move(1530, 770);
+    await sleep(4000);
+  });
   const st = await page.evaluate(() => {
     const slide = document.querySelector('.slide[data-state="active"]');
     const plate = slide.querySelector('.plate');
@@ -44,14 +74,69 @@ for (const id of ids) {
   console.log(id, JSON.stringify(st));
   await page.screenshot({ path: join(out, `check-${id}-tape.png`) });
   const r = await page.evaluate(() => { const b = document.querySelector('.slide[data-state="active"] .plate').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
-  const t0 = await page.evaluate(() => performance.now());
-  await page.mouse.move(r.x - 40, r.y, { steps: 4 });
-  for (let i = 0; i < 30; i++) { await page.mouse.move(r.x - 40 + (i % 5), r.y); await sleep(30); }
-  const live = await page.evaluate((t0) => new Promise((r) => { const p = document.querySelector('.slide[data-state="active"] .plate'); const t = () => (p.hasAttribute('data-live') ? r(Math.round(performance.now() - t0)) : setTimeout(t, 10)); t(); }), t0);
-  console.log('  live', live, 'ms after hover; out-of-process frames:', (await (await browser.target().createCDPSession()).send('Target.getTargets')).targetInfos.filter((t) => t.type === 'iframe').map((t) => t.url.replace(/^https?:\/\//, '')).join(' '));
+  const wiggle = async (ms) => {
+    const end = Date.now() + ms;
+    let a = 0;
+    while (Date.now() < end) { a += 0.4; await page.mouse.move(r.x + Math.cos(a) * 30, r.y + Math.sin(a) * 30); await sleep(10); }
+  };
+  await phase(`${id}:hover`, async () => {
+    const t0 = await now();
+    await page.mouse.move(r.x - 40, r.y, { steps: 4 });
+    let live = false;
+    for (let i = 0; i < 250 && !live; i++) {
+      await wiggle(60);
+      live = await page.evaluate(() => document.querySelector('.slide[data-state="active"] .plate').hasAttribute('data-live'));
+    }
+    return { goLive: live ? Math.round((await now()) - t0) : null };
+  });
+  console.log('  live', phases.at(-1)?.goLive ?? null, 'ms after hover; out-of-process frames:', (await (await browser.target().createCDPSession()).send('Target.getTargets')).targetInfos.filter((t) => t.type === 'iframe').map((t) => t.url.replace(/^https?:\/\//, '')).join(' '));
   await page.screenshot({ path: join(out, `check-${id}-live.png`) });
+  await phase(`${id}:use`, () => wiggle(2000));
+  const zoom = await page.evaluate(() => {
+    const g = document.querySelector('.slide[data-state="active"] .plate .lights--left .light--zoom');
+    if (!g) return null;
+    const b = g.getBoundingClientRect();
+    return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+  });
+  if (zoom) {
+    await phase(`${id}:open`, async () => {
+      await page.mouse.move(zoom.x, zoom.y, { steps: 4 });
+      await page.mouse.click(zoom.x, zoom.y);
+      await sleep(1200);
+    });
+    await phase(`${id}:window`, () => wiggle(2000));
+    await phase(`${id}:close`, async () => {
+      await page.keyboard.press('Escape');
+      await sleep(1200);
+    });
+  }
   await page.mouse.move(1530, 770);
   await sleep(500);
 }
+
+// ---- Frame budgets
+const frames = await page.evaluate(() => window.__frames.slice());
+const bb = await page.evaluate(() => (window.__bb ? window.__bb.dumps : []));
+const VSYNC = 1000 / 240;
+const pct = (a, p) => (a.length ? a[Math.min(a.length - 1, Math.floor((a.length - 1) * p))] : 0);
+let bad = 0;
+console.log('\nphase               fps  p99ms  maxms  janky  dropped' + (gate ? '  gate' : ''));
+for (const ph of phases) {
+  const f = frames.filter((t) => t >= ph.t0 && t <= ph.t1);
+  const iv = f.slice(1).map((t, i) => t - f[i]).sort((a, b) => a - b);
+  const span = Math.max(1, ph.t1 - ph.t0);
+  const p99 = +pct(iv, 0.99).toFixed(1);
+  const max = Math.round(iv.at(-1) ?? 0);
+  const janky = +((iv.filter((d) => d > 1000 / 60).reduce((a, d) => a + d, 0) / span) * 100).toFixed(1);
+  const dropped = iv.reduce((a, d) => a + Math.max(0, Math.round(d / VSYNC) - 1), 0);
+  const ok = p99 <= 16.7 && max <= 100;
+  if (gate && !ok && !ph.name.includes('arrive')) bad++;
+  console.log(ph.name.padEnd(18), String(Math.round(f.length / (span / 1000))).padStart(4), String(p99).padStart(6), String(max).padStart(6), (janky + '%').padStart(6), String(dropped).padStart(7), gate ? '  ' + (ok ? 'ok' : 'BREACH') : '');
+}
+if (bb.length) console.log('\nblackbox dumps:', JSON.stringify(bb).slice(0, 1500));
 console.log('errors:', errors);
 await browser.close();
+if (gate) {
+  console.log(bad || errors.length ? `\nGATE: FAIL (${bad} phase(s) over budget${errors.length ? `, ${errors.length} page errors` : ''})` : '\nGATE: PASS');
+  process.exit(bad || errors.length ? 1 : 0);
+}

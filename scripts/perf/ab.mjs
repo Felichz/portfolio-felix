@@ -26,6 +26,8 @@ const CSS = {
   nocursor: '.tape-cursor { display: none !important; }',
   noshadow: '.plate, .plate *, .slide-media, .slide-media * { box-shadow: none !important; filter: none !important; }',
   noripple: '.light--zoom::after { animation: none !important; }',
+  noambtrans: '.ambient, .cursor-light { transition: none !important; }',
+  grainlayer: '.ambient::after { will-change: transform; }',
   notilt: '.slide-media .plate { transform: none !important; }',
   noclip: '.plate-frame, .plate-motion, .plate { overflow: visible !important; border-radius: 0 !important; }',
   noambient: '.ambient, .cursor-light { display: none !important; }',
