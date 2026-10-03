@@ -7,9 +7,19 @@ const accent = (p: Project) =>
   `--a-light:${p.accent.light};--a-dark:${p.accent.dark};--on-light:${p.accent.onLight};--on-dark:${p.accent.onDark}`;
 const host = (url: string) => new URL(url).host;
 const total = String(projects.length).padStart(2, '0');
+// The panel's room light resolved at build time, one rule per product: a product change flips one
+// attribute instead of four custom properties rippling through the panel's whole subtree. The rail
+// items and slides keep their own inline accents (their colors never change on a switch); the
+// section-level variable only ever fed the light.
+const glowCSS = projects
+  .map(
+    (p) =>
+      `[data-p='${p.id}'] { --panel-glow: ${p.accent.light}; }\n:root[data-theme='dark'] [data-p='${p.id}'] { --panel-glow: ${p.accent.dark}; }`,
+  )
+  .join('\n');
 ---
 
-<section id="work" class="panel" data-label="Work" tabindex="-1" aria-labelledby="work-title" data-accent style={accent(projects[0]!)} data-work>
+<section id="work" class="panel" data-label="Work" tabindex="-1" aria-labelledby="work-title" data-p={projects[0]!.id} data-work>
   <div class="panel-inner work">
     <aside class="rail glass" data-reveal style="--d:0">
       <header class="rail-head">
@@ -119,6 +129,7 @@ const total = String(projects.length).padStart(2, '0');
   </div>
 
   <!-- A deep link like #work/lifeui opens on that product before the first paint. -->
+  <style is:global set:html={glowCSS} />
   <script is:inline>
     (() => {
       const [panel, sub] = decodeURIComponent(location.hash.slice(1)).split('/');
@@ -164,6 +175,7 @@ const total = String(projects.length).padStart(2, '0');
     padding-block: 10px;
     overflow-y: auto;
     scrollbar-width: none;
+    contain: layout style;
   }
   .rail-list > li { flex: 1 1 0; max-height: 104px; min-height: 0; display: flex; }
   .rail-item {
@@ -279,6 +291,10 @@ const total = String(projects.length).padStart(2, '0');
     visibility: hidden;
     transition: visibility 0s linear 0.7s;
   }
+  /* Pre-rastering (the script): the slide shows for two invisible frames so its textures get built
+     before the switch asks for them. It stays aria-hidden and inert the whole time. */
+  .slide[data-pre] { visibility: visible; transition: none !important; }
+  .slide[data-pre] :is(.slide-media, .slide-head > *, .slide-side > *) { opacity: 0 !important; transform: none !important; transition: none !important; }
   .slide[data-state='active'] { visibility: visible; transition-delay: 0s; z-index: 1; }
 
   .slide-media {
@@ -512,51 +528,74 @@ const total = String(projects.length).padStart(2, '0');
       const timing: KeyframeAnimationOptions = { duration: total, easing: 'linear', fill: 'forwards' };
       count = [fill.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], timing), edge.animate([{ transform: 'translateX(-100%)' }, { transform: 'none' }], timing)];
       count[0]!.onfinish = () => select(index + 1, 'auto');
+      // Near the end of the countdown, the next slide's textures get built (see preraster).
+      clearInterval(preTimer);
+      preTimer = window.setInterval(() => {
+        const a = count[0];
+        if (a && a.playState === 'running' && total > 0 && Number(a.currentTime) / total >= 0.85) preraster(index + 1);
+      }, 400);
       sync();
     };
 
-    // What a product change can wait a frame for: the first frame paints the switch (slide states,
-    // accents); starting the recording, the countdown and the address bar update come on the next
-    // one, instead of fusing into a single long frame.
-    let settleFrame = 0;
-    const settle = () => {
-      if (settleFrame) return;
-      settleFrame = requestAnimationFrame(() => {
-        settleFrame = 0;
-        roll();
-        count0();
-        if (active) history.replaceState(history.state, '', `#work/${slides[index]!.dataset.id}`);
-      });
+    // The incoming slide's textures get built ahead of its turn: it shows for two invisible frames
+    // (still aria-hidden and inert), timed from the countdown — which always runs out the same way —
+    // and from a rail hover, whose click follows within a beat. The switch then composes textures
+    // that exist instead of building them.
+    const prerastered = new Set<HTMLElement>();
+    const preraster = (j: number) => {
+      const s = slides[((j % slides.length) + slides.length) % slides.length];
+      if (!s || s.dataset.state === 'active' || prerastered.has(s)) return;
+      prerastered.add(s);
+      s.setAttribute('data-pre', '');
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => s.removeAttribute('data-pre'), 50)));
     };
+    let preTimer = 0;
 
+    // A product change in three modest frames, never one long one. The first is the answer: the rail
+    // turns over and the room light follows. The next brings the slide switch and the countdown. The
+    // last brings what the eye can wait a beat for: the recording over its still, the address, the
+    // neighbors' warming.
+    let change1 = 0;
+    let change2 = 0;
     const select = (i: number, from: 'auto' | 'user' = 'user') => {
       const n = slides.length;
       const j = ((i % n) + n) % n;
       if (j === index && from === 'auto') return;
       const prev = index;
       index = j;
-      slides.forEach((s, k) => {
-        s.dataset.state = k === j ? 'active' : k < j ? 'before' : 'after';
-        s.toggleAttribute('inert', k !== j);
-        k === j ? s.removeAttribute('aria-hidden') : s.setAttribute('aria-hidden', 'true');
-      });
       items.forEach((b, k) => (k === j ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
       if (pos) pos.textContent = String(j + 1).padStart(2, '0');
-      // The whole panel takes on the product's accent, and the room light follows.
-      const s = slides[j]!;
-      for (const k of ['--a-light', '--a-dark', '--on-light', '--on-dark']) root.style.setProperty(k, s.style.getPropertyValue(k));
-      document.dispatchEvent(new CustomEvent('deck:refresh'));
+      root.dataset.p = slides[j]!.dataset.id;
       if (prev !== j) rest(prev);
-      // The products on either side have their stages warmed — queued, one at a time, only while the
-      // page is quiet (src/scripts/live.ts): mounting a tape is a burst never paid under the visitor.
-      document.dispatchEvent(new CustomEvent('live:warm', { detail: [j + 1, j - 1].map((k) => plateOf((((k % n) + n) % n))?.querySelector<HTMLElement & { preload: string }>('tape-player')) }));
-      settle();
-      // Keep the chosen chip in view on phones, scrolling only the strip.
-      const li = items[j]?.parentElement;
-      const strip = li?.parentElement;
-      if (li && strip && strip.scrollWidth > strip.clientWidth) {
-        strip.scrollTo({ left: li.offsetLeft - strip.clientWidth / 2 + li.offsetWidth / 2, behavior: reduce.matches ? 'instant' : 'smooth' });
-      }
+      document.dispatchEvent(new CustomEvent('deck:refresh'));
+      cancelAnimationFrame(change1);
+      change1 = requestAnimationFrame(() => {
+        change1 = 0;
+        slides.forEach((s, k) => {
+          s.dataset.state = k === j ? 'active' : k < j ? 'before' : 'after';
+          s.toggleAttribute('inert', k !== j);
+          k === j ? s.removeAttribute('aria-hidden') : s.setAttribute('aria-hidden', 'true');
+        });
+        prerastered.delete(slides[j]!);
+        count0();
+      });
+      clearTimeout(change2);
+      change2 = window.setTimeout(() => {
+        change2 = 0;
+        roll();
+        if (active) history.replaceState(history.state, '', `#work/${slides[j]!.dataset.id}`);
+        // The products on either side have their stages warmed — queued, one at a time, only while
+        // the page is quiet (src/scripts/live.ts): a mount is a burst never paid under the visitor.
+        document.dispatchEvent(
+          new CustomEvent('live:warm', { detail: [j + 1, j - 1].map((k) => plateOf((((k % n) + n) % n))?.querySelector<HTMLElement & { preload: string }>('tape-player')) }),
+        );
+        // Keep the chosen chip in view on phones, scrolling only the strip.
+        const li = items[j]?.parentElement;
+        const strip = li?.parentElement;
+        if (li && strip && strip.scrollWidth > strip.clientWidth) {
+          strip.scrollTo({ left: li.offsetLeft - strip.clientWidth / 2 + li.offsetWidth / 2, behavior: reduce.matches ? 'instant' : 'smooth' });
+        }
+      }, 120);
     };
 
     const setAuto = (on: boolean) => {
@@ -568,6 +607,8 @@ const total = String(projects.length).padStart(2, '0');
     };
 
     items.forEach((b, i) => b.addEventListener('click', () => select(i)));
+    // A hover on a rail item is a click on its way: the slide it leads to pre-rasters now.
+    items.forEach((b, i) => b.addEventListener('pointerenter', () => preraster(i)));
     // Up and down move through the list, like a menu.
     root.querySelector('.rail-list')?.addEventListener('keydown', (e) => {
       const ev = e as KeyboardEvent;
