@@ -127,6 +127,9 @@ addEventListener('message', (e: MessageEvent<ToStage>) => {
       // (A stage whose app is live keeps everything: only its tape — not the app — would unload.)
       if (!session) core.unload();
       return;
+    case 'pace':
+      session?.setPaceCap(m.n);
+      return;
     case 'mode':
       pendingMode = m.window;
       // (If the move brings no resize, it applies anyway.)

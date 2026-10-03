@@ -27,6 +27,8 @@ export type ToStage =
   | { k: 'warm-bytes' }
   /** Let the tape go entirely (another preview has the stage); a later play rebuilds it. */
   | { k: 'unload' }
+  /** A ceiling for the app's pace, from the page: its frames are the ones the app's render can starve. */
+  | { k: 'pace'; n: number }
   /** Nobody can see it: the app's clock stops and its animations pause. */
   | { k: 'hold'; on: boolean }
   | { k: 'drop' }

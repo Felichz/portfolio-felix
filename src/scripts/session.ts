@@ -546,8 +546,19 @@ export class Session {
   #setPace(n: number) {
     if (n === this.#pace) return;
     this.#pace = n;
-    this.handoff.setPace?.(n);
+    this.#applyPace();
     n > 1 ? this.#restDecorative() : this.#wakeDecorative();
+  }
+
+  /** The page can cap the pace: its frames are the ones the app's render can starve (the stage's own
+     look at its frames can't see GPU time). The lower of the two wins. */
+  paceCap = 4;
+  setPaceCap(n: number) {
+    this.paceCap = Math.max(1, Math.min(4, n | 0));
+    this.#applyPace();
+  }
+  #applyPace() {
+    this.handoff.setPace?.(Math.min(this.#pace, this.paceCap));
   }
   /** Pauses the app's endless animations — a pulse, a spinner: decorative by definition — so the pace
      the loop settles on is one the app can actually hold. They run again at full cadence. */

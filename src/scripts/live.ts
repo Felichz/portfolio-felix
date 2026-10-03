@@ -399,9 +399,11 @@ async function zoom(plate: HTMLElement) {
 
   // ---- In
   document.dispatchEvent(new CustomEvent('thaw:open'));
-  // While this preview has the stage, every other tape lets its document go (a later play rebuilds
-  // it from cache): the machine runs the app and nothing else.
+  // While this preview has the machine, it has all of it: every other tape lets its document go (a
+  // later play rebuilds it from cache) and every other app — held, unseen — goes, to boot warm at
+  // its tape's end when its preview is used again. Nothing renders behind the window's back.
   for (const p of document.querySelectorAll('tape-player')) if (p !== player) (p as TapePlayer).send({ k: 'unload' });
+  for (const l of lives.values()) if (l !== app && l.state !== 'none' && !l.inWindow) l.drop();
   // Not live yet (a click before the hover finished): it becomes live in the window.
   void app.goLive().then(() => {
     player.frame?.focus();
@@ -465,7 +467,46 @@ async function zoom(plate: HTMLElement) {
   history.pushState({ ...(history.state ?? {}), liveZoom: true }, '', location.href);
   const onPop = () => void close(true);
   addEventListener('popstate', onPop, { once: true });
-}
+
+  // The app in the window renders in its own process, but it renders onto the machine's one GPU — the
+  // first frames it starves are the page's. The stage can't see that (its own frames stay healthy),
+  // so the page watches its own: once a second, the worst frame gap of the second; two bad seconds
+  // in a row raise the app's pace ceiling by one, a clean one lets it back down. The morph and its
+  // settle get their two seconds first.
+  let paceWatch = 0;
+  let paceAt = 0;
+  let bucket = performance.now();
+  let warm = 2;
+  let worst = 0;
+  let bad = 0;
+  let cap = 1;
+  const paceTick = (t: number) => {
+    if (paceAt) worst = Math.max(worst, t - paceAt);
+    paceAt = t;
+    if (t - bucket >= 1000) {
+      bucket = t;
+      if (warm > 0) warm--;
+      else {
+        const k = worst / Math.max(4, 1000 / 240);
+        if (k > 1.6) bad++;
+        else {
+          bad = 0;
+          if (cap > 1 && k < 1.15) {
+            cap--;
+            player.send({ k: 'pace', n: cap });
+          }
+        }
+        if (bad >= 2 && cap < 4) {
+          bad = 0;
+          cap++;
+          player.send({ k: 'pace', n: cap });
+        }
+      }
+      worst = 0;
+    }
+    if (zooming) paceWatch = requestAnimationFrame(paceTick);
+  };
+  paceWatch = requestAnimationFrame(paceTick);
 
 // ---------------------------------------------------------------------------------------------------
 // Wiring

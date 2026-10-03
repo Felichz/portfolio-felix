@@ -100,11 +100,30 @@ Stages load from `PUBLIC_STAGE_ORIGIN` when it's set at build time: another regi
 
 ```bash
 node scripts/perf/check.mjs              # every preview plays, goes live, and the stage is out of process
+node scripts/perf/check.mjs --gate       # + frame budgets per phase: interval p99 <= 16.7 ms, no gap > 100 ms
+npm run perf:gate                        # the gate at 2x CPU throttling
 node scripts/perf/live.mjs [label]       # fps of every interaction: the cycle, hover to live, the window
 node scripts/perf/scroll.mjs             # fps of scrolling the portfolio: slow down, fast back up
 node scripts/perf/trace.mjs <label>      # traces of the showcase's moments, summarized per process
 node scripts/perf/ab.mjs base,noshadow   # one thing switched off at a time, alternating runs
 ```
+
+**The frame budget.** Every interaction is measured (`--gate`), the page keeps a flight recorder
+(`src/scripts/blackbox.ts`: frame gaps over 250 ms dump what was mounting, whether the window was
+open, whether the page was flinging), and the heavy work obeys the page's quiet: stages mount one at
+a time, never under the visitor; a product change is three modest frames (the rail answers first,
+the slide lands next, the recording and the address last), with the incoming slide's textures
+pre-rastered off its countdown; the panel's room light is resolved at build time (a `data-p` flip,
+not four variables through the subtree); a boot starts where the tape ended (every tape records a
+final checkpoint) with its bytes already warm (`warm-bytes`, fired when the slide turns active —
+never during the boot itself: a fetch in flight would deduplicate against the frame's own load);
+under the pointer the tape answers as a ghost until the real app takes it; the bridge owns the app's
+frames as it owns its clock — an app nobody sees fires none, and one that is seen runs at the
+highest steady cadence the stage measures the machine to hold (`setPace`), with its endless
+animations resting at reduced pace; while one preview has the machine, every other tape lets its
+document go. Measured results along the way: a 800 ms three-stage mount burst -> 84 ms; the window
+morphs 60-71% hitched -> 0-22%; a heavy app in its window 58 fps/71% hitched -> 240/0 (playsync,
+whose YouTube player is beyond the bridge: 42 -> 95).
 
 ## Running it
 
