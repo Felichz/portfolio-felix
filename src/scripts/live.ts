@@ -102,7 +102,7 @@ class Live {
       await shown;
       this.state = 'live';
       this.used = performance.now();
-      this.player.ghost(-1, -1);
+      this.player?.ghost(-1, -1);
       this.plate.dataset.live = '';
       this.motion?.removeAttribute('aria-hidden');
       if (player.frame) {
@@ -507,6 +507,7 @@ async function zoom(plate: HTMLElement) {
     if (zooming) paceWatch = requestAnimationFrame(paceTick);
   };
   paceWatch = requestAnimationFrame(paceTick);
+}
 
 // ---------------------------------------------------------------------------------------------------
 // Wiring
@@ -572,7 +573,7 @@ export function initLive() {
       const l = liveFor(plate);
       if (l.state !== 'live') {
         const r = plate.getBoundingClientRect();
-        l.player.ghost((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+        l.player?.ghost((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
       }
       void l.goLive();
     });
@@ -584,13 +585,13 @@ export function initLive() {
       const l = liveFor(plate);
       if (l.state !== 'live') {
         const r = plate.getBoundingClientRect();
-        l.player.ghost((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+        l.player?.ghost((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
         void l.goLive();
       }
     });
     // (Moving into the app isn't leaving: the stage's report comes a moment later.)
     plate.addEventListener('pointerleave', () => {
-      lives.get(plate)?.player.ghost(-1, -1);
+      lives.get(plate)?.player?.ghost(-1, -1);
       released(plate);
     });
     plate.addEventListener('stage:hover', (e) => {
@@ -635,7 +636,9 @@ export function initLive() {
   let warmBusy = false;
   let lastChange = 0;
   const quiet = () =>
-    !zooming && !document.hidden && !document.documentElement.classList.contains('deck-fast') && !document.querySelector('.thaw') && performance.now() - lastChange > 900;
+    !zooming && !document.hidden && !document.documentElement.classList.contains('deck-fast') && !document.querySelector('.thaw') && performance.now() - lastChange > 900 &&
+    // ...and not while the visitor's hand is on a preview: hovering, or the app live under it.
+    ![...lives.values()].some((l) => l.state !== 'none' && (l.plate.matches(':hover') || l.plate.hasAttribute('data-hover') || l.state === 'live'));
   const warmStep = () => {
     const p = warmQueue.shift();
     if (!p || !p.isConnected) return void (warmBusy = false);

@@ -41,6 +41,21 @@ await page.evaluateOnNewDocument(() => {
   requestAnimationFrame(tick);
 });
 if (throttle) await page.emulateCPUThrottling(2);
+// The gate measures this machine, so it first asks whether the machine is free to measure: a blank
+// page's frames are the ceiling. Under a game client, a video call, a hundred tabs — whatever keeps
+// the CPU busy — the numbers would be about that, not about the site, and the gate says so instead
+// of crying wolf.
+await page.goto('about:blank');
+const ceiling = await page.evaluate(() => new Promise((done) => {
+  const ts = [];
+  const tick = (t) => { ts.push(t); ts.length < 61 ? requestAnimationFrame(tick) : done([...ts.slice(1).map((x, i) => x - ts[i])].sort((a, b) => a - b)[30]); };
+  requestAnimationFrame(tick);
+}));
+if (!throttle && ceiling > 8.4) {
+  console.log(`GATE: the machine is busy (a blank page holds ${Math.round(1000 / ceiling)} fps; it should hold 240+). Close what's running and run it again — otherwise the numbers would be about that, not about the site.`);
+  await browser.close();
+  process.exit(2);
+}
 const ids = (process.env.IDS ?? 'lifeui').split(',');
 await page.goto(BASE + '/', { waitUntil: 'load' });
 await sleep(1500);
