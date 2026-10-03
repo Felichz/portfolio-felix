@@ -555,6 +555,47 @@ export function initLive() {
     window.__faTheme?.({ x: r.left + x * k, y: r.top + y * k });
   });
 
+  // -------------------------------------------------------------------------------------------------
+  // Warming previews ahead of their turn: a stage mounts its tape (fetch, first frame, fonts, a filmed
+  // clip) before anyone turns to it. Mounting is a burst of raster — three at once once froze the page
+  // for 800 ms, which the black box caught — so they go one at a time, and only while the page is
+  // quiet: no window open, nothing being flung, no product just turned over, the tab visible.
+  // -------------------------------------------------------------------------------------------------
+  const warmQueue: TapePlayer[] = [];
+  const warmed = new WeakSet<TapePlayer>();
+  let warmBusy = false;
+  let lastChange = 0;
+  const quiet = () =>
+    !zooming && !document.hidden && !document.documentElement.classList.contains('deck-fast') && !document.querySelector('.thaw') && performance.now() - lastChange > 900;
+  const warmStep = () => {
+    const p = warmQueue.shift();
+    if (!p || !p.isConnected) return void (warmBusy = false);
+    if (!quiet()) return void setTimeout(warmStep, 400);
+    idle(() => {
+      if (p.isConnected && quiet()) {
+        warmed.add(p);
+        p.preload = 'auto';
+      }
+      setTimeout(warmStep, 400);
+    });
+  };
+  const warm = (players: (TapePlayer | null | undefined)[]) => {
+    for (const p of players) if (p && !warmed.has(p) && !warmQueue.includes(p)) warmQueue.push(p);
+    if (!warmBusy) {
+      warmBusy = true;
+      warmStep();
+    }
+  };
+  document.addEventListener('live:warm', (e) => {
+    lastChange = performance.now();
+    warm((e as CustomEvent<(TapePlayer | null | undefined)[]>).detail);
+  });
+  // When the window closes, what it unmounted (or what went cold while it was open) warms again.
+  document.addEventListener('thaw:close', () => {
+    lastChange = performance.now();
+    warm([...document.querySelectorAll('tape-player')] as TapePlayer[]);
+  });
+
   // Boot only after the visitor's first input, and only for a preview on screen (in view, and not in
   // an inactive showcase slide: they overlap the active one, hidden and inert) for a moment.
   let started = false;

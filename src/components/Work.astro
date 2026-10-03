@@ -547,12 +547,9 @@ const total = String(projects.length).padStart(2, '0');
       for (const k of ['--a-light', '--a-dark', '--on-light', '--on-dark']) root.style.setProperty(k, s.style.getPropertyValue(k));
       document.dispatchEvent(new CustomEvent('deck:refresh'));
       if (prev !== j) rest(prev);
-      // The products on either side have their stages load their tapes now, in their own process,
-      // so turning to them doesn't pay for a first fetch and frame.
-      for (const k of [j + 1, j - 1]) {
-        const p = plateOf(((k % n) + n) % n)?.querySelector<HTMLElement & { preload: string }>('tape-player');
-        if (p) p.preload = 'auto';
-      }
+      // The products on either side have their stages warmed — queued, one at a time, only while the
+      // page is quiet (src/scripts/live.ts): mounting a tape is a burst never paid under the visitor.
+      document.dispatchEvent(new CustomEvent('live:warm', { detail: [j + 1, j - 1].map((k) => plateOf((((k % n) + n) % n))?.querySelector<HTMLElement & { preload: string }>('tape-player')) }));
       settle();
       // Keep the chosen chip in view on phones, scrolling only the strip.
       const li = items[j]?.parentElement;
