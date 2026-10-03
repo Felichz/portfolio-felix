@@ -633,21 +633,11 @@ kbd .icon { width: 12px; height: 12px; }
 /* A tape's last frame is the app itself, not a video still: it stays up once it ends. */
 .plate[data-state='done'] .plate-motion tape-player { opacity: 1; }
 
-/* Live previews (src/scripts/live.ts). Once the visitor is using the page, a preview's real app runs
-   under its tape at the recorded 1440x900, scaled like the tape, invisible until it takes over. */
-.plate-motion .live-app {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1440px;
-  height: 900px;
-  border: 0;
-  transform-origin: 0 0;
-  transform: scale(var(--live-k, 1));
-  opacity: 0;
-  pointer-events: none;
-}
-.plate-motion .live-app.shown { opacity: 1; pointer-events: auto; transition: opacity 0.16s ease-out; }
+/* Live previews (src/scripts/live.ts). The tape and, once the visitor is using the page, the real app
+   run in the preview's stage (src/scripts/stage.ts), a frame of its own. It takes the pointer once the
+   app is live, in the preview or in its window. */
+.plate[data-live] .plate-motion tape-player { opacity: 1; }
+.plate[data-live] .stage-frame, .thaw .stage-frame { pointer-events: auto; }
 /* A live preview is the app, not a link or a lightbox: no zoom cursor, and only its lights on the bar
    (no address, no recording button). */
 .plate[data-live] .motion-btn { display: none; }
@@ -731,8 +721,6 @@ html.thawing.thawing-gutter { scrollbar-gutter: stable; }
 }
 .thaw-bar { position: absolute; top: 0; left: 0; right: 0; }
 .thaw-screen { position: absolute; left: 0; overflow: hidden; transform-origin: 0 0; }
-/* In the window the app fills the screen, laid out at the screen's size, no longer the recorded 1440x900. */
-.thaw-screen .live-app { width: 100%; height: 100%; transform: none; }
 /* The way on and the way back, under the window, in the site's own edition. They arrive once it has
    landed. */
 .thaw-actions {
@@ -759,39 +747,19 @@ html.thawing.thawing-gutter { scrollbar-gutter: stable; }
   white-space: nowrap;
 }
 
-/* Tapes (src/scripts/tape.ts): the recorded viewport, scaled to cover the plate, and a drawn cursor. */
-tape-player { position: absolute; inset: 0; overflow: hidden; contain: strict; --tape-k: 1; }
-.tape-frame {
+/* Tapes: the stage they play in (src/scripts/player.ts) fills the preview. Its document must not paint a
+   background of its own: same color scheme as here. */
+tape-player { position: absolute; inset: 0; overflow: hidden; contain: strict; }
+.stage-frame {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
   border: 0;
-  transform-origin: 0 0;
-  transform: scale(var(--tape-k));
-  pointer-events: none;
   color-scheme: normal;
-}
-/* The cursor moves in the recording's pixels inside a layer scaled like the frame; its path is one
-   animation on the compositor, and its shadow is drawn into the arrow. */
-.tape-cursor-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
-  transform: scale(var(--tape-k));
   pointer-events: none;
 }
-.tape-cursor {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 22px;
-  height: 22px;
-  opacity: 0;
-  will-change: transform, opacity;
-}
-.tape-cursor svg { display: block; transition: transform 0.12s var(--ease-out); transform-origin: 4.6px 2.3px; }
-.tape-cursor.down svg { transform: scale(0.84); }
 
 /* A lead recording hides the callouts while it plays; they come back one by one on the final frame. */
 .plate[data-motion='lead'] .pin--live {

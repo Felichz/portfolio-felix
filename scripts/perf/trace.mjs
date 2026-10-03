@@ -112,6 +112,27 @@ function summarize(name, path, wall) {
   const drawn = ev.filter((e) => e.name === 'DirectRenderer::DrawFrame').length / (wall / 1000);
   let longest = 0;
   for (const e of xs) if (depth.get(e) === 0 && /^Renderer$/.test(pname.get(e.pid) ?? '') && tname.get(`${e.pid}:${e.tid}`) === 'CrRendererMain') longest = Math.max(longest, e.dur / 1000);
+  // With stages from another site there are two renderers: the page's (the one that ran its rAF) and
+  // the stages'. Busy shares per renderer process, page first.
+  const label = new Map();
+  for (const e of ev) if (e.ph === 'M' && e.name === 'process_labels') label.set(e.pid, e.args.labels);
+  const mains = new Map();
+  for (const e of xs) {
+    if (depth.get(e) !== 0 || tname.get(`${e.pid}:${e.tid}`) !== 'CrRendererMain' || pname.get(e.pid) !== 'Renderer') continue;
+    mains.set(e.pid, (mains.get(e.pid) ?? 0) + e.dur);
+  }
+  // The page's renderer is the one that has the page's own documents (not a stage's).
+  const docs = new Map();
+  for (const e of ev) {
+    const u = e.args?.data?.url;
+    if (typeof u === 'string' && e.args.data.frame && /^https?:/.test(u)) docs.set(e.pid, [...(docs.get(e.pid) ?? []), u]);
+  }
+  const pagePid = [...mains.keys()].find((pid) => (docs.get(pid) ?? []).some((u) => u.startsWith(BASE) && !u.includes('/stage/') && !u.includes('/apps/') && !u.includes('/tapes/'))) ?? [...mains.keys()][0];
+  const pageMain = (mains.get(pagePid) ?? 0) / 1000 / wall;
+  const others = [...mains].filter(([pid]) => pid !== pagePid).map(([pid, d]) => `${(label.get(pid) ?? pid).toString().slice(0, 24)}:${((d / 1000 / wall) * 100).toFixed(0)}%`);
+  let pageLongest = 0;
+  for (const e of xs) if (e.pid === pagePid && depth.get(e) === 0 && tname.get(`${e.pid}:${e.tid}`) === 'CrRendererMain') pageLongest = Math.max(pageLongest, e.dur / 1000);
+  console.log(`RESULT ${name} page=${(pageMain * 100).toFixed(0)}% pageLongest=${pageLongest.toFixed(0)}ms others=[${others.join(' ')}] gpu=${(busyOf(/^GPU Process\/CrGpuMain/) * 100).toFixed(0)}% drawn=${drawn.toFixed(0)}fps`);
   console.log(`RESULT ${name} main=${(busyOf(/^Renderer\/CrRendererMain/) * 100).toFixed(0)}% gpu=${(busyOf(/^GPU Process\/CrGpuMain/) * 100).toFixed(0)}% drawn=${drawn.toFixed(0)}fps longest=${longest.toFixed(0)}ms`);
   console.log(`\n== ${name} (${(wall / 1000).toFixed(1)}s)`);
   for (const [thread, t] of [...byThread].sort((a, b) => b[1].total - a[1].total)) {

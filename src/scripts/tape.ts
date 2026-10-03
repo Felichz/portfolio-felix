@@ -1,14 +1,15 @@
 /**
- * <tape-player src="/tapes/<id>.json">: plays a tape, a recording of an app's own DOM (see
- * scripts/tapes/recorder.js), instead of a video of it.
+ * <tape-core src="/tapes/<id>.json">: plays a tape, a recording of an app's own DOM (see
+ * scripts/tapes/recorder.js), instead of a video of it. It runs in a stage (src/scripts/stage.ts), the
+ * document a page's <tape-player> (src/scripts/player.ts) shows a preview in.
  *
  * The recorded document is rebuilt inside a sandboxed iframe with the app's real stylesheet and none of
  * its JavaScript, then every recorded change is applied at its time. The browser paints real text,
  * real vector icons and the app's own CSS transitions, at any size and pixel density, from a file that
  * is a few dozen kilobytes instead of megabytes of video.
  *
- * - Themes: the app switches theme with one attribute on <html>, so one tape plays in either edition.
- *   It follows the site's theme instantly (inverted, like the screenshots: dark app on the light site).
+ * - Themes: the app switches theme with one attribute on <html>, so one tape plays in either edition,
+ *   the one the stage asks for.
  * - Interaction state a replay can't produce (hover, focus, pressed) was recorded as events and turned
  *   into attributes the recorded stylesheet was rewritten to match.
  * - The cursor is drawn here, over the frame, from the recorded pointer path.
@@ -16,8 +17,7 @@
  *   timer sleeps until the next one, and frames are asked for only while changes come every frame.
  *   The cursor's path and the app's own Web Animations run on the compositor, on the tape's clock.
  * - It speaks enough of HTMLMediaElement (play, pause, currentTime, duration, ended, loop, onended,
- *   'loadedmetadata', 'playing', 'pause', 'ended') for the showcase and the case study plates to drive
- *   it like the <video> it replaces.
+ *   'loadedmetadata', 'playing', 'pause', 'ended') for the stage to drive it like a video.
  */
 
 type TapeNode = [number, string] | [number, string, Record<string, string>, TapeNode[]?];
@@ -115,24 +115,17 @@ export const loadTape = (src: string) => {
 // on every frame it moves; this one is painted once with the arrow.
 const CURSOR = `<svg viewBox="0 0 24 24" width="22" height="22" overflow="visible" aria-hidden="true"><defs><filter id="tape-cursor-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation="0.75" flood-color="#000" flood-opacity="0.35"/></filter></defs><path d="M5 2.5v17.2l4.6-4.4 3 6.6 3-1.3-3-6.5 6.4-.2Z" fill="#111114" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" filter="url(#tape-cursor-shadow)"/></svg>`;
 
-/** The app edition shown on this site: the opposite of the site's own theme. */
-const appTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-const players = new Set<TapePlayer>();
-new MutationObserver(() => players.forEach((p) => p.syncTheme())).observe(document.documentElement, {
-  attributes: true,
-  attributeFilter: ['data-theme'],
-});
-
 /** A recorded gap longer than this is a pause in the pointer, not a move: the cursor holds still. */
 const HOLD = 80;
 
-export class TapePlayer extends HTMLElement {
+export class TapeCore extends HTMLElement {
   tape?: Tape;
   /** Lays the recorded DOM out at this size instead of the recorded one; it reflows like the app would. */
   viewport?: [number, number];
   loop = false;
   preloadMode = 'none';
   onended: ((e: Event) => void) | null = null;
+  #theme = 'dark';
 
   #frame?: HTMLIFrameElement;
   #doc?: Document;
@@ -161,16 +154,14 @@ export class TapePlayer extends HTMLElement {
   #clips = new Set<HTMLVideoElement>();
 
   connectedCallback() {
-    players.add(this);
     if (this.preloadMode === 'auto') void this.#load();
   }
   disconnectedCallback() {
-    players.delete(this);
     this.pause();
     this.#resize?.disconnect();
   }
 
-  // ---- HTMLMediaElement, the parts the site uses
+  // ---- HTMLMediaElement, the parts the stage uses
   get src() {
     return this.getAttribute('src') ?? '';
   }
@@ -209,6 +200,15 @@ export class TapePlayer extends HTMLElement {
     this.#syncTimed();
     if (this.#running) this.#schedule();
   }
+  /** The app edition shown: the value of its theme attribute. */
+  get theme() {
+    return this.#theme;
+  }
+  set theme(t: string) {
+    this.#theme = t;
+    this.syncTheme();
+  }
+
   /** The tape's time now, in ms. */
   get #now() {
     if (!this.#running || !this.tape) return this.#vt;
@@ -281,12 +281,12 @@ export class TapePlayer extends HTMLElement {
   }
 
   syncTheme() {
-    if (this.#doc && this.tape) this.#doc.documentElement.setAttribute(this.tape.themeAttr, appTheme());
+    if (this.#doc && this.tape) this.#doc.documentElement.setAttribute(this.tape.themeAttr, this.#theme);
   }
 
   // ---- Loading and building
   #load() {
-    if (!this.src) return Promise.reject(new Error('tape-player: no src'));
+    if (!this.src) return Promise.reject(new Error('tape-core: no src'));
     return loadTape(this.src).then((tape) => {
       if (!this.tape) {
         this.tape = tape;
@@ -638,4 +638,4 @@ const TAPE_CSS = `
 html { pointer-events: none; }
 `;
 
-if (!customElements.get('tape-player')) customElements.define('tape-player', TapePlayer);
+if (!customElements.get('tape-core')) customElements.define('tape-core', TapeCore);

@@ -1,0 +1,82 @@
+---
+// A preview's stage: its tape and its live app, in a document of their own (src/scripts/stage.ts).
+// Loaded in a frame at /stage/#<tape id>, from another site than the page when there is one
+// (src/scripts/origin.ts). Not a page to visit or index.
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex" />
+    <title>Preview</title>
+    <style is:global>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+      /* The tape: the recorded viewport, scaled to cover the stage, and a drawn cursor. */
+      tape-core { position: absolute; inset: 0; overflow: hidden; contain: strict; --tape-k: 1; }
+      .tape-frame {
+        position: absolute;
+        top: 0;
+        left: 0;
+        border: 0;
+        transform-origin: 0 0;
+        transform: scale(var(--tape-k));
+        pointer-events: none;
+        color-scheme: normal;
+      }
+      /* The cursor moves in the recording's pixels inside a layer scaled like the frame; its path is one
+         animation on the compositor, and its shadow is drawn into the arrow. */
+      .tape-cursor-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform-origin: 0 0;
+        transform: scale(var(--tape-k));
+        pointer-events: none;
+      }
+      .tape-cursor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 22px;
+        height: 22px;
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+      .tape-cursor svg { display: block; transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1); transform-origin: 4.6px 2.3px; }
+      .tape-cursor.down svg { transform: scale(0.84); }
+
+      /* The live app: it runs under the tape at the recorded 1440x900, scaled like the tape, invisible
+         until it takes over. In a window it's laid out at the stage's own size. */
+      .live-app {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 1440px;
+        height: 900px;
+        border: 0;
+        transform-origin: 0 0;
+        transform: scale(var(--live-k, 1));
+        opacity: 0;
+        pointer-events: none;
+      }
+      .live-app.shown { opacity: 1; pointer-events: auto; transition: opacity 0.16s ease-out; }
+      html[data-window] .live-app { width: 100%; height: 100%; transform: none; }
+      @media (prefers-reduced-motion: reduce) {
+        .live-app.shown { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      import '../scripts/stage';
+    </script>
+  </body>
+</html>

@@ -1,50 +1,43 @@
 /**
- * Live previews. A product's preview starts as a tape (src/scripts/tape.ts): its own DOM, replayed.
- * Once the visitor is using the page and the preview is on screen, the real app boots under it, hidden,
- * and keeps up with the tape: the scene's recorded clicks are replayed in it as the tape reaches them,
- * with its clock and timers following the recording (scripts/apps/bridge.js). So at any moment the
- * live app is in the state the tape shows.
+ * Live previews, the page's side. A product's preview is a <tape-player> (src/scripts/player.ts): its
+ * tape plays in a stage (src/scripts/stage.ts), a frame from another site when there is one, in its own
+ * process. Once the visitor is using the page, the stage boots the real app under the tape, hidden, and
+ * keeps it in step with the tape (src/scripts/session.ts). So at any moment the live app is in the
+ * state the tape shows.
  *
- * - Hover: the live app takes the tape's place on the same frame. From
- *   there it's the app: hover states, cursors and clicks are real. Its bar has only the window lights,
- *   which keep to the pointer's side.
- * - The green light: the preview's contents (the live app itself, moved with moveBefore so it keeps
- *   its state) go into a window over the page, where the app runs at its own size. The case study, the
- *   live site and the source wait under it. Red or yellow, Escape, a click outside or Back return it
- *   to the preview, still live.
+ * - Hover: the live app takes the tape's place on the same frame. From there it's the app: hover
+ *   states, cursors and clicks are real. Its bar has only the window lights, which keep to the
+ *   pointer's side.
+ * - The green light: the preview's contents (the stage, moved with moveBefore so the app keeps its
+ *   state) go into a window over the page, where the app runs at its own size. The case study, the live
+ *   site and the source wait under it. Red or yellow, Escape, a click outside or Back return it to the
+ *   preview, still live.
  *
- * Nothing boots before the visitor's first input, so page-load audits (Lighthouse) never pay for it,
- * and only one app runs at a time: it's dropped when its preview leaves the screen. Desktop pointers
- * only; on touch screens previews stay tapes and links stay links.
+ * What runs, and when (each app is expensive, and there are several):
+ * - Nothing boots before the visitor's first input, so page-load audits never pay for it.
+ * - A preview's app boots once it has been on screen for a moment (not while the showcase is passing
+ *   through), one boot at a time, or at once when the pointer comes to it.
+ * - An app that was only following its tape is dropped when its preview leaves the screen. One the
+ *   visitor used is held instead (its clock stopped, its animations paused) and comes back as they
+ *   left it; the two used most recently are kept. Everything is held while the tab is hidden.
+ *
+ * Desktop pointers only; on touch screens previews stay tapes and links stay links.
  */
-import { loadTape, type Action, type Exchange, type IdbDump, type Tape, type TapePlayer } from './tape';
+import type { TapePlayer } from './player';
 
 const FLIGHT = 560; // the window's morph, ms
 /** Its curve: a gentle start and a long settle, shared by the window and the page behind it. */
 const CURVE = 'cubic-bezier(0.45, 0, 0.15, 1)';
+/** How long a preview is on screen before its app boots. */
+const DWELL = 600;
+/** Apps the visitor used that are kept (held) when their previews leave the screen. */
+const KEEP = 2;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 const desktop = () => matchMedia('(hover: hover) and (pointer: fine)').matches && innerWidth >= 900;
 const canMove = 'moveBefore' in Element.prototype;
 
-interface Handoff {
-  app: string;
-  clock: number;
-  readySelector: string;
-  ready: () => void;
-  /** The tape time the app boots at (its checkpoint's), for stand-ins that replay what came later. */
-  at?: number;
-  /** For a single-page app: the URL it should see, set by the bridge before its code runs. */
-  route?: string;
-  /** The backend's recorded answers, which the bridge serves to the app's fetches. */
-  network?: Exchange[];
-  /** A recorded real-time room, which the bridge plays to the app's WebSocket. */
-  socket?: Tape['app']['socket'];
-  /** Installed by the bridge: sets the app's clock, frozen or running; its timers follow it. */
-  setClock?: (ms: number, freeze?: boolean, tick?: boolean) => void;
-}
 declare global {
   interface Window {
-    __live?: Record<string, Handoff>;
     /** The site's theme switch (Bar.astro): a circle from a point, or opening out from a rectangle. */
     __faTheme?: (from?: { x: number; y: number } | { rect: DOMRect }) => void;
     /** Maps a point on the screen to this page's viewport (Bar.astro), once the pointer has moved here. */
@@ -55,402 +48,113 @@ declare global {
   }
 }
 
-const frames = (win: Window, n = 2) =>
-  new Promise<void>((r) => {
-    const step = () => (--n <= 0 ? r() : win.requestAnimationFrame(step));
-    win.requestAnimationFrame(step);
-  });
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-/** A performance mark per stage of a live app (boot, ready, live), for traces and scripts/perf. */
-const mark = (id: string, stage: string) => performance.mark(`live:${id}:${stage}`);
+const once = (target: EventTarget, type: string) => new Promise<void>((r) => target.addEventListener(type, () => r(), { once: true }));
 
 // ---------------------------------------------------------------------------------------------------
-// Driving the live app
+// One preview's app, as the page sees it
 // ---------------------------------------------------------------------------------------------------
 
-/** Finds a recorded click's element in the live app: by its path, checked against its signature. */
-// Text, without the counts in it ("Chat 9" is the Chat tab with nine unread messages).
-const textOf = (s: string) => s.replace(/\d+/g, '').replace(/\s+/g, ' ').trim().slice(0, 50);
-
-function resolve(doc: Document, a: Action) {
-  const matches = (el: Element | null | undefined): el is HTMLElement =>
-    !!el &&
-    el.localName === a.sig.tag &&
-    (a.sig.testid ?? null) === el.getAttribute('data-testid') &&
-    (a.sig.label ?? null) === el.getAttribute('aria-label') &&
-    (a.kind === 'input' || textOf((el.textContent ?? '').slice(0, 60)) === textOf(a.sig.text));
-  let el: Element | undefined = doc.body;
-  for (const i of a.path) el = el?.children[i];
-  if (!a.path.length && a.sig.tag === 'body') return doc.body;
-  if (matches(el)) return el;
-  // A portal that only existed while recording (a tooltip) can shift the path: find it by signature.
-  return [...doc.querySelectorAll(a.sig.tag)].find(matches) as HTMLElement | undefined;
-}
-
-/** A key pressed on an element (keydown, then keyup), in the app's own realm. */
-function press(win: Window & typeof globalThis, el: HTMLElement, key: string) {
-  const at = { key, bubbles: true, cancelable: true, composed: true, view: win };
-  el.dispatchEvent(new win.KeyboardEvent('keydown', at));
-  el.dispatchEvent(new win.KeyboardEvent('keyup', at));
-}
-
-/** Text in a field, set the way typing sets it (through the native setter, so frameworks see it). */
-function type(win: Window & typeof globalThis, el: HTMLElement, value: string) {
-  if (el.isContentEditable) el.textContent = value;
-  else {
-    const proto = el instanceof win.HTMLTextAreaElement ? win.HTMLTextAreaElement.prototype : win.HTMLInputElement.prototype;
-    Object.getOwnPropertyDescriptor(proto, 'value')?.set?.call(el, value);
-  }
-  el.focus();
-  el.dispatchEvent(new win.InputEvent('input', { bubbles: true, composed: true, data: value, inputType: 'insertText' }));
-}
-
-/** Puts IndexedDB databases back as a checkpoint recorded them (same origin: the app reads them). */
-async function restoreIdb(dumps: IdbDump[]) {
-  const done = (r: IDBRequest | IDBTransaction) =>
-    new Promise<void>((ok, no) => {
-      if (r instanceof IDBTransaction) (r.oncomplete = () => ok()), (r.onerror = () => no(r.error));
-      else (r.onsuccess = () => ok()), (r.onerror = () => no(r.error));
-    });
-  for (const dump of dumps) {
-    await done(indexedDB.deleteDatabase(dump.name)).catch(() => {});
-    const open = indexedDB.open(dump.name, dump.version);
-    open.onupgradeneeded = () => {
-      for (const s of dump.stores) {
-        const store = open.result.createObjectStore(s.name, { keyPath: s.keyPath ?? undefined, autoIncrement: s.autoIncrement });
-        for (const i of s.indexes) store.createIndex(i.name, i.keyPath, { unique: i.unique, multiEntry: i.multiEntry });
-      }
-    };
-    await done(open);
-    const db = open.result;
-    if (dump.stores.length) {
-      const tx = db.transaction(dump.stores.map((s) => s.name), 'readwrite');
-      for (const s of dump.stores) for (const [k, v] of s.records) s.keyPath === null ? tx.objectStore(s.name).put(v, k as IDBValidKey) : tx.objectStore(s.name).put(v);
-      await done(tx);
-    }
-    db.close();
-  }
-}
-
-/** A pointer click the way a hand makes one, dispatched in the app's own realm. */
-function click(win: Window & typeof globalThis, el: HTMLElement) {
-  const r = el.getBoundingClientRect();
-  const at = { bubbles: true, cancelable: true, composed: true, view: win, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 0 };
-  el.dispatchEvent(new win.PointerEvent('pointerdown', { ...at, pointerType: 'mouse', isPrimary: true, buttons: 1 }));
-  el.dispatchEvent(new win.MouseEvent('mousedown', { ...at, buttons: 1 }));
-  el.dispatchEvent(new win.PointerEvent('pointerup', { ...at, pointerType: 'mouse', isPrimary: true }));
-  el.dispatchEvent(new win.MouseEvent('mouseup', at));
-  el.dispatchEvent(new win.MouseEvent('click', at));
-}
-
-/** Resolves once the document has gone a few frames without a change (async work after a click). */
-function quiet(win: Window, doc: Document, max = 700) {
-  return new Promise<void>((done) => {
-    let still = 0;
-    const seen = new (win as Window & typeof globalThis).MutationObserver(() => (still = 0));
-    seen.observe(doc, { subtree: true, childList: true, attributes: true, characterData: true });
-    const end = performance.now() + max;
-    const step = () => {
-      if (++still >= 3 || performance.now() > end) {
-        seen.disconnect();
-        return done();
-      }
-      win.requestAnimationFrame(step);
-    };
-    win.requestAnimationFrame(step);
-  });
-}
+type State = 'none' | 'booting' | 'following' | 'live';
 
 /**
- * One app, booted under one preview. It follows the preview's tape: each recorded click is replayed
- * when the tape reaches it, with the app's clock frozen at that recorded moment, then left running in
- * step with the tape. `goLive` makes it the visible, interactive preview.
+ * The page's handle on a preview's app: what state it's in, and the messages that move it along. The
+ * work itself happens in the stage.
  */
-class Session {
-  tape!: Tape;
-  frame!: HTMLIFrameElement;
-  handoff!: Handoff;
-  live = false;
-  booted: Promise<void>;
-  #done = 0;
-  #busy: Promise<void> = Promise.resolve();
-  #last = 0;
-  #timer = 0;
+class Live {
+  state: State = 'none';
+  held = false;
+  inWindow = false;
+  /** When the visitor last had it live, for keeping the most recent ones. */
+  used = 0;
+  #booted?: Promise<void>;
   #going?: Promise<void>;
-  #disposed = false;
-  #restore = new Map<string, string | null>();
-  #fit?: ResizeObserver;
 
-  constructor(
-    public id: string,
-    public plate: HTMLElement,
-  ) {
-    this.booted = this.#boot();
-  }
+  constructor(public plate: HTMLElement) {}
 
   get player() {
-    return this.plate.querySelector<TapePlayer>('tape-player') ?? undefined;
+    return this.plate.querySelector<TapePlayer>('tape-player')!;
   }
   get motion() {
     return this.plate.querySelector<HTMLElement>('.plate-motion') ?? undefined;
   }
-  get #now() {
-    const p = this.player;
-    return p?.tape && (p.currentTime > 0 || !p.paused) ? p.currentTime * 1000 : this.tape.duration;
-  }
-  #clockAt(t: number) {
-    return this.tape.clock0 + t;
-  }
 
-  async #boot() {
-    mark(this.id, 'boot');
-    this.tape = await loadTape(`/tapes/${this.id}.json`);
-    const tape = this.tape;
-    const t = this.#now;
-    const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpoints[0]!;
-    this.#done = (tape.actions ?? []).filter((a) => a.t <= cp.t).length;
-    this.#last = t;
-
-    // Storage as recorded at the checkpoint, in the edition the plate shows. Keys this site uses for
-    // itself (its theme, when it's the app) go back as soon as the app has read them.
-    const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    for (const key of tape.app.restore ?? []) this.#restore.set(key, localStorage.getItem(key));
-    for (const key of tape.app.storage) {
-      if (key in cp.storage) localStorage.setItem(key, cp.storage[key]!);
-      else localStorage.removeItem(key);
+  /** Boots the app under the tape; resolves once it has painted and caught up to its checkpoint. */
+  boot() {
+    if (this.state === 'none') {
+      this.state = 'booting';
+      const player = this.player;
+      this.#booted = once(player, 'stage:booted').then(() => {
+        if (this.state === 'booting') this.state = 'following';
+      });
+      player.send({ k: 'boot' });
     }
-    if (tape.app.themeKey) localStorage.setItem(tape.app.themeKey, theme);
-    // The database and the recorded answers load side by side.
-    const [, network] = await Promise.all([
-      cp.idb ? restoreIdb(cp.idb).catch(() => {}) : undefined,
-      tape.app.network ? fetch(tape.app.network).then((r) => r.json() as Promise<Exchange[]>).catch(() => undefined) : undefined,
-    ]);
-    if (this.#disposed) return;
-
-    let ready!: () => void;
-    const painted = new Promise<void>((r) => (ready = r));
-    this.handoff = {
-      app: this.id,
-      clock: this.#clockAt(cp.t),
-      readySelector: tape.app.readySelector,
-      ready: () => ready(),
-      network,
-      socket: tape.app.socket,
-      at: cp.t,
-      route: tape.app.spa ? tape.app.entry.replace(/\/$/, '') + cp.route : undefined,
-    };
-    (window.__live ??= {})[this.id] = this.handoff;
-
-    const frame = document.createElement('iframe');
-    frame.className = 'live-app';
-    frame.title = `${nameOf(this.plate)}, live`;
-    frame.tabIndex = -1;
-    // Media inside the app (PlaySync's YouTube player) may play and go full screen.
-    frame.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
-    // A single-page app loads its index.html (a real file on any server) and the bridge gives it the
-    // route; an app of several pages loads the page itself.
-    frame.src = tape.app.spa ? tape.app.entry : tape.app.entry.replace(/\/$/, '') + cp.route;
-    this.frame = frame;
-    this.motion?.append(frame);
-    // The app runs at the recorded 1440x900 and is scaled to its container, like the tape.
-    this.#fit = new ResizeObserver(() => {
-      const m = frame.parentElement;
-      if (m) m.style.setProperty('--live-k', String(Math.max(m.clientWidth / 1440, m.clientHeight / 900)));
-    });
-    this.#fit.observe(this.motion!);
-    // Apps without the bridge (this site, opened in itself) are watched from here: same origin.
-    const watch = window.setInterval(() => {
-      const doc = frame.contentDocument;
-      if (this.#disposed) return clearInterval(watch);
-      if (!doc || doc.readyState === 'loading' || !doc.querySelector(tape.app.readySelector)) return;
-      clearInterval(watch);
-      void doc.fonts.ready.then(() => frames(frame.contentWindow!).then(ready));
-    }, 50);
-    await painted;
-    mark(this.id, 'ready');
-    for (const [k, v] of this.#restore) v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
-    this.#attach();
-    // An app of several pages gets the same hooks on each page it goes to.
-    frame.addEventListener('load', () => this.#attach());
-    // Following is driven by the tape: when it plays (from wherever it was put) and when an action is due.
-    const player = this.player;
-    player?.addEventListener('playing', this.#follow);
-    player?.addEventListener('pause', this.#follow);
-    this.#follow();
+    return this.#booted!;
   }
 
-  #attached = new WeakSet<Document>();
-  /** Hooks into the app's current page: the theme both ways, the pointer (for the lights), the wheel. */
-  #attach() {
-    const frame = this.frame;
-    const win = frame.contentWindow;
-    const doc = frame.contentDocument;
-    if (!win || !doc || this.#attached.has(doc)) return;
-    this.#attached.add(doc);
-    const tape = this.tape;
-    this.syncTheme();
-    // A theme the app switches itself (in its own settings) is the site's too: the site takes the
-    // other edition, opening out from the app's window to the edges. (This site, running inside
-    // itself, hands its toggle to the page around it instead: see Bar.astro.)
-    const appRoot = doc.documentElement;
-    new MutationObserver(() => {
-      const theirs = appRoot.getAttribute(tape.themeAttr);
-      if (theirs && theirs === document.documentElement.dataset.theme)
-        window.__faTheme?.({ rect: (frame.closest('.thaw-window, .plate') ?? frame).getBoundingClientRect() });
-    }).observe(appRoot, { attributes: true, attributeFilter: [tape.themeAttr] });
-    // Where the pointer is over the app, for the window lights (they keep to the pointer's side).
-    win.addEventListener('pointermove', (e) => frame.dispatchEvent(new CustomEvent('live:pointer', { bubbles: true, detail: e.clientX / win.innerWidth })), {
-      passive: true,
-    });
-    // In a preview the app takes the pointer and clicks, but not the wheel: that still scrolls the page
-    // (and moves the showcase, which listens for it). In its window, the app scrolls itself.
-    win.addEventListener(
-      'wheel',
-      (e) => {
-        if (!this.plate.contains(frame)) return;
-        e.preventDefault();
-        const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
-        const pass = new WheelEvent('wheel', { deltaX: e.deltaX * k, deltaY: e.deltaY * k, bubbles: true, cancelable: true });
-        if (this.plate.dispatchEvent(pass)) scrollBy(e.deltaX * k, e.deltaY * k);
-      },
-      { passive: false },
-    );
-  }
-
-  /**
-   * Follows the site's theme switch, inverted like the tape: on the same frame, so the switch's circle
-   * spreads over the app too. The app's own key is saved, so it reloads in that edition; a key this
-   * site shares with the app (this site in itself) is left to the site.
-   */
-  syncTheme() {
-    const doc = this.frame?.contentDocument;
-    if (!doc || !this.tape) return;
-    const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    doc.documentElement.setAttribute(this.tape.themeAttr, theme);
-    const key = this.tape.app.themeKey;
-    if (key && !this.tape.app.restore?.includes(key))
-      try {
-        localStorage.setItem(key, theme);
-      } catch {}
-  }
-
-  /**
-   * Keeps up with the tape: replays the actions it passes, each when the tape reaches it (a timer to
-   * the next one, not a check on every frame); restarts if the tape went back.
-   */
-  #follow = () => {
-    clearTimeout(this.#timer);
-    if (this.#disposed || this.live) return;
-    const t = this.#now;
-    if (t < this.#last - 300) return void this.#reboot();
-    this.#last = t;
-    const actions = this.tape.actions ?? [];
-    while (actions[this.#done] && actions[this.#done]!.t <= t) {
-      const a = actions[this.#done++]!;
-      this.#busy = this.#busy.then(() => this.#replay(a));
-    }
-    const p = this.player;
-    const next = actions[this.#done];
-    if (next && p && !p.paused) this.#timer = window.setTimeout(this.#follow, Math.max(0, (next.t - t) / (p.playbackRate || 1)));
-  };
-
-  async #replay(a: Action) {
-    const win = this.frame.contentWindow as Window & typeof globalThis;
-    const doc = this.frame.contentDocument;
-    if (!win || !doc) return;
-    this.handoff.setClock?.(this.#clockAt(a.t), true);
-    let el: HTMLElement | undefined;
-    for (let tries = 0; !(el = resolve(doc, a)) && tries < 40; tries++) await frames(win, 1);
-    if (el && a.kind === 'key') press(win, el, a.key!);
-    else if (el && a.kind === 'input') type(win, el, a.value ?? '');
-    else if (el) click(win, el);
-    // A click can start async work: wait for the DOM to settle (bounded: a playing video never does).
-    // Typing is synchronous, and there's a lot of it: one frame is enough.
-    if (a.kind === 'input') await frames(win, 1);
-    else await quiet(win, doc, 450);
-    this.handoff.setClock?.(this.#clockAt(this.#now), false);
-  }
-
-  #reboot() {
-    const { id, plate } = this;
-    this.dispose();
-    sessions.set(plate, new Session(id, plate));
-  }
-
-  /**
-   * Makes the live app the preview, on the frame the tape is on: the tape stops, the app catches up
-   * (clicks still in flight, timers that fell due), settles its clock on the time the frame shows (the
-   * last time its text changed), and takes the tape's place. From here it's interactive. However many
-   * times it's asked for (every pointer move over the preview asks), it happens once.
-   */
+  /** The app takes the tape's place, booting first if it hasn't. However often it's asked, once. */
   goLive() {
-    return (this.#going ??= this.#goLive());
+    return (this.#going ??= (async () => {
+      const player = this.player;
+      const shown = once(player, 'stage:live');
+      void this.boot();
+      player.send({ k: 'live' });
+      await shown;
+      this.state = 'live';
+      this.used = performance.now();
+      this.plate.dataset.live = '';
+      this.motion?.removeAttribute('aria-hidden');
+      if (player.frame) {
+        player.frame.tabIndex = 0;
+        player.frame.removeAttribute('aria-hidden');
+        player.frame.title = `${nameOf(this.plate)}, live`;
+      }
+      trim();
+    })());
   }
 
-  async #goLive() {
-    await this.booted;
-    await this.#busy;
-    if (this.live || this.#disposed) return;
-    clearTimeout(this.#timer);
+  hold(on: boolean) {
+    if (this.state === 'none' || this.held === on) return;
+    this.held = on;
+    this.player.send({ k: 'hold', on });
+  }
+
+  /** Lets the app go; the tape picks up where it was. */
+  drop() {
+    if (this.state === 'none') return;
+    const wasLive = this.state === 'live';
+    this.state = 'none';
+    this.held = false;
+    this.#booted = this.#going = undefined;
     const player = this.player;
-    const at = this.#now;
-    player?.pause();
-    // (Pausing hands the tape's due actions to the queue: they finish first.)
-    await this.#busy;
-    // Clicks the tape had reached but the app hadn't yet.
-    for (const a of (this.tape.actions ?? []).slice(this.#done)) if (a.t <= at) {
-      this.#done++;
-      await this.#replay(a);
-    }
-    let shown = 0;
-    for (const a of this.tape.actions ?? []) if (a.t <= at) shown = Math.max(shown, a.t);
-    for (const e of this.tape.events) if (e[0] === 't' && e[1] <= at && e[1] > shown) shown = e[1];
-    const win = this.frame.contentWindow!;
-    const doc = this.frame.contentDocument!;
-    const settle = async () => {
-      await quiet(win, doc, 500);
-      await Promise.race([Promise.all(doc.getAnimations().map((x) => x.finished.catch(() => {}))), sleep(600)]);
-    };
-    this.handoff.setClock?.(this.#clockAt(at), true);
-    await settle();
-    this.handoff.setClock?.(this.#clockAt(shown), true, true);
-    await frames(win);
-    this.handoff.setClock?.(this.#clockAt(shown), false);
-    this.live = true;
-    this.plate.dataset.live = '';
-    this.motion?.removeAttribute('aria-hidden');
-    this.frame.tabIndex = 0;
-    this.frame.classList.add('shown');
-    mark(this.id, 'live');
-  }
-
-  dispose() {
-    this.#disposed = true;
-    clearTimeout(this.#timer);
-    this.player?.removeEventListener('playing', this.#follow);
-    this.player?.removeEventListener('pause', this.#follow);
-    this.#fit?.disconnect();
-    this.frame?.remove();
-    if (window.__live) delete window.__live[this.id];
+    player.send({ k: 'drop' });
     delete this.plate.dataset.live;
     this.motion?.setAttribute('aria-hidden', 'true');
-    const player = this.player;
-    // The tape picks up from where the app was.
-    if (this.live && player?.tape && this.plate.dataset.state === 'playing') void player.play();
-    if (sessions.get(this.plate) === this) sessions.delete(this.plate);
+    if (player.frame) {
+      player.frame.tabIndex = -1;
+      player.frame.setAttribute('aria-hidden', 'true');
+    }
+    if (wasLive && this.plate.dataset.state === 'playing') void player.play();
   }
 }
 
-const sessions = new Map<HTMLElement, Session>();
-const sessionFor = (plate: HTMLElement) => {
-  let s = sessions.get(plate);
-  if (!s) {
-    // One app at a time.
-    for (const other of [...sessions.values()]) other.dispose();
-    s = new Session(plate.dataset.app!, plate);
-    sessions.set(plate, s);
-  }
-  return s;
+const lives = new Map<HTMLElement, Live>();
+const liveFor = (plate: HTMLElement) => {
+  let l = lives.get(plate);
+  if (!l) lives.set(plate, (l = new Live(plate)));
+  return l;
+};
+/** Keeps the apps the visitor used most recently; any other one that's held (off screen) goes. */
+const trim = () =>
+  [...lives.values()]
+    .filter((l) => l.state === 'live' && !l.inWindow)
+    .sort((a, b) => b.used - a.used)
+    .slice(KEEP)
+    .forEach((l) => l.held && l.drop());
+
+/** Boots one app at a time (each waits for the one before, for a while at most). */
+let booting: Promise<unknown> = Promise.resolve();
+const queueBoot = (l: Live) => {
+  booting = booting.then(() => Promise.race([l.boot(), new Promise((r) => setTimeout(r, 8000))]));
 };
 
 // ---------------------------------------------------------------------------------------------------
@@ -559,7 +263,8 @@ async function zoom(plate: HTMLElement) {
     return;
   }
   zooming = true;
-  const session = sessionFor(plate);
+  const app = liveFor(plate);
+  const player = app.player;
   const motion = plate.querySelector<HTMLElement>('.plate-motion')!;
   const home = motion.parentElement!;
   const homeNext = motion.nextSibling;
@@ -686,7 +391,14 @@ async function zoom(plate: HTMLElement) {
   // ---- In
   document.dispatchEvent(new CustomEvent('thaw:open'));
   // Not live yet (a click before the hover finished): it becomes live in the window.
-  void session.goLive().then(() => session.frame.focus());
+  void app.goLive().then(() => {
+    player.frame?.focus();
+    player.send({ k: 'focus' });
+  });
+  // In the window the app is laid out at the window's size, and the wheel is its own (the stage applies
+  // this with the resize the move brings, on that frame).
+  player.send({ k: 'mode', window: true });
+  app.inWindow = true;
   const steps = stepping(true, FLIGHT);
   await morph(true, FLIGHT, steps);
   overlay.classList.add('landed');
@@ -698,7 +410,7 @@ async function zoom(plate: HTMLElement) {
     closing = true;
     removeEventListener('popstate', onPop);
     removeEventListener('keydown', onKey, true);
-    session.frame.contentWindow?.removeEventListener('keydown', onKey, true);
+    player.removeEventListener('stage:escape', onEscape);
     if (!viaHistory && history.state?.liveZoom) history.back();
     overlay.classList.remove('landed');
     // The lights land on the side they're on now, in the plate too.
@@ -708,6 +420,8 @@ async function zoom(plate: HTMLElement) {
     const land = new DOMRect(ox + (p.left - ox) / sc, oy + (p.top - oy) / sc, p.width / sc, p.height / sc);
     const returns = stepping(false, FLIGHT * 0.85);
     steps.forEach((a) => a.cancel());
+    player.send({ k: 'mode', window: false });
+    app.inWindow = false;
     await morph(false, FLIGHT * 0.85, returns, land);
     await Promise.all(returns.map((a) => a.finished));
     returns.forEach((a) => a.cancel());
@@ -719,18 +433,18 @@ async function zoom(plate: HTMLElement) {
   };
   const onKey = (e: KeyboardEvent) => {
     if (e.key !== 'Escape' || e.defaultPrevented) return;
-    // The app's own dialogs and menus take Escape first.
-    if (session.frame.contentDocument?.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
     e.preventDefault();
     void close();
   };
+  // Escape in the app comes from the stage, which lets the app's own dialogs and menus take it first.
+  const onEscape = () => void close();
   addEventListener('keydown', onKey, true);
-  session.frame.contentWindow?.addEventListener('keydown', onKey, true);
+  player.addEventListener('stage:escape', onEscape);
   overlay.addEventListener('click', (e) => e.target === overlay && void close());
   overlay.querySelectorAll('[data-light]').forEach((b) => b.addEventListener('click', () => void close()));
   // The lights keep to the pointer's side: over the page around the window, and over the app in it.
   overlay.addEventListener('pointermove', (e) => moveLights(lights, (e.clientX - mx) / availW));
-  overlay.addEventListener('live:pointer', (e) => moveLights(lights, (e as CustomEvent<number>).detail));
+  overlay.addEventListener('stage:pointer', (e) => moveLights(lights, (e as CustomEvent<{ f: number }>).detail.f));
   // The deck listens on window: keep wheel and keys over the overlay from moving the page under it.
   for (const type of ['wheel', 'keydown'] as const) overlay.addEventListener(type, (e) => e.stopPropagation());
   history.pushState({ ...(history.state ?? {}), liveZoom: true }, '', location.href);
@@ -743,7 +457,7 @@ async function zoom(plate: HTMLElement) {
 // ---------------------------------------------------------------------------------------------------
 
 export function initLive() {
-  // Inside an app's frame (this site, opened in itself), previews stay tapes: no apps in apps.
+  // Inside a stage (this site, opened in itself), previews stay tapes: no apps in apps.
   if (window !== window.top) return;
   const plates = [...document.querySelectorAll<HTMLElement>('.plate[data-app]')];
   if (!plates.length) return;
@@ -783,64 +497,108 @@ export function initLive() {
       e.preventDefault();
       e.stopPropagation();
       if (t.closest('[data-light="zoom"]')) void zoom(plate);
-      else if (!t.closest('[data-light]')) void sessionFor(plate).goLive();
+      else if (!t.closest('[data-light]')) void liveFor(plate).goLive();
     },
     true,
   );
 
-  // Hover: the preview lifts and the live app takes its place; the showcase holds while it's hovered.
+  // Hover: the live app takes the tape's place, booting first if it hadn't; the showcase holds while
+  // the preview is hovered. Over the app the pointer is in the stage, which a page can't see when the
+  // stage is from another site: the stage reports it (stage:hover), kept as data-hover.
   const lightsOf = (plate: HTMLElement) => plate.querySelector<HTMLElement>('.lights-pair');
+  const hovered = (plate: HTMLElement) => plate.matches(':hover') || plate.hasAttribute('data-hover');
+  const holdShow = (on: boolean) => document.dispatchEvent(new CustomEvent('live:hold', { detail: on }));
+  const released = (plate: HTMLElement) => setTimeout(() => !hovered(plate) && holdShow(false), 120);
   for (const plate of plates) {
     plate.addEventListener('pointerenter', (e) => {
-      if (e.pointerType !== 'mouse' || !desktop()) return;
-      document.dispatchEvent(new CustomEvent('live:hold', { detail: true }));
-      const s = sessions.get(plate);
-      if (s) void s.goLive();
+      if (e.pointerType !== 'mouse' || !ok()) return;
+      holdShow(true);
+      void liveFor(plate).goLive();
     });
     // A preview that scrolled under a resting pointer gets no pointerenter: any move over it counts.
     plate.addEventListener('pointermove', (e) => {
-      const s = sessions.get(plate);
-      if (e.pointerType === 'mouse' && s && !s.live && desktop()) void s.goLive();
+      if (e.pointerType === 'mouse' && ok() && liveFor(plate).state !== 'live') void liveFor(plate).goLive();
     });
-    plate.addEventListener('live:pointer', (e) => moveLights(lightsOf(plate), (e as CustomEvent<number>).detail));
-    plate.addEventListener('pointerleave', () => {
-      // (Moving into the app's frame isn't leaving.)
-      requestAnimationFrame(() => !plate.matches(':hover') && document.dispatchEvent(new CustomEvent('live:hold', { detail: false })));
+    // (Moving into the app isn't leaving: the stage's report comes a moment later.)
+    plate.addEventListener('pointerleave', () => released(plate));
+    plate.addEventListener('stage:hover', (e) => {
+      const on = (e as CustomEvent<{ on: boolean }>).detail.on;
+      plate.toggleAttribute('data-hover', on);
+      if (!on) released(plate);
     });
+    plate.addEventListener('stage:pointer', (e) => moveLights(lightsOf(plate), (e as CustomEvent<{ f: number }>).detail.f));
   }
-  // A preview booted under the pointer becomes live at once.
-  const boot = (plate: HTMLElement) => {
-    const s = sessionFor(plate);
-    void s.booted.then(() => {
-      if (plate.matches(':hover')) void s.goLive();
-    });
-  };
+  // What the app does that's the page's business, wherever its stage is (a plate, or the window).
+  document.addEventListener('stage:wheel', (e) => {
+    // In a preview the wheel still moves the page (and the showcase, which listens for it).
+    const { dx, dy } = (e as CustomEvent<{ dx: number; dy: number }>).detail;
+    const plate = (e.target as Element).closest<HTMLElement>('.plate');
+    const pass = new WheelEvent('wheel', { deltaX: dx, deltaY: dy, bubbles: true, cancelable: true });
+    if (!plate || plate.dispatchEvent(pass)) scrollBy(dx, dy);
+  });
+  document.addEventListener('stage:theme-app', (e) => {
+    // A theme the app switched itself is the site's too: the site takes the other edition, opening out
+    // from the app's window to the edges.
+    const at = (e.target as Element).closest('.thaw-window, .plate') ?? (e.target as Element);
+    window.__faTheme?.({ rect: at.getBoundingClientRect() });
+  });
+  document.addEventListener('stage:theme-toggle', (e) => {
+    // This site, opened in its own stage, had its toggle used: the switch spreads from that point.
+    const { x, y } = (e as CustomEvent<{ x: number; y: number }>).detail;
+    const frame = (e.target as TapePlayer).frame;
+    if (!frame) return;
+    const r = frame.getBoundingClientRect();
+    const k = r.width / (frame.offsetWidth || r.width);
+    window.__faTheme?.({ x: r.left + x * k, y: r.top + y * k });
+  });
 
-  // Boot only after the visitor's first input, and only for the preview on screen: in view, and not in
-  // an inactive showcase slide (they overlap the active one, hidden and inert).
+  // Boot only after the visitor's first input, and only for a preview on screen (in view, and not in
+  // an inactive showcase slide: they overlap the active one, hidden and inert) for a moment.
   let started = false;
   const visible = new Set<HTMLElement>();
   const inView = new Set<HTMLElement>();
+  const idle = (fn: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
+  const dwell = new Map<HTMLElement, number>();
+  const consider = (plate: HTMLElement) => {
+    clearTimeout(dwell.get(plate));
+    if (!started || !ok()) return;
+    dwell.set(
+      plate,
+      window.setTimeout(() => idle(() => visible.has(plate) && !zooming && liveFor(plate).state === 'none' && queueBoot(liveFor(plate))), DWELL),
+    );
+  };
   const start = () => {
     if (started || !desktop()) return;
     started = true;
     for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) removeEventListener(type, start, true);
-    for (const p of visible) idle(() => visible.has(p) && !zooming && boot(p));
+    visible.forEach(consider);
   };
   for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(type, start, { capture: true, passive: true });
-  const idle = (fn: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 2000 }) : setTimeout(fn, 400));
   const leaving = new Map<HTMLElement, number>();
   const update = (plate: HTMLElement) => {
     const on = inView.has(plate) && !plate.closest('[inert]');
     if (on === visible.has(plate)) return;
+    const l = lives.get(plate);
     if (on) {
       visible.add(plate);
       clearTimeout(leaving.get(plate));
-      if (started && !zooming) idle(() => visible.has(plate) && boot(plate));
+      if (l?.state === 'live') !document.hidden && l.hold(false);
+      else consider(plate);
     } else {
       visible.delete(plate);
-      // Off screen for a moment: let the app go (not while its window is open).
-      leaving.set(plate, window.setTimeout(() => !zooming && !visible.has(plate) && sessions.get(plate)?.dispose(), 1200));
+      clearTimeout(dwell.get(plate));
+      // Off screen for a moment (not while its window is open): an app that was only following its tape
+      // goes; one the visitor used is held, and kept if it's among the most recent.
+      leaving.set(
+        plate,
+        window.setTimeout(() => {
+          if (zooming || visible.has(plate) || !l) return;
+          if (l.state === 'live') {
+            l.hold(true);
+            trim();
+          } else l.drop();
+        }, 1200),
+      );
     }
   };
   const seen = new IntersectionObserver(
@@ -855,14 +613,25 @@ export function initLive() {
     { threshold: [0, 0.6] },
   );
   plates.forEach((p) => seen.observe(p));
+  new MutationObserver(() => plates.forEach(update)).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['inert'] });
+  // A hidden tab holds every app; coming back lets the ones on screen go on.
+  document.addEventListener('visibilitychange', () => lives.forEach((l) => l.hold(document.hidden || (!visible.has(l.plate) && !l.inWindow))));
+
   // The lights of the previews on screen keep to the pointer's side of them, wherever it is on the page
-  // (over an app, the app reports it: live:pointer). Read once a frame.
+  // (over an app, the stage reports it: stage:pointer). Read once a frame.
   let px = -1;
   let queued = 0;
   addEventListener(
     'pointermove',
     (e) => {
       px = e.clientX;
+      // The pointer is on this page again: any stage it was in has been left, whether or not the stage
+      // saw it go (leaving straight out of an app's frame, it may not).
+      for (const p of document.querySelectorAll<HTMLElement>('.plate[data-hover]'))
+        if (!p.contains(e.target as Node)) {
+          p.removeAttribute('data-hover');
+          released(p);
+        }
       queued ||= requestAnimationFrame(() => {
         queued = 0;
         if (!ok() || zooming) return;
@@ -874,7 +643,4 @@ export function initLive() {
     },
     { passive: true },
   );
-  // The theme switch reaches the live apps (it reaches the tapes in tape.ts).
-  new MutationObserver(() => sessions.forEach((s) => s.syncTheme())).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  new MutationObserver(() => plates.forEach(update)).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['inert'] });
 }

@@ -13,7 +13,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const browser = await puppeteer.launch({
   executablePath: ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome'].find(existsSync),
   headless: false, defaultViewport: null, userDataDir: mkdtempSync(join(tmpdir(), 'perf-check-')),
-  args: ['--window-size=1600,1047', '--window-position=0,0', '--lang=en-US', '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-features=CalculateNativeWinOcclusion'],
+  args: ['--window-size=1600,1047', '--window-position=0,0', '--lang=en-US', '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-features=CalculateNativeWinOcclusion', ...(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(/ (?=--)/) : [])],
   ignoreDefaultArgs: ['--enable-automation'],
 });
 const [page] = await browser.pages();
@@ -27,6 +27,7 @@ await page.mouse.move(700, 400, { steps: 5 });
 await page.keyboard.press('ArrowDown');
 await sleep(2000);
 for (const id of ids) {
+  await page.mouse.move(1530, 770);
   await page.evaluate((id) => {
     const i = [...document.querySelectorAll('[data-slide]')].findIndex((s) => s.dataset.id === id);
     document.querySelectorAll('[data-go]')[i]?.click();
@@ -38,7 +39,7 @@ for (const id of ids) {
     const plate = slide.querySelector('.plate');
     const tp = plate.querySelector('tape-player');
     const bar = document.querySelector('.rail-item[aria-current="true"] .rail-progress i');
-    return { state: plate.dataset.state, t: tp?.currentTime?.toFixed(2), paused: tp?.paused, bar: bar?.getAnimations().map((a) => `${a.playState} ${Math.round(a.currentTime)}`), cursor: plate.querySelector('.tape-cursor')?.getAnimations().map((a) => a.playState), app: !!plate.querySelector('.live-app') };
+    return { state: plate.dataset.state, t: tp?.currentTime?.toFixed(2), paused: tp?.paused, bar: bar?.getAnimations().map((a) => `${a.playState} ${Math.round(a.currentTime)}`), stage: tp?.frame?.src };
   });
   console.log(id, JSON.stringify(st));
   await page.screenshot({ path: join(out, `check-${id}-tape.png`) });
@@ -46,8 +47,8 @@ for (const id of ids) {
   const t0 = await page.evaluate(() => performance.now());
   await page.mouse.move(r.x - 40, r.y, { steps: 4 });
   for (let i = 0; i < 30; i++) { await page.mouse.move(r.x - 40 + (i % 5), r.y); await sleep(30); }
-  const marks = await page.evaluate((t0) => performance.getEntriesByType('mark').filter((m) => m.name.startsWith('live:')).map((m) => `${m.name} ${Math.round(m.startTime - t0)}`), t0);
-  console.log('  marks rel. to hover:', marks.join(', '), '| live:', await page.evaluate(() => document.querySelector('.slide[data-state="active"] .plate').hasAttribute('data-live')));
+  const live = await page.evaluate((t0) => new Promise((r) => { const p = document.querySelector('.slide[data-state="active"] .plate'); const t = () => (p.hasAttribute('data-live') ? r(Math.round(performance.now() - t0)) : setTimeout(t, 10)); t(); }), t0);
+  console.log('  live', live, 'ms after hover; out-of-process frames:', (await (await browser.target().createCDPSession()).send('Target.getTargets')).targetInfos.filter((t) => t.type === 'iframe').map((t) => t.url.replace(/^https?:\/\//, '')).join(' '));
   await page.screenshot({ path: join(out, `check-${id}-live.png`) });
   await page.mouse.move(1530, 770);
   await sleep(500);

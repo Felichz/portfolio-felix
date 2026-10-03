@@ -10,7 +10,7 @@
  * Only one video decodes, apart from that moment.
  */
 // Plates hold <tape-player> elements too; define it before any plate script drives one.
-import './tape';
+import './player';
 
 export interface ThemeSwitch {
   theme: 'light' | 'dark';
