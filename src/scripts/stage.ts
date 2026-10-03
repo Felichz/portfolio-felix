@@ -22,6 +22,7 @@ document.body.append(core);
 let title = id;
 let inWindow = false;
 let session: Session | undefined;
+let warmBytes = false;
 
 core.addEventListener('loadedmetadata', () => post({ k: 'meta', duration: core.duration }));
 core.addEventListener('playing', () => post({ k: 'playing', t: core.currentTime * 1000 }));
@@ -103,6 +104,25 @@ addEventListener('message', (e: MessageEvent<ToStage>) => {
     case 'live':
       session ??= newSession();
       return void session.goLive().then(() => session?.live && post({ k: 'live' }));
+    case 'ghost':
+      // The tape answers the pointer while the app behind it boots; once it's live, the pointer is
+      // the app's and the ghost lifts.
+      if (!session?.live) core.hover(m.x, m.y);
+      else core.hover(-1, -1);
+      return;
+    case 'warm-bytes': {
+      // The app's entry and its recorded prefetches, into the cache in the stage's own origin — the
+      // one the app's frame will load from. Only before any boot (a fetch in flight while the app
+      // loads would deduplicate against the frame's own request and hold it up), and only once the
+      // tape — which names the files — is here.
+      const tape = core.tape;
+      if (!tape || warmBytes || session) return;
+      warmBytes = true;
+      const base = new URL(tape.app.entry, location.href);
+      fetch(base.href, { priority: 'low' }).catch(() => {});
+      for (const p of tape.app.prefetch ?? []) fetch(new URL(p, base), { priority: 'low' }).catch(() => {});
+      return;
+    }
     case 'mode':
       pendingMode = m.window;
       // (If the move brings no resize, it applies anyway.)

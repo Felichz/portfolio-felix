@@ -21,6 +21,10 @@ export type ToStage =
   | { k: 'live' }
   /** In a window the app is laid out at the stage's size and keeps the wheel; applied on the next resize. */
   | { k: 'mode'; window: boolean }
+  /** The page's pointer over the preview, as fractions across it; x < 0 lifts. The tape's ghost hover. */
+  | { k: 'ghost'; x: number; y: number }
+  /** Warm the live app's own bytes (its entry and its recorded prefetches) into the cache. */
+  | { k: 'warm-bytes' }
   /** Nobody can see it: the app's clock stops and its animations pause. */
   | { k: 'hold'; on: boolean }
   | { k: 'drop' }

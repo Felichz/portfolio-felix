@@ -583,6 +583,8 @@ const glowCSS = projects
       change2 = window.setTimeout(() => {
         change2 = 0;
         roll();
+        // The app behind this product warms its bytes now, seconds before anything boots them.
+        plateOf(j)?.querySelector<HTMLElement & { warm?: () => void }>('tape-player')?.warm?.();
         if (active) history.replaceState(history.state, '', `#work/${slides[j]!.dataset.id}`);
         // The products on either side have their stages warmed — queued, one at a time, only while
         // the page is quiet (src/scripts/live.ts): a mount is a burst never paid under the visitor.

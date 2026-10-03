@@ -284,6 +284,25 @@ export class TapeCore extends HTMLElement {
     if (this.#doc && this.tape) this.#doc.documentElement.setAttribute(this.tape.themeAttr, this.#theme);
   }
 
+  /**
+   * The ghost: the tape answers the page's pointer while the live app behind it boots — the recorded
+   * stylesheet styles what's under the cursor, so the preview reacts from the first instant and the
+   * swap to the real app has nothing to be noticed. `fx`/`fy` are fractions across this element;
+   * `fx < 0` lifts everything. It only styles: nothing here is clickable, and a playing tape's own
+   * recorded hover keeps arriving underneath (the pointer's word is simply the latest).
+   */
+  hover(fx: number, fy: number) {
+    if (!this.#doc || !this.tape || !this.#frame) return;
+    let el: Element | undefined;
+    if (fx >= 0) {
+      const [w, h] = this.viewport ?? this.tape.viewport;
+      const r = this.getBoundingClientRect();
+      const k = Math.max(r.width / w, r.height / h);
+      el = this.#doc.elementFromPoint((fx * r.width) / k, (fy * r.height) / k) ?? undefined;
+    }
+    this.#hover = this.#chain(this.#hover, el, 'data-tape-hover');
+  }
+
   // ---- Loading and building
   #load() {
     if (!this.src) return Promise.reject(new Error('tape-core: no src'));
@@ -630,12 +649,12 @@ export class TapeCore extends HTMLElement {
 }
 
 /**
- * Added to every tape's stylesheet: no text caret, nothing reacts to the real pointer. Scrollbars stay:
- * the live app has them (taking width on Windows, overlaid on macOS), and the two are swapped.
+ * Added to every tape's stylesheet: no text caret, nothing shows a pointer cursor. The frame itself
+ * never receives real pointer events (it's aria-hidden and its element takes none), but the document
+ * stays hit-testable for the ghost (hover()).
  */
 const TAPE_CSS = `
 * { caret-color: transparent !important; cursor: default !important; }
-html { pointer-events: none; }
 `;
 
 if (!customElements.get('tape-core')) customElements.define('tape-core', TapeCore);

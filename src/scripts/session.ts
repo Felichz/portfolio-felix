@@ -216,7 +216,9 @@ export class Session {
       else localStorage.removeItem(key);
     }
     if (tape.app.themeKey) localStorage.setItem(tape.app.themeKey, theme);
-    // The database and the recorded answers load side by side.
+    // (The app's bytes are warmed by the page's `warm-bytes`, when its slide turns active — never
+    // here: a fetch in flight at boot deduplicates against the frame's own load of the same file,
+    // and the app waits on a low-priority request to finish before it can start.)
     const [, network] = await Promise.all([
       cp.idb ? restoreIdb(cp.idb).catch(() => {}) : undefined,
       tape.app.network ? fetch(tape.app.network).then((r) => r.json() as Promise<Exchange[]>).catch(() => undefined) : undefined,

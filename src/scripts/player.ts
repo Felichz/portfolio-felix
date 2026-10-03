@@ -159,6 +159,16 @@ export class TapePlayer extends HTMLElement {
     this.#post(m);
   }
 
+  /** The page's pointer over this preview, as fractions across it; x < 0 lifts. */
+  ghost(x: number, y: number) {
+    this.#post({ k: 'ghost', x, y });
+  }
+
+  /** Asks the stage to warm the app's bytes ahead of its boot. */
+  warm() {
+    this.send({ k: 'warm-bytes' });
+  }
+
   #load() {
     this.#post({ k: 'load' });
   }

@@ -193,6 +193,9 @@ const clipRect = scene.clip
 const wall0 = await page.evaluate(() => performance.timeOrigin + window.__tapeT0);
 const socketLog = scene.socket ? await page.evaluate(() => window.__wsLog) : null;
 const pageT0 = await page.evaluate(() => window.__tapeT0);
+// The final checkpoint, at the scene's end: the live app boots from it when its tape has played
+// through (which is most of the time), so it never replays the scene to catch up.
+await helpers.checkpoint('end');
 const tape = await page.evaluate(() => window.__tapeStop());
 await browser.close();
 await scene.teardown?.();

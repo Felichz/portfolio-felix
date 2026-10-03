@@ -49,6 +49,7 @@ declare global {
 }
 
 const once = (target: EventTarget, type: string) => new Promise<void>((r) => target.addEventListener(type, () => r(), { once: true }));
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 // ---------------------------------------------------------------------------------------------------
 // One preview's app, as the page sees it
@@ -101,6 +102,7 @@ class Live {
       await shown;
       this.state = 'live';
       this.used = performance.now();
+      this.player.ghost(-1, -1);
       this.plate.dataset.live = '';
       this.motion?.removeAttribute('aria-hidden');
       if (player.frame) {
@@ -265,6 +267,9 @@ async function zoom(plate: HTMLElement) {
   zooming = true;
   const app = liveFor(plate);
   const player = app.player;
+  // A cold app would catch up with its tape inside the morph. It goes live first, bounded — the tape
+  // holds the picture meanwhile — so the window opens already answering, however cold it was.
+  if (app.state !== 'live') await Promise.race([app.goLive(), sleep(500)]);
   const motion = plate.querySelector<HTMLElement>('.plate-motion')!;
   const home = motion.parentElement!;
   const homeNext = motion.nextSibling;
@@ -516,14 +521,30 @@ export function initLive() {
     plate.addEventListener('pointerenter', (e) => {
       if (e.pointerType !== 'mouse' || !ok()) return;
       holdShow(true);
-      void liveFor(plate).goLive();
+      const l = liveFor(plate);
+      if (l.state !== 'live') {
+        const r = plate.getBoundingClientRect();
+        l.player.ghost((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+      }
+      void l.goLive();
     });
     // A preview that scrolled under a resting pointer gets no pointerenter: any move over it counts.
+    // Under the pointer, the tape answers as a ghost (its own recorded hover styles what's under the
+    // cursor) until the real app takes over — so the preview reacts from the first instant.
     plate.addEventListener('pointermove', (e) => {
-      if (e.pointerType === 'mouse' && ok() && liveFor(plate).state !== 'live') void liveFor(plate).goLive();
+      if (e.pointerType !== 'mouse' || !ok()) return;
+      const l = liveFor(plate);
+      if (l.state !== 'live') {
+        const r = plate.getBoundingClientRect();
+        l.player.ghost((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+        void l.goLive();
+      }
     });
     // (Moving into the app isn't leaving: the stage's report comes a moment later.)
-    plate.addEventListener('pointerleave', () => released(plate));
+    plate.addEventListener('pointerleave', () => {
+      lives.get(plate)?.player.ghost(-1, -1);
+      released(plate);
+    });
     plate.addEventListener('stage:hover', (e) => {
       const on = (e as CustomEvent<{ on: boolean }>).detail.on;
       plate.toggleAttribute('data-hover', on);
