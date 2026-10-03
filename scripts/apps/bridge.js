@@ -107,10 +107,57 @@
     handoff.running = !freeze;
     handoff.offset = ms - realBase;
     timers.forEach(schedule);
+    pump();
     if (tick)
       timers.forEach(function (t) {
         if (t.every && typeof t.fn === 'function') t.fn.apply(window, t.args);
       });
+  };
+
+  // ---- Frames. requestAnimationFrame follows the hold, not the frozen clock: a booting or replaying
+  // app is frozen and still has to paint (readiness itself is reported from two frames); an app
+  // nobody sees fires nothing. Seen, its callbacks run on every `pace`-th vsync, so a preview asks
+  // for a metronome it can hold instead of a sprint it stutters through. A callback that
+  // re-registers itself runs on the next due frame, as it would in the raw browser.
+  var realRaf = window.requestAnimationFrame.bind(window);
+  var rafCallbacks = new Map();
+  var rafSeq = 1;
+  var rafLoop = false;
+  var vsyncs = 0;
+  var pace = 1;
+  var held = false;
+  var tickFrame = function () {
+    rafLoop = false;
+    if (held) return;
+    if (++vsyncs % pace === 0 && rafCallbacks.size) {
+      var cbs = Array.from(rafCallbacks.values());
+      rafCallbacks.clear();
+      for (var i = 0; i < cbs.length; i++) {
+        try {
+          cbs[i](now());
+        } catch (e) {}
+      }
+    }
+    pump();
+  };
+  var pump = function () {
+    if (!rafLoop && !held && rafCallbacks.size) {
+      rafLoop = true;
+      realRaf(tickFrame);
+    }
+  };
+  window.requestAnimationFrame = function (cb) {
+    var id = rafSeq++;
+    rafCallbacks.set(id, typeof cb === 'function' ? cb : function () {});
+    pump();
+    return id;
+  };
+  window.cancelAnimationFrame = function (id) {
+    rafCallbacks.delete(id);
+  };
+  handoff.setPace = function (n) {
+    pace = Math.max(1, Math.min(4, n | 0));
+    pump();
   };
 
   /**
@@ -131,7 +178,9 @@
       frozen = heldFrozen;
       heldFrozen = null;
     }
+    held = !!on;
     timers.forEach(schedule);
+    pump();
   };
 
   // ---- The backend, as the scene got it

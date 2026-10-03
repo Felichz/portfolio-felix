@@ -262,6 +262,24 @@ export class TapeCore extends HTMLElement {
     this.dispatchEvent(new Event('pause'));
   }
 
+  /** Lets the whole tape go — frame, nodes, cursor — keeping only where it was (`currentTime`). A
+     later play rebuilds it from the file, warm in the cache. For while another preview has the stage:
+     an unloaded tape costs no document, no layers, nothing. */
+  unload() {
+    this.pause();
+    this.#resize?.disconnect();
+    this.#cursorAnim?.cancel();
+    this.#frame?.remove();
+    this.#frame = this.#doc = this.#cursor = undefined;
+    this.#cursorAnim = undefined;
+    this.#nodes.clear();
+    this.#anims.clear();
+    this.#clips.clear();
+    this.#mounted = undefined;
+    this.#i = 0;
+    this.#applied = 0;
+  }
+
   /** Jumps to a time: forward by applying the events in between, backward by rebuilding first. */
   seek(ms: number) {
     const tape = this.tape!;

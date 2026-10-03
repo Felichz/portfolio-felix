@@ -25,6 +25,8 @@ export type ToStage =
   | { k: 'ghost'; x: number; y: number }
   /** Warm the live app's own bytes (its entry and its recorded prefetches) into the cache. */
   | { k: 'warm-bytes' }
+  /** Let the tape go entirely (another preview has the stage); a later play rebuilds it. */
+  | { k: 'unload' }
   /** Nobody can see it: the app's clock stops and its animations pause. */
   | { k: 'hold'; on: boolean }
   | { k: 'drop' }

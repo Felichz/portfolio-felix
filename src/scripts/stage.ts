@@ -123,6 +123,10 @@ addEventListener('message', (e: MessageEvent<ToStage>) => {
       for (const p of tape.app.prefetch ?? []) fetch(new URL(p, base), { priority: 'low' }).catch(() => {});
       return;
     }
+    case 'unload':
+      // (A stage whose app is live keeps everything: only its tape — not the app — would unload.)
+      if (!session) core.unload();
+      return;
     case 'mode':
       pendingMode = m.window;
       // (If the move brings no resize, it applies anyway.)

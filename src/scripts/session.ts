@@ -27,6 +27,8 @@ interface Handoff {
   setClock?: (ms: number, freeze?: boolean, tick?: boolean) => void;
   /** Installed by the bridge: holds the app's clock where it is (nothing timed fires), or lets it run on. */
   hold?: (on: boolean) => void;
+  /** Installed by the bridge: the app's frames fire on every `n`-th vsync (1 = full cadence). */
+  setPace?: (n: number) => void;
 }
 declare global {
   interface Window {
@@ -452,6 +454,8 @@ export class Session {
     this.frame.tabIndex = 0;
     this.frame.classList.add('shown');
     mark(this.id, 'live');
+    this.#setPace(this.opts.inWindow() ? 1 : 2);
+    this.#tunePace();
   }
 
   /**
@@ -492,10 +496,80 @@ export class Session {
     }
   }
 
+  // ---- The cadence. The bridge fires the app's frames on every `pace`-th vsync: half cadence in a
+  // preview to start (a scaled-down picture can't show the difference), full in a window. A small loop
+  // then watches this document's own frame intervals — the stage shares the app's process, so its
+  // frames feel what the app's rendering costs — and settles the app at the highest steady pace the
+  // machine holds. Steadiness is the point, not the number: a metronome at 60 reads as smoother than
+  // a lottery between 42 and 63.
+  #pace = 1;
+  #vsync = 8.33;
+  #paceTimer = 0;
+  #decorative: Animation[] = [];
+
+  #vsyncUnset = true;
+  #tunePace = () => {
+    if (this.#disposed || !this.live) return;
+    if (document.hidden || !this.frame.isConnected) return void (this.#paceTimer = window.setTimeout(this.#tunePace, 1500));
+    const ts: number[] = [];
+    const tick = (t: number) => {
+      ts.push(t);
+      if (ts.length < 40) requestAnimationFrame(tick);
+      else {
+        // The stage's own vsync, measured once from this first batch: the pace arithmetic runs in
+        // units of it, on this machine and this screen.
+        if (this.#vsyncUnset) {
+          const iv = ts
+            .slice(1)
+            .map((x, i) => x - ts[i]!)
+            .sort((a, b) => a - b);
+          this.#vsync = Math.max(4, iv[Math.floor(iv.length / 2)]!);
+          this.#vsyncUnset = false;
+        }
+        this.#judge(ts);
+      }
+    };
+    requestAnimationFrame(tick);
+  };
+  #judge(ts: number[]) {
+    if (this.#disposed || !this.live) return;
+    const iv = ts
+      .slice(1)
+      .map((t, i) => t - ts[i]!)
+      .sort((a, b) => a - b);
+    const p95 = iv[Math.floor(iv.length * 0.95)]!;
+    const target = this.#vsync * this.#pace;
+    if (p95 > target * 1.7 && this.#pace < 4) this.#setPace(this.#pace + 1);
+    else if (p95 < target * 1.15 && this.#pace > 1) this.#setPace(this.#pace - 1);
+    this.#paceTimer = window.setTimeout(this.#tunePace, 1500);
+  }
+  #setPace(n: number) {
+    if (n === this.#pace) return;
+    this.#pace = n;
+    this.handoff.setPace?.(n);
+    n > 1 ? this.#restDecorative() : this.#wakeDecorative();
+  }
+  /** Pauses the app's endless animations — a pulse, a spinner: decorative by definition — so the pace
+     the loop settles on is one the app can actually hold. They run again at full cadence. */
+  #restDecorative() {
+    const doc = this.frame?.contentDocument;
+    if (!doc) return;
+    for (const a of doc.getAnimations())
+      if (a.playState === 'running' && Number(a.effect?.getComputedTiming().endTime) === Infinity) {
+        a.pause();
+        this.#decorative.push(a);
+      }
+  }
+  #wakeDecorative() {
+    this.#decorative.forEach((a) => a.playState === 'paused' && a.play());
+    this.#decorative = [];
+  }
+
   dispose() {
     this.#disposed = true;
     clearTimeout(this.#timer);
     clearInterval(this.#restTimer);
+    clearTimeout(this.#paceTimer);
     this.player.removeEventListener('playing', this.follow);
     this.player.removeEventListener('pause', this.follow);
     this.#fit?.disconnect();

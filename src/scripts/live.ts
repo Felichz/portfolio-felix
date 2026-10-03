@@ -349,6 +349,10 @@ async function zoom(plate: HTMLElement) {
     overlay.style.visibility = open ? '' : 'hidden';
     root.classList.toggle('thawing', open);
     layers.forEach((el) => (el.inert = open));
+    // A measuring switch (scripts/perf): hide the page entirely while the window is open, to price
+    // what the inert, paused page behind the window costs the machine. Decides whether previews
+    // deserve a colder backdrop than the paused, inert page they already have.
+    if (new URLSearchParams(location.search).has('freeze')) layers.forEach((el) => (el.style.visibility = open ? 'hidden' : ''));
   };
   /**
    * The morph is a view transition of the window alone, while the page, live under it, steps back
@@ -395,6 +399,9 @@ async function zoom(plate: HTMLElement) {
 
   // ---- In
   document.dispatchEvent(new CustomEvent('thaw:open'));
+  // While this preview has the stage, every other tape lets its document go (a later play rebuilds
+  // it from cache): the machine runs the app and nothing else.
+  for (const p of document.querySelectorAll('tape-player')) if (p !== player) (p as TapePlayer).send({ k: 'unload' });
   // Not live yet (a click before the hover finished): it becomes live in the window.
   void app.goLive().then(() => {
     player.frame?.focus();
