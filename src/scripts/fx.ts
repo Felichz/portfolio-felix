@@ -25,6 +25,8 @@ export function initFx() {
   document.querySelectorAll<HTMLElement>('[data-tilt]').forEach((el) => {
     const max = Number(el.dataset.tilt) || 6;
     let raf = 0;
+    // The sheen: a light painted once, moved across the window (see .tilt-sheen in Work.astro).
+    el.querySelector('.plate')?.insertAdjacentHTML('beforeend', '<span class="tilt-sheen" aria-hidden="true"></span>');
     el.addEventListener('pointermove', (e) => {
       if (!fine.matches || reduce.matches) return;
       cancelAnimationFrame(raf);
@@ -34,8 +36,8 @@ export function initFx() {
         const y = (e.clientY - r.top) / r.height;
         el.style.setProperty('--rx', `${(0.5 - y) * max}deg`);
         el.style.setProperty('--ry', `${(x - 0.5) * max}deg`);
-        el.style.setProperty('--sx', `${x * 100}%`);
-        el.style.setProperty('--sy', `${y * 100}%`);
+        el.style.setProperty('--sx', `${x * r.width}px`);
+        el.style.setProperty('--sy', `${y * r.height}px`);
         el.setAttribute('data-tilting', '');
       });
     });

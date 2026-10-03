@@ -34,7 +34,7 @@ const total = String(projects.length).padStart(2, '0');
                   )}
                 </span>
                 <span class="rail-short">{p.short}</span>
-                <span class="rail-progress" aria-hidden="true"><i /></span>
+                <span class="rail-progress" aria-hidden="true"><i /><i /></span>
               </button>
             </li>
           ))
@@ -211,7 +211,8 @@ const total = String(projects.length).padStart(2, '0');
   }
   .rail-item[aria-current='true'] .rail-short { color: var(--ink-2); }
   /* The countdown fills the whole item from left to right, behind the text, in the product's
-     color, with a brighter leading edge. */
+     color, with a brighter leading edge. Both run on the compositor: the fill scales, and the edge
+     slides with it so it stays 2px wide. */
   .rail-progress {
     position: absolute;
     inset: 0;
@@ -224,8 +225,13 @@ const total = String(projects.length).padStart(2, '0');
   .rail-progress i {
     position: absolute;
     inset: 0;
-    right: calc((1 - var(--p, 0)) * 100%);
+    transform-origin: 0 0;
+    transform: scaleX(0);
     background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 3%, transparent), color-mix(in oklab, var(--accent) 17%, transparent));
+  }
+  .rail-progress i + i {
+    transform: translateX(-100%);
+    background: none;
     box-shadow: inset -2px 0 0 color-mix(in oklab, var(--accent) 50%, transparent);
   }
   .rail-item[aria-current='true'] .rail-progress { opacity: 1; }
@@ -304,19 +310,30 @@ const total = String(projects.length).padStart(2, '0');
   }
   .slide-media:hover :global(.plate) { transform: perspective(1600px) translateY(-4px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
   .slide-media[data-tilting] :global(.plate) { transition: transform 0.15s linear, box-shadow 0.6s var(--ease-out); }
-  /* On the window itself, so it moves with the lean and the lift. */
-  .slide-media :global(.plate)::after {
-    content: '';
+  /* On the window itself, so it moves with the lean and the lift. The light is painted once and only
+     moved (src/scripts/fx.ts sets --sx/--sy): following the pointer never repaints the window. */
+  .slide-media :global(.tilt-sheen) {
     position: absolute;
     inset: 0;
     z-index: 3;
+    overflow: hidden;
     border-radius: inherit;
-    background: radial-gradient(45% 55% at var(--sx, 50%) var(--sy, 0%), rgb(255 255 255 / 0.12), transparent 65%);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s var(--ease-out);
   }
-  .slide-media[data-tilting] :global(.plate)::after { opacity: 1; }
+  .slide-media :global(.tilt-sheen)::before {
+    content: '';
+    position: absolute;
+    top: -55%;
+    left: -45%;
+    width: 90%;
+    height: 110%;
+    background: radial-gradient(closest-side, rgb(255 255 255 / 0.12), transparent 65%);
+    transform: translate(var(--sx, 50%), var(--sy, 0%));
+    will-change: transform;
+  }
+  .slide-media[data-tilting] :global(.tilt-sheen) { opacity: 1; }
 
   .slide-info {
     display: grid;
@@ -443,10 +460,10 @@ const total = String(projects.length).padStart(2, '0');
     let hold = false;
     let liveHold = false;
     let active = root.hasAttribute('data-active');
-    let elapsed = 0;
+    let windowOpen = false;
     let total = STILL;
-    let last = performance.now();
-    let raf = 0;
+    /** The countdown: the current item's bar, on the compositor. When it ends, the next product. */
+    let count: Animation[] = [];
 
     const plateOf = (i: number) => slides[i]?.querySelector<HTMLElement>('.plate') ?? null;
     const clipOf = (i: number) => {
@@ -468,7 +485,9 @@ const total = String(projects.length).padStart(2, '0');
       total = STILL;
       if (!plate || !v || reduce.matches || !active) return;
       const setTotal = () => {
-        if (Number.isFinite(v.duration)) total = v.duration * 1000 + HOLD;
+        if (!Number.isFinite(v.duration)) return;
+        total = v.duration * 1000 + HOLD;
+        count.forEach((a) => a.effect?.updateTiming({ duration: total }));
       };
       if (v.readyState >= 1) setTotal();
       else v.addEventListener('loadedmetadata', setTotal, { once: true });
@@ -480,8 +499,20 @@ const total = String(projects.length).padStart(2, '0');
       v.play().catch(() => (plate.dataset.state = 'idle'));
     };
 
-    const paint = () => {
-      items[index]?.style.setProperty('--p', String(Math.min(1, elapsed / total)));
+    /** Runs while nothing holds it: the visitor reading, a live preview in use, its window, a hidden tab. */
+    const sync = () => {
+      const run = auto && active && !hold && !liveHold && !windowOpen && !document.hidden;
+      count.forEach((a) => (run ? a.play() : a.pause()));
+    };
+    const count0 = () => {
+      count.forEach((a) => a.cancel());
+      const [fill, edge] = items[index]?.querySelectorAll<HTMLElement>('.rail-progress i') ?? [];
+      count = [];
+      if (!fill || !edge) return;
+      const timing: KeyframeAnimationOptions = { duration: total, easing: 'linear', fill: 'forwards' };
+      count = [fill.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], timing), edge.animate([{ transform: 'translateX(-100%)' }, { transform: 'none' }], timing)];
+      count[0]!.onfinish = () => select(index + 1, 'auto');
+      sync();
     };
 
     const select = (i: number, from: 'auto' | 'user' = 'user') => {
@@ -495,18 +526,15 @@ const total = String(projects.length).padStart(2, '0');
         s.toggleAttribute('inert', k !== j);
         k === j ? s.removeAttribute('aria-hidden') : s.setAttribute('aria-hidden', 'true');
       });
-      items.forEach((b, k) => {
-        k === j ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current');
-        b.style.setProperty('--p', '0');
-      });
+      items.forEach((b, k) => (k === j ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
       if (pos) pos.textContent = String(j + 1).padStart(2, '0');
       // The whole panel takes on the product's accent, and the room light follows.
       const s = slides[j]!;
       for (const k of ['--a-light', '--a-dark', '--on-light', '--on-dark']) root.style.setProperty(k, s.style.getPropertyValue(k));
       document.dispatchEvent(new CustomEvent('deck:refresh'));
       if (prev !== j) rest(prev);
-      elapsed = 0;
       roll();
+      count0();
       if (active) history.replaceState(history.state, '', `#work/${s.dataset.id}`);
       // Keep the chosen chip in view on phones, scrolling only the strip.
       const li = items[j]?.parentElement;
@@ -516,25 +544,10 @@ const total = String(projects.length).padStart(2, '0');
       }
     };
 
-    const loop = (now: number) => {
-      const dt = Math.min(100, now - last);
-      last = now;
-      if (auto && active && !hold && !liveHold && !document.hidden) {
-        elapsed += dt;
-        if (elapsed >= total) select(index + 1, 'auto');
-      }
-      paint();
-      raf = requestAnimationFrame(loop);
-    };
-    const run = () => {
-      cancelAnimationFrame(raf);
-      last = performance.now();
-      raf = requestAnimationFrame(loop);
-    };
-
     const setAuto = (on: boolean) => {
       auto = on;
       autoBtn.setAttribute('aria-pressed', String(on));
+      sync();
       // Announce product changes only when the visitor is driving, never on every automatic turn.
       show.setAttribute('aria-live', on ? 'off' : 'polite');
     };
@@ -550,18 +563,17 @@ const total = String(projects.length).padStart(2, '0');
       items[j]?.focus();
       select(j);
     });
-    autoBtn.addEventListener('click', () => {
-      setAuto(!auto);
-      if (auto && elapsed >= total) select(index + 1, 'auto');
-    });
+    autoBtn.addEventListener('click', () => setAuto(!auto));
 
     // Reading a product's text pauses the countdown; watching its recording doesn't need to.
     show.addEventListener('pointerover', (e) => {
       if (e.pointerType === 'mouse') hold = !!(e.target as HTMLElement).closest('.slide-info');
+      sync();
     });
-    show.addEventListener('pointerleave', () => (hold = false));
-    show.addEventListener('focusin', () => (hold = true));
-    show.addEventListener('focusout', (e) => !show.contains(e.relatedTarget as Node) && (hold = false));
+    show.addEventListener('pointerleave', () => ((hold = false), sync()));
+    show.addEventListener('focusin', () => ((hold = true), sync()));
+    show.addEventListener('focusout', (e) => !show.contains(e.relatedTarget as Node) && ((hold = false), sync()));
+    document.addEventListener('visibilitychange', sync);
 
     document.addEventListener('deck:change', (e) => {
       const was = active;
@@ -569,13 +581,12 @@ const total = String(projects.length).padStart(2, '0');
       if (active && !was) {
         const plate = plateOf(index);
         if (!plate?.dataset.state || plate.dataset.state === 'idle') {
-          elapsed = 0;
           roll();
-        }
-        run();
+          count0();
+        } else sync();
       } else if (!active && was) {
         clipOf(index)?.pause();
-        cancelAnimationFrame(raf);
+        sync();
       }
     });
     document.addEventListener('deck:sub', (e) => {
@@ -585,19 +596,17 @@ const total = String(projects.length).padStart(2, '0');
       if (j >= 0) select(j);
     });
     // A live preview being used (hovered) holds the countdown (src/scripts/live.ts).
-    document.addEventListener('live:hold', (e) => (liveHold = (e as CustomEvent<boolean>).detail));
+    document.addEventListener('live:hold', (e) => ((liveHold = (e as CustomEvent<boolean>).detail), sync()));
     // An app opened in its window holds the showcase until it closes.
-    document.addEventListener('thaw:open', () => {
-      if (!active) return;
-      cancelAnimationFrame(raf);
-    });
+    document.addEventListener('thaw:open', () => ((windowOpen = true), sync()));
     document.addEventListener('thaw:close', () => {
-      if (!active) return;
+      windowOpen = false;
+      if (!active) return sync();
       const v = clipOf(index);
       const plate = plateOf(index);
       // A live preview stays live; only a tape or a video picks up again.
       if (v && plate?.dataset.state === 'playing' && !plate.hasAttribute('data-live')) void v.play();
-      run();
+      sync();
     });
 
     // A theme switch hands the recording to the other edition's video on the same frame; the countdown
@@ -613,6 +622,5 @@ const total = String(projects.length).padStart(2, '0');
     setAuto(auto);
     index = -1;
     select(Number(root.dataset.start ?? 0));
-    if (active) run();
   }
 </script>

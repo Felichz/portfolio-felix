@@ -771,6 +771,16 @@ tape-player { position: absolute; inset: 0; overflow: hidden; contain: strict; -
   pointer-events: none;
   color-scheme: normal;
 }
+/* The cursor moves in the recording's pixels inside a layer scaled like the frame; its path is one
+   animation on the compositor, and its shadow is drawn into the arrow. */
+.tape-cursor-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  transform: scale(var(--tape-k));
+  pointer-events: none;
+}
 .tape-cursor {
   position: absolute;
   top: 0;
@@ -778,10 +788,7 @@ tape-player { position: absolute; inset: 0; overflow: hidden; contain: strict; -
   width: 22px;
   height: 22px;
   opacity: 0;
-  transform-origin: 0 0;
-  pointer-events: none;
-  will-change: transform;
-  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.35));
+  will-change: transform, opacity;
 }
 .tape-cursor svg { display: block; transition: transform 0.12s var(--ease-out); transform-origin: 4.6px 2.3px; }
 .tape-cursor.down svg { transform: scale(0.84); }

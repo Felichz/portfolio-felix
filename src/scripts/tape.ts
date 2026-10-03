@@ -12,9 +12,12 @@
  * - Interaction state a replay can't produce (hover, focus, pressed) was recorded as events and turned
  *   into attributes the recorded stylesheet was rewritten to match.
  * - The cursor is drawn here, over the frame, from the recorded pointer path.
+ * - Work happens only when the recording changes. Recorded changes are applied as they fall due: a
+ *   timer sleeps until the next one, and frames are asked for only while changes come every frame.
+ *   The cursor's path and the app's own Web Animations run on the compositor, on the tape's clock.
  * - It speaks enough of HTMLMediaElement (play, pause, currentTime, duration, ended, loop, onended,
- *   'loadedmetadata', 'playing', 'ended') for the showcase and the case study plates to drive it like
- *   the <video> it replaces.
+ *   'loadedmetadata', 'playing', 'pause', 'ended') for the showcase and the case study plates to drive
+ *   it like the <video> it replaces.
  */
 
 type TapeNode = [number, string] | [number, string, Record<string, string>, TapeNode[]?];
@@ -91,7 +94,7 @@ export interface Tape {
   snapshot: TapeNode;
   events: TapeEvent[];
   checkpoints: Checkpoint[];
-  /** The scene's clicks, which the thaw replays in the live app. */
+  /** The scene's clicks, which the live app replays. */
   actions: Action[];
   /** The app's clock at tape time 0. */
   clock0: number;
@@ -108,6 +111,10 @@ export const loadTape = (src: string) => {
   return tapes.get(src)!;
 };
 
+// The arrow, with its shadow drawn into it: a shadow filter on the moving element would be redrawn
+// on every frame it moves; this one is painted once with the arrow.
+const CURSOR = `<svg viewBox="0 0 24 24" width="22" height="22" overflow="visible" aria-hidden="true"><defs><filter id="tape-cursor-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation="0.75" flood-color="#000" flood-opacity="0.35"/></filter></defs><path d="M5 2.5v17.2l4.6-4.4 3 6.6 3-1.3-3-6.5 6.4-.2Z" fill="#111114" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" filter="url(#tape-cursor-shadow)"/></svg>`;
+
 /** The app edition shown on this site: the opposite of the site's own theme. */
 const appTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
 const players = new Set<TapePlayer>();
@@ -116,7 +123,8 @@ new MutationObserver(() => players.forEach((p) => p.syncTheme())).observe(docume
   attributeFilter: ['data-theme'],
 });
 
-const CURSOR = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 2.5v17.2l4.6-4.4 3 6.6 3-1.3-3-6.5 6.4-.2Z" fill="#111114" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+/** A recorded gap longer than this is a pause in the pointer, not a move: the cursor holds still. */
+const HOLD = 80;
 
 export class TapePlayer extends HTMLElement {
   tape?: Tape;
@@ -129,18 +137,22 @@ export class TapePlayer extends HTMLElement {
   #frame?: HTMLIFrameElement;
   #doc?: Document;
   #cursor?: HTMLElement;
+  #cursorAnim?: Animation;
   #nodes = new Map<number, Node>();
   #i = 0;
+  /** The tape's time at `#at` (performance.now()), when the clock runs; its time, when it doesn't. */
   #vt = 0;
+  #at = 0;
+  #running = false;
   #rate = 1;
   #raf = 0;
-  #last = 0;
+  #timer = 0;
   #paused = true;
   #ended = false;
   #hover: Element[] = [];
   #focus: Element[] = [];
   #pressed = false;
-  #pointer: { t: number[]; x: number[]; y: number[]; j: number } = { t: [], x: [], y: [], j: 0 };
+  #pointer: { t: number[]; x: number[]; y: number[] } = { t: [], x: [], y: [] };
   #mounted?: Promise<void>;
   #resize?: ResizeObserver;
   #stop?: { t: number; done: () => void };
@@ -169,7 +181,7 @@ export class TapePlayer extends HTMLElement {
     return this.tape ? this.tape.duration / 1000 : NaN;
   }
   get currentTime() {
-    return this.#vt / 1000;
+    return this.#now / 1000;
   }
   set currentTime(s: number) {
     if (this.tape && this.#doc) this.seek(s * 1000);
@@ -188,12 +200,26 @@ export class TapePlayer extends HTMLElement {
     this.preloadMode = v;
     if (v === 'auto') void this.#load();
   }
-  /** Playback speed; the thaw speeds a tape up to reach a checkpoint while the camera moves. */
   get playbackRate() {
     return this.#rate;
   }
   set playbackRate(r: number) {
+    this.#anchor();
     this.#rate = r;
+    this.#syncTimed();
+    if (this.#running) this.#schedule();
+  }
+  /** The tape's time now, in ms. */
+  get #now() {
+    if (!this.#running || !this.tape) return this.#vt;
+    return Math.min(this.#limit, this.#vt + (performance.now() - this.#at) * this.#rate);
+  }
+  get #limit() {
+    return this.#stop ? Math.min(this.#stop.t, this.tape!.duration) : this.tape!.duration;
+  }
+  #anchor() {
+    this.#vt = this.#now;
+    this.#at = performance.now();
   }
 
   async play() {
@@ -203,11 +229,12 @@ export class TapePlayer extends HTMLElement {
     if (this.#ended || this.#vt >= this.tape!.duration) this.seek(0);
     this.#ended = false;
     await this.#doc!.fonts.ready;
-    if (this.#paused) return;
+    if (this.#paused || this.#running) return;
+    this.#at = performance.now();
+    this.#running = true;
+    this.#syncTimed();
     this.dispatchEvent(new Event('playing'));
-    cancelAnimationFrame(this.#raf);
-    this.#last = performance.now();
-    this.#raf = requestAnimationFrame(this.#tick);
+    this.#step();
   }
 
   /** Resolves once the first frame is built and its fonts are loaded. */
@@ -219,7 +246,7 @@ export class TapePlayer extends HTMLElement {
   /** Plays up to a time and stops exactly there, even at a high playback rate. */
   playTo(ms: number) {
     return new Promise<void>((done) => {
-      if (this.#vt >= ms) return done();
+      if (this.#now >= ms) return done();
       this.#stop = { t: ms, done };
       void this.play();
     });
@@ -227,9 +254,11 @@ export class TapePlayer extends HTMLElement {
 
   pause() {
     if (this.#paused) return;
+    this.#anchor();
     this.#paused = true;
-    cancelAnimationFrame(this.#raf);
-    this.#clips.forEach((v) => v.pause());
+    this.#running = false;
+    this.#cancel();
+    this.#syncTimed();
     this.dispatchEvent(new Event('pause'));
   }
 
@@ -237,18 +266,19 @@ export class TapePlayer extends HTMLElement {
   seek(ms: number) {
     const tape = this.tape!;
     const to = Math.max(0, Math.min(ms, tape.duration));
-    if (to < this.#vt || !this.#nodes.size) this.#reset();
+    if (to < this.#applied || !this.#nodes.size) this.#reset();
     this.#advance(to);
     this.#vt = to;
+    this.#at = performance.now();
     this.#ended = to >= tape.duration;
-    this.#drawCursor();
+    this.#syncTimed();
+    if (this.#running) this.#schedule();
   }
 
-  /** The frame's document, for the thaw to copy from. */
+  /** The frame's document. */
   get frame() {
     return this.#frame;
   }
-
 
   syncTheme() {
     if (this.#doc && this.tape) this.#doc.documentElement.setAttribute(this.tape.themeAttr, appTheme());
@@ -279,10 +309,14 @@ export class TapePlayer extends HTMLElement {
       frame.className = 'tape-frame';
       frame.style.cssText = `width:${w}px;height:${h}px`;
       frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>';
+      // The cursor sits in a layer scaled like the frame, and moves in the recording's own pixels.
+      const layer = document.createElement('div');
+      layer.className = 'tape-cursor-layer';
       const cursor = document.createElement('div');
       cursor.className = 'tape-cursor';
       cursor.innerHTML = CURSOR;
-      this.replaceChildren(frame, cursor);
+      layer.append(cursor);
+      this.replaceChildren(frame, layer);
       await new Promise((r) => frame.addEventListener('load', r, { once: true }));
       this.#frame = frame;
       this.#doc = frame.contentDocument!;
@@ -294,6 +328,7 @@ export class TapePlayer extends HTMLElement {
       this.#resize = new ResizeObserver(() => this.#fit());
       this.#resize.observe(this);
       this.#fit();
+      this.#buildCursor();
       this.seek(this.#vt);
     })();
     return this.#mounted;
@@ -306,6 +341,8 @@ export class TapePlayer extends HTMLElement {
     this.style.setProperty('--tape-k', String(k));
   }
 
+  #applied = 0;
+
   #reset() {
     const doc = this.#doc!;
     const tape = this.tape!;
@@ -314,10 +351,11 @@ export class TapePlayer extends HTMLElement {
     this.#anims.clear();
     this.#clips.clear();
     this.#i = 0;
-    this.#vt = 0;
+    this.#applied = 0;
     this.#hover = [];
     this.#focus = [];
-    this.#pointer.j = 0;
+    this.#pressed = false;
+    this.#cursor?.classList.remove('down');
     const [id, , attrs, kids = []] = tape.snapshot as [number, string, Record<string, string>, TapeNode[]?];
     const html = doc.documentElement;
     for (const a of [...html.attributes]) html.removeAttribute(a.name);
@@ -362,57 +400,110 @@ export class TapePlayer extends HTMLElement {
   }
 
   // ---- Playback
-  #tick = (now: number) => {
+  /** Applies what fell due, then sleeps until the next change. */
+  #step = () => {
+    this.#raf = 0;
+    this.#timer = 0;
+    if (!this.#running) return;
     const tape = this.tape!;
-    const limit = this.#stop ? Math.min(this.#stop.t, tape.duration) : tape.duration;
-    this.#vt = Math.min(limit, this.#vt + Math.min(100, now - this.#last) * this.#rate);
-    this.#last = now;
-    this.#advance(this.#vt);
-    this.#drawCursor();
-    if (this.#stop && this.#vt >= this.#stop.t) {
+    const now = this.#now;
+    this.#advance(now);
+    if (this.#stop && now >= this.#stop.t) {
       const { done } = this.#stop;
       this.#stop = undefined;
+      this.#vt = now;
+      this.#running = false;
       this.#paused = true;
+      this.#syncTimed();
       done();
       return;
     }
-    if (this.#vt >= tape.duration) {
+    if (now >= tape.duration) {
       if (this.loop) {
         this.seek(0);
-      } else {
-        this.#ended = true;
-        this.#paused = true;
-        const e = new Event('ended');
-        this.dispatchEvent(e);
-        this.onended?.(e);
         return;
       }
+      this.#vt = tape.duration;
+      this.#running = false;
+      this.#ended = true;
+      this.#paused = true;
+      this.#syncTimed();
+      const e = new Event('ended');
+      this.dispatchEvent(e);
+      this.onended?.(e);
+      return;
     }
-    this.#raf = requestAnimationFrame(this.#tick);
+    this.#schedule();
   };
+
+  #schedule() {
+    this.#cancel();
+    const now = this.#now;
+    const next = Math.min(this.tape!.events[this.#i]?.[1] ?? Infinity, this.#limit);
+    // A filmed clip that plays is checked for drift a few times a second.
+    const wait = Math.min((next - now) / this.#rate, this.#clips.size ? 250 : Infinity);
+    if (wait <= 12) this.#raf = requestAnimationFrame(this.#step);
+    // Woken a little early, then on a frame, so a change lands with the frame that shows it.
+    else
+      this.#timer = window.setTimeout(() => {
+        this.#timer = 0;
+        this.#raf = requestAnimationFrame(this.#step);
+      }, wait - 8);
+  }
+
+  #cancel() {
+    cancelAnimationFrame(this.#raf);
+    clearTimeout(this.#timer);
+    this.#raf = 0;
+    this.#timer = 0;
+  }
 
   #advance(to: number) {
     const events = this.tape!.events;
-    while (this.#i < events.length && events[this.#i]![1] <= to) this.#apply(events[this.#i++]!);
-    // Animations follow the tape's time, so pausing, seeking and speeding up hold for them too.
-    for (const { t, a } of this.#anims.values()) a.currentTime = Math.max(0, to - t);
-    // So do clips: held on their frame while paused, playing (and corrected if they drift) otherwise.
+    while (this.#i < events.length && events[this.#i]![1] <= to) this.#apply(events[this.#i++]!, to);
+    this.#applied = to;
+    this.#syncClips(to);
+  }
+
+  /**
+   * Puts what runs on its own (the cursor, the app's animations, clips) on the tape's clock: its time,
+   * its speed, and whether it runs. Called when that changes, never on every frame.
+   */
+  #syncTimed() {
+    const now = this.#now;
+    if (this.#cursorAnim) this.#time(this.#cursorAnim, now);
+    for (const { t, a } of this.#anims.values()) this.#time(a, Math.max(0, now - t));
+    this.#syncClips(now);
+  }
+
+  #time(a: Animation, t: number) {
+    a.playbackRate = this.#rate;
+    a.currentTime = t;
+    // (Playing an animation that has ended would rewind it: one that has ended holds its last frame.)
+    const end = a.effect?.getComputedTiming().endTime;
+    if (this.#running && (end === undefined || t < Number(end))) a.play();
+    else a.pause();
+  }
+
+  /** Clips hold their frame while paused, play otherwise, and are corrected if they drift. */
+  #syncClips(to: number) {
     const clip = this.tape!.clip;
     for (const v of this.#clips) {
       if (!clip || !v.isConnected) continue;
       const at = Math.max(0, (to - clip.t) / 1000);
       const drift = Math.abs(v.currentTime - at);
-      if (this.#paused || to < clip.t) {
+      if (!this.#running || to < clip.t) {
         if (!v.paused) v.pause();
         if (drift > 0.04 && v.readyState >= 1) v.currentTime = at;
       } else {
         if (drift > 0.3 && v.readyState >= 1) v.currentTime = at;
+        v.playbackRate = this.#rate;
         if (v.paused) void v.play().catch(() => {});
       }
     }
   }
 
-  #apply(e: TapeEvent) {
+  #apply(e: TapeEvent, to: number) {
     const node = (id: unknown) => this.#nodes.get(id as number);
     switch (e[0]) {
       case 'c': {
@@ -456,8 +547,8 @@ export class TapePlayer extends HTMLElement {
         if (!el) return;
         try {
           const a = el.animate(e[3] as Keyframe[], e[4] as KeyframeEffectOptions);
-          a.pause();
           this.#anims.set(e[5] as number, { t: e[1], a });
+          this.#time(a, Math.max(0, to - e[1]));
         } catch {}
         return;
       }
@@ -502,7 +593,7 @@ export class TapePlayer extends HTMLElement {
     return next;
   }
 
-  // ---- Cursor, interpolated between recorded pointer samples
+  // ---- Cursor: the recorded pointer path as one animation, linear between samples
   #indexPointer() {
     const p = this.#pointer;
     for (const e of this.tape!.events) {
@@ -513,32 +604,34 @@ export class TapePlayer extends HTMLElement {
     }
   }
 
-  #drawCursor() {
-    const cursor = this.#cursor;
-    if (!cursor) return;
+  #buildCursor() {
     const p = this.#pointer;
-    const t = this.#vt;
-    if (!p.t.length || t < p.t[0]!) return void (cursor.style.opacity = '0');
-    if (p.j > 0 && p.t[p.j]! > t) p.j = 0;
-    while (p.j + 1 < p.t.length && p.t[p.j + 1]! <= t) p.j++;
-    const j = p.j;
-    let x = p.x[j]!;
-    let y = p.y[j]!;
-    const t1 = p.t[j + 1];
-    if (t1 !== undefined && t1 - p.t[j]! < 80) {
-      const k = (t - p.t[j]!) / (t1 - p.t[j]!);
-      x += (p.x[j + 1]! - x) * k;
-      y += (p.y[j + 1]! - y) * k;
-    }
-    cursor.style.opacity = '1';
+    const cursor = this.#cursor;
+    const D = this.tape!.duration;
+    if (!cursor || !p.t.length || !D) return;
     // The arrow's tip sits 4.6px and 2.3px into its box.
-    cursor.style.transform = `translate(calc(${x - 4.6}px * var(--tape-k)), calc(${y - 2.3}px * var(--tape-k))) scale(var(--tape-k))`;
+    const at = (j: number) => `translate(${p.x[j]! - 4.6}px, ${p.y[j]! - 2.3}px)`;
+    const frames: Keyframe[] = [];
+    const key = (t: number, j: number, opacity = 1) => frames.push({ offset: Math.min(1, Math.max(0, t / D)), transform: at(j), opacity });
+    // Hidden until the first sample.
+    if (p.t[0]! > 0) {
+      key(0, 0, 0);
+      key(p.t[0]! - 0.01, 0, 0);
+    }
+    for (let j = 0; j < p.t.length; j++) {
+      key(p.t[j]!, j);
+      const next = p.t[j + 1];
+      if (next !== undefined && next - p.t[j]! >= HOLD) key(next - 0.01, j);
+    }
+    if (frames.at(-1)!.offset! < 1) key(D, p.t.length - 1);
+    this.#cursorAnim = cursor.animate(frames, { duration: D, fill: 'both', easing: 'linear' });
+    this.#cursorAnim.pause();
   }
 }
 
 /**
  * Added to every tape's stylesheet: no text caret, nothing reacts to the real pointer. Scrollbars stay:
- * the live app has them (taking width on Windows, overlaid on macOS), and the thaw swaps the two.
+ * the live app has them (taking width on Windows, overlaid on macOS), and the two are swapped.
  */
 const TAPE_CSS = `
 * { caret-color: transparent !important; cursor: default !important; }

@@ -61,6 +61,8 @@ const frames = (win: Window, n = 2) =>
     win.requestAnimationFrame(step);
   });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** A performance mark per stage of a live app (boot, ready, live), for traces and scripts/perf. */
+const mark = (id: string, stage: string) => performance.mark(`live:${id}:${stage}`);
 
 // ---------------------------------------------------------------------------------------------------
 // Driving the live app
@@ -173,7 +175,8 @@ class Session {
   #done = 0;
   #busy: Promise<void> = Promise.resolve();
   #last = 0;
-  #loop = 0;
+  #timer = 0;
+  #going?: Promise<void>;
   #disposed = false;
   #restore = new Map<string, string | null>();
   #fit?: ResizeObserver;
@@ -200,6 +203,7 @@ class Session {
   }
 
   async #boot() {
+    mark(this.id, 'boot');
     this.tape = await loadTape(`/tapes/${this.id}.json`);
     const tape = this.tape;
     const t = this.#now;
@@ -216,8 +220,12 @@ class Session {
       else localStorage.removeItem(key);
     }
     if (tape.app.themeKey) localStorage.setItem(tape.app.themeKey, theme);
-    if (cp.idb) await restoreIdb(cp.idb).catch(() => {});
-    const network = tape.app.network ? await fetch(tape.app.network).then((r) => r.json() as Promise<Exchange[]>).catch(() => undefined) : undefined;
+    // The database and the recorded answers load side by side.
+    const [, network] = await Promise.all([
+      cp.idb ? restoreIdb(cp.idb).catch(() => {}) : undefined,
+      tape.app.network ? fetch(tape.app.network).then((r) => r.json() as Promise<Exchange[]>).catch(() => undefined) : undefined,
+    ]);
+    if (this.#disposed) return;
 
     let ready!: () => void;
     const painted = new Promise<void>((r) => (ready = r));
@@ -259,10 +267,15 @@ class Session {
       void doc.fonts.ready.then(() => frames(frame.contentWindow!).then(ready));
     }, 50);
     await painted;
+    mark(this.id, 'ready');
     for (const [k, v] of this.#restore) v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
     this.#attach();
     // An app of several pages gets the same hooks on each page it goes to.
     frame.addEventListener('load', () => this.#attach());
+    // Following is driven by the tape: when it plays (from wherever it was put) and when an action is due.
+    const player = this.player;
+    player?.addEventListener('playing', this.#follow);
+    player?.addEventListener('pause', this.#follow);
     this.#follow();
   }
 
@@ -321,18 +334,24 @@ class Session {
       } catch {}
   }
 
-  /** Keeps up with the tape: replays the clicks it passes; restarts if the tape went back. */
+  /**
+   * Keeps up with the tape: replays the actions it passes, each when the tape reaches it (a timer to
+   * the next one, not a check on every frame); restarts if the tape went back.
+   */
   #follow = () => {
+    clearTimeout(this.#timer);
     if (this.#disposed || this.live) return;
     const t = this.#now;
     if (t < this.#last - 300) return void this.#reboot();
     this.#last = t;
-    const next = (this.tape.actions ?? [])[this.#done];
-    if (next && next.t <= t) {
-      this.#done++;
-      this.#busy = this.#busy.then(() => this.#replay(next));
+    const actions = this.tape.actions ?? [];
+    while (actions[this.#done] && actions[this.#done]!.t <= t) {
+      const a = actions[this.#done++]!;
+      this.#busy = this.#busy.then(() => this.#replay(a));
     }
-    this.#loop = requestAnimationFrame(this.#follow);
+    const p = this.player;
+    const next = actions[this.#done];
+    if (next && p && !p.paused) this.#timer = window.setTimeout(this.#follow, Math.max(0, (next.t - t) / (p.playbackRate || 1)));
   };
 
   async #replay(a: Action) {
@@ -361,17 +380,23 @@ class Session {
   /**
    * Makes the live app the preview, on the frame the tape is on: the tape stops, the app catches up
    * (clicks still in flight, timers that fell due), settles its clock on the time the frame shows (the
-   * last time its text changed), and takes the tape's place. From here it's interactive.
+   * last time its text changed), and takes the tape's place. From here it's interactive. However many
+   * times it's asked for (every pointer move over the preview asks), it happens once.
    */
-  async goLive() {
-    if (this.live) return;
+  goLive() {
+    return (this.#going ??= this.#goLive());
+  }
+
+  async #goLive() {
     await this.booted;
     await this.#busy;
     if (this.live || this.#disposed) return;
-    cancelAnimationFrame(this.#loop);
+    clearTimeout(this.#timer);
     const player = this.player;
     const at = this.#now;
     player?.pause();
+    // (Pausing hands the tape's due actions to the queue: they finish first.)
+    await this.#busy;
     // Clicks the tape had reached but the app hadn't yet.
     for (const a of (this.tape.actions ?? []).slice(this.#done)) if (a.t <= at) {
       this.#done++;
@@ -396,11 +421,14 @@ class Session {
     this.motion?.removeAttribute('aria-hidden');
     this.frame.tabIndex = 0;
     this.frame.classList.add('shown');
+    mark(this.id, 'live');
   }
 
   dispose() {
     this.#disposed = true;
-    cancelAnimationFrame(this.#loop);
+    clearTimeout(this.#timer);
+    this.player?.removeEventListener('playing', this.#follow);
+    this.player?.removeEventListener('pause', this.#follow);
     this.#fit?.disconnect();
     this.frame?.remove();
     if (window.__live) delete window.__live[this.id];
