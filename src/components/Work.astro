@@ -550,6 +550,7 @@ const glowCSS = projects
       requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => s.removeAttribute('data-pre'), 50)));
     };
     let preTimer = 0;
+    let swept = false;
 
     // A product change in three modest frames, never one long one. The first is the answer: the rail
     // turns over and the room light follows. The next brings the slide switch and the countdown. The
@@ -636,6 +637,20 @@ const glowCSS = projects
     document.addEventListener('deck:change', (e) => {
       const was = active;
       active = (e as CustomEvent).detail.id === 'work';
+      // The sweep: a moment after the panel is reached, every slide's textures get built once, a
+      // beat apart, so a jump to any product composes what exists. The countdown's own pre-raster
+      // keeps covering what's next; this covers every way a visitor can jump.
+      if (active && !was && !swept) {
+        swept = true;
+        setTimeout(() => {
+          let k = 0;
+          const iv = setInterval(() => {
+            if (document.hidden) return;
+            if (k >= slides.length || !active) return clearInterval(iv);
+            preraster(k++);
+          }, 400);
+        }, 2500);
+      }
       if (active && !was) {
         const plate = plateOf(index);
         if (!plate?.dataset.state || plate.dataset.state === 'idle') {

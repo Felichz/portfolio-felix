@@ -685,6 +685,10 @@ export function initLive() {
     started = true;
     for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) removeEventListener(type, start, true);
     visible.forEach(consider);
+    // The sweep: every preview's stage mounts its tape now, one at a time, in the queue's quiet —
+    // so no product ever costs a first fetch and frame, however it's reached (the showcase pre-warms
+    // its neighbors; this covers every way a visitor can move).
+    warm(plates.map((p) => p.querySelector('tape-player')));
   };
   for (const type of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(type, start, { capture: true, passive: true });
   const leaving = new Map<HTMLElement, number>();

@@ -127,7 +127,7 @@
   var rafSeq = 1;
   var rafLoop = false;
   var vsyncs = 0;
-  var pace = 1;
+  var pace = handoff.pace || 1;
   var held = false;
   var tickFrame = function () {
     rafLoop = false;

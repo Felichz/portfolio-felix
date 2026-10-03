@@ -127,7 +127,7 @@
   var rafSeq = 1;
   var rafLoop = false;
   var vsyncs = 0;
-  var pace = 1;
+  var pace = handoff.pace || 1;
   var held = false;
   var tickFrame = function () {
     rafLoop = false;
@@ -233,7 +233,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#100E0C" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nAgG2qaMj2XnOa3PlVQtkNpsKC0fR6RgfoDloObDbiI=' 'sha256-hL+HwS2kM4znagDFzkA0TkNy8xowVceF6eSxJnp7j9k='; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nAgG2qaMj2XnOa3PlVQtkNpsKC0fR6RgfoDloObDbiI=' 'sha256-uLCiGYHhmtDaaggtD6hBxx7sbvMVuhRerZ2VuE/it3w='; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
     <!-- Theme before first paint: saved choice (localStorage "knowgraph:theme") or the system setting. The CSP allows this exact script by hash; tests/logic/theme.mjs checks it. -->
     <script>(function(){var t;try{t=localStorage.getItem("knowgraph:theme")}catch(e){}if(t!=="light"&&t!=="dark")t=window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#F7F4EF":"#100E0C"})()</script>
     <style>html{background:#100E0C;color-scheme:dark}html[data-theme="light"]{background:#F7F4EF;color-scheme:light}</style>

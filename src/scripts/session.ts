@@ -29,6 +29,8 @@ interface Handoff {
   hold?: (on: boolean) => void;
   /** Installed by the bridge: the app's frames fire on every `n`-th vsync (1 = full cadence). */
   setPace?: (n: number) => void;
+  /** The pace to start at, read by the bridge before the app's code runs (4: unseen, booting). */
+  pace?: number;
 }
 declare global {
   interface Window {
@@ -238,6 +240,10 @@ export class Session {
       socket: tape.app.socket,
       at: cp.t,
       route: tape.app.spa ? tape.app.entry.replace(/\/$/, '') + cp.route : undefined,
+      // Unseen while it boots and follows its tape, the app runs at a quarter of the screen's
+      // cadence: nothing it shows can be watched yet, and a quarter of the paint leaves the machine
+      // to the page. goLive sets the pace it keeps.
+      pace: 4,
     };
     (window.__live ??= {})[this.id] = this.handoff;
 

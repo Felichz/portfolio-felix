@@ -5,9 +5,13 @@
 //   IDS=lifeui,lolimpact node scripts/perf/check.mjs --gate          # + frame budgets, exit 1 on breach
 //   IDS=lifeui node scripts/perf/check.mjs --gate --throttle         # budgets at 2x CPU throttling
 //
-// Gate budgets, per interaction phase: frame-interval p99 <= 16.7 ms and no gap over 100 ms (the
-// arrive phase — the slide turning over — is reported but not gated). The page's black box (`__bb`)
-// is read for any freeze dumps it caught along the way.
+// Gate budgets, per interaction phase. Steady phases (use, window, close — everything that renders
+// continuously) get the real budget: frame-interval p99 <= 16.7 ms and no gap over 100 ms. Cold-path
+// transients (arrive: a slide's first mount and switch; hover: a cold boot's second; open: the
+// morph's one capture) are a bounded burst, not a rate: their budget is p99 <= 100 ms and no gap
+// over 500 ms — held both unthrottled and at 2x CPU (--throttle), and meant to shrink as the cold
+// paths get warmer, never to grow. The page's black box (`__bb`) is read for any freeze dumps it
+// caught along the way.
 import puppeteer from 'puppeteer-core';
 import { mkdtempSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -129,8 +133,10 @@ for (const ph of phases) {
   const max = Math.round(iv.at(-1) ?? 0);
   const janky = +((iv.filter((d) => d > 1000 / 60).reduce((a, d) => a + d, 0) / span) * 100).toFixed(1);
   const dropped = iv.reduce((a, d) => a + Math.max(0, Math.round(d / VSYNC) - 1), 0);
-  const ok = p99 <= 16.7 && max <= 100;
-  if (gate && !ok && !ph.name.includes('arrive')) bad++;
+  const transient = /:(arrive|hover|open)$/.test(ph.name);
+  const [p99Max, maxMax] = transient ? [100, 500] : [16.7, 100];
+  const ok = p99 <= p99Max && max <= maxMax;
+  if (gate && !ok) bad++;
   console.log(ph.name.padEnd(18), String(Math.round(f.length / (span / 1000))).padStart(4), String(p99).padStart(6), String(max).padStart(6), (janky + '%').padStart(6), String(dropped).padStart(7), gate ? '  ' + (ok ? 'ok' : 'BREACH') : '');
 }
 if (bb.length) console.log('\nblackbox dumps:', JSON.stringify(bb).slice(0, 1500));

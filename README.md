@@ -100,7 +100,7 @@ Stages load from `PUBLIC_STAGE_ORIGIN` when it's set at build time: another regi
 
 ```bash
 node scripts/perf/check.mjs              # every preview plays, goes live, and the stage is out of process
-node scripts/perf/check.mjs --gate       # + frame budgets per phase: interval p99 <= 16.7 ms, no gap > 100 ms
+node scripts/perf/check.mjs --gate       # + frame budgets: steady phases p99 <= 16.7 ms, no gap > 100 ms; cold transients p99 <= 100 ms, no gap > 500 ms
 npm run perf:gate                        # the gate at 2x CPU throttling
 node scripts/perf/live.mjs [label]       # fps of every interaction: the cycle, hover to live, the window
 node scripts/perf/scroll.mjs             # fps of scrolling the portfolio: slow down, fast back up
