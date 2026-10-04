@@ -90,18 +90,14 @@ class Live {
     return this.#booted!;
   }
 
-  /** The app takes the tape's place, booting first if it hasn't. However often it's asked, once —
-     and an ask that ends without the app live forgets itself, so the next move asks again (a session
-     can die under an ask — its tape looping it away — and a cached dead ask never retried left a
-     preview whose window opened over its tape, every input dead but the ghost's hover). */
+  /** The app takes the tape's place, booting first if it hasn't. However often it's asked, once. */
   goLive() {
     return (this.#going ??= (async () => {
       const player = this.player;
       const shown = once(player, 'stage:live');
       void this.boot();
       player.send({ k: 'live' });
-      await Promise.race([shown, sleep(2500)]);
-      if (this.state !== 'live') this.#going = undefined;
+      await shown;
       this.state = 'live';
       this.used = performance.now();
       this.player?.ghost(-1, -1);
