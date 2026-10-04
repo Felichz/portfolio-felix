@@ -15,7 +15,6 @@
  */
 import { STAGE_ORIGIN } from './origin';
 import type { ToHost, ToStage } from './stage-protocol';
-import type { ThemeSwitch } from './handoff';
 
 const appTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
 const players = new Set<TapePlayer>();
@@ -27,25 +26,20 @@ addEventListener('message', (e: MessageEvent<ToHost>) => {
 /** A stage that hasn't answered by then is loaded again from this page's own origin. */
 const PATIENCE = 3000;
 
-// A theme switch: each stage gets the new edition and answers once it has painted it; the switch's
-// snapshot waits for that, a little at most.
+// A theme switch reaches the stages when its reveal starts (Bar.astro: theme:reveal), not when the
+// page's theme attribute flips: a stage paints in its own process, so switching it while the page
+// waits for its new snapshot showed the new edition for a moment, then the old one again, before the
+// circle brought it. Started, the old page is a still and the new edition shows only inside the
+// circle, so the stage's switch lands there. Nothing waits on the stages either.
 let themeId = 0;
-const acks = new Map<number, () => void>();
-document.addEventListener('theme:switch', (e) => {
+const sendTheme = () => {
   const id = ++themeId;
-  const stages = [...players].filter((p) => p.frame);
-  if (!stages.length) return;
-  let left = stages.length;
-  (e as CustomEvent<ThemeSwitch>).detail.waitUntil(
-    new Promise<void>((done) => {
-      acks.set(id, () => --left <= 0 && done());
-      setTimeout(done, 160);
-    }),
-  );
-});
-new MutationObserver(() => {
-  const id = themeId;
   players.forEach((p) => p.send({ k: 'theme', theme: appTheme(), id }));
+};
+document.addEventListener('theme:reveal', sendTheme);
+// (A theme set any other way, without the switch: the stages follow at once.)
+new MutationObserver(() => {
+  if (!document.documentElement.hasAttribute('data-theme-switching')) sendTheme();
 }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 export class TapePlayer extends HTMLElement {
@@ -257,7 +251,6 @@ export class TapePlayer extends HTMLElement {
         return;
       }
       case 'ack':
-        acks.get(m.id)?.();
         return;
       default:
         this.dispatchEvent(new CustomEvent(`stage:${m.k}`, { detail: m, bubbles: true }));

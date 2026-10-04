@@ -210,11 +210,16 @@ const { panels, home } = Astro.props;
     // The new edition spreads out in a circle from the toggle, where the browser supports it.
     // Transitions stay suspended meanwhile, so the page is snapshotted once instead of animating piece by piece.
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } };
+    // Previews run in frames of their own process (src/scripts/player.ts): they take the new edition
+    // when this event says so, never earlier. A frame that switched while the page waits for its new
+    // snapshot would show the new edition over the frozen page, then the old one again under it.
+    const reveal = () => document.dispatchEvent(new CustomEvent('theme:reveal'));
     root.setAttribute('data-theme-switching', '');
     const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-theme-switching')));
     if (!doc.startViewTransition || reduce) {
-      apply();
+      void apply();
+      reveal();
       return done();
     }
     if (from && 'rect' in from) {
@@ -227,7 +232,10 @@ const { panels, home } = Astro.props;
       root.style.setProperty('--vt-y', `${from?.y ?? (r ? r.top + r.height / 2 : 0)}px`);
       root.dataset.vt = 'theme';
     }
-    doc.startViewTransition(apply).finished.finally(() => {
+    const vt = doc.startViewTransition(apply);
+    // From the first frame of the reveal: the old page is a still, the new one shows only inside the circle.
+    vt.ready.then(reveal, reveal);
+    vt.finished.finally(() => {
       delete root.dataset.vt;
       done();
     });

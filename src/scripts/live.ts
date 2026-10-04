@@ -622,7 +622,12 @@ export function initLive() {
   document.addEventListener('stage:theme-app', (e) => {
     // A theme the app switched itself is the site's too: the site takes the other edition, opening out
     // from the app's window to the edges.
-    const at = (e.target as Element).closest('.thaw-window, .plate') ?? (e.target as Element);
+    const at = (e.target as Element).closest<HTMLElement>('.thaw-window, .plate') ?? (e.target as HTMLElement);
+    // The app has already painted its new edition; its window's bar takes it on this frame, before the
+    // switch's snapshot, instead of when the reveal reaches it. (The app's new edition is the site's
+    // current one; the site is about to take the other.)
+    at.dataset.chrome = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+    document.addEventListener('theme:reveal', () => delete at.dataset.chrome, { once: true });
     window.__faTheme?.({ rect: at.getBoundingClientRect() });
   });
   document.addEventListener('stage:theme-toggle', (e) => {

@@ -714,6 +714,11 @@ html.live-ok:not(.lights-used) .plate[data-app] .light--zoom::after {
   html.live-ok:not(.lights-used) .plate[data-app] .light--zoom::after { animation: none; transform: scale(1.5); opacity: 0.6; }
 }
 
+/* A window's bar in the edition its app just switched to, ahead of the site (src/scripts/live.ts):
+   the same colors each theme gives it. */
+.plate[data-chrome='light'] { --chrome-bg: #f1f0ec; --chrome-ink: #6a6a72; }
+.plate[data-chrome='dark'] { --chrome-bg: #17171b; --chrome-ink: #9d9da6; }
+
 /* The window a preview opens in (src/scripts/live.ts), at the room the screen has, where the app is
    laid out at its own size. It morphs from and back into the plate with a view transition of the
    window alone: the page stays live under it, stepping back. */
