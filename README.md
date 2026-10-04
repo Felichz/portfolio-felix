@@ -67,7 +67,7 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 - A cursor light: a soft pool of color follows the pointer and brings up the dot grid under it, with a lens bulge. Buttons are magnetic, the portrait and the showcase window tilt toward the pointer, and a scrubber on the Experience timeline names the month and role under the cursor.
 - The room light follows the content: each section, and each product in the showcase, sets the colors of the ambient glow.
 - The showcase screenshot and product name morph into the case study header (cross-document view transitions).
-- Kept cheap to render: no backdrop blur, static ambient layers. The theme toggle reveals the other edition in a circle from the button, from a single snapshot with transitions suspended.
+- Kept cheap to render: no backdrop blur, static ambient layers. The theme toggle fades the other edition in over the whole page, a view transition that only blends two pictures, with transitions suspended.
 - Everything sizes against the window with container units, and tightens on short screens.
 - Reduced motion: no autoplay, no tilt, instant section moves.
 - Static output, responsive AVIF/WebP images, recordings that load only when they play, self-hosted font subsets, no client framework.

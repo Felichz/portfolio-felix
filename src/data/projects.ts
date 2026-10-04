@@ -396,7 +396,7 @@ export const projects: Project[] = [
       },
       {
         title: 'Theme switches that restart nothing',
-        body: 'The new edition spreads in a circle from the toggle, in one view-transition snapshot. Recordings keep their place across it, the showcase countdown doesn’t notice, and a tape switches on the same frame.',
+        body: 'The new edition fades in over the old one, a view transition that only blends two pictures. Recordings keep their place across it, the showcase countdown doesn’t notice, and a tape switches on the same frame.',
       },
       {
         title: 'Measured, not assumed',

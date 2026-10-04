@@ -38,10 +38,8 @@ const canMove = 'moveBefore' in Element.prototype;
 
 declare global {
   interface Window {
-    /** The site's theme switch (Bar.astro): a circle from a point, or opening out from a rectangle. */
-    __faTheme?: (from?: { x: number; y: number } | { rect: DOMRect }) => void;
-    /** Maps a point on the screen to this page's viewport (Bar.astro), once the pointer has moved here. */
-    __faScreen?: (screenX: number, screenY: number) => { x: number; y: number } | undefined;
+    /** The site's theme switch (Bar.astro): the new edition fades in over the whole page. */
+    __faTheme?: () => void;
   }
   interface Element {
     moveBefore(node: Node, child: Node | null): void;
@@ -92,14 +90,18 @@ class Live {
     return this.#booted!;
   }
 
-  /** The app takes the tape's place, booting first if it hasn't. However often it's asked, once. */
+  /** The app takes the tape's place, booting first if it hasn't. However often it's asked, once —
+     and an ask that ends without the app live forgets itself, so the next move asks again (a session
+     can die under an ask — its tape looping it away — and a cached dead ask never retried left a
+     preview whose window opened over its tape, every input dead but the ghost's hover). */
   goLive() {
     return (this.#going ??= (async () => {
       const player = this.player;
       const shown = once(player, 'stage:live');
       void this.boot();
       player.send({ k: 'live' });
-      await shown;
+      await Promise.race([shown, sleep(2500)]);
+      if (this.state !== 'live') this.#going = undefined;
       this.state = 'live';
       this.used = performance.now();
       this.player?.ghost(-1, -1);
@@ -620,25 +622,17 @@ export function initLive() {
     if (!plate || plate.dispatchEvent(pass)) scrollBy(dx, dy);
   });
   document.addEventListener('stage:theme-app', (e) => {
-    // A theme the app switched itself is the site's too: the site takes the other edition, opening out
-    // from the app's window to the edges.
+    // A theme the app switched itself is the site's too: the site takes the other edition.
     const at = (e.target as Element).closest<HTMLElement>('.thaw-window, .plate') ?? (e.target as HTMLElement);
     // The app has already painted its new edition; its window's bar takes it on this frame, before the
-    // switch's snapshot, instead of when the reveal reaches it. (The app's new edition is the site's
+    // switch's snapshot, instead of with the fade. (The app's new edition is the site's
     // current one; the site is about to take the other.)
     at.dataset.chrome = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
     document.addEventListener('theme:reveal', () => delete at.dataset.chrome, { once: true });
-    window.__faTheme?.({ rect: at.getBoundingClientRect() });
+    window.__faTheme?.();
   });
-  document.addEventListener('stage:theme-toggle', (e) => {
-    // This site, opened in its own stage, had its toggle used: the switch spreads from that point.
-    const { x, y } = (e as CustomEvent<{ x: number; y: number }>).detail;
-    const frame = (e.target as TapePlayer).frame;
-    if (!frame) return;
-    const r = frame.getBoundingClientRect();
-    const k = r.width / (frame.offsetWidth || r.width);
-    window.__faTheme?.({ x: r.left + x * k, y: r.top + y * k });
-  });
+  // This site, opened in its own stage, had its toggle used: the switch is this page's.
+  document.addEventListener('stage:theme-toggle', () => window.__faTheme?.());
 
   // -------------------------------------------------------------------------------------------------
   // Warming previews ahead of their turn: a stage mounts its tape (fetch, first frame, fonts, a filmed

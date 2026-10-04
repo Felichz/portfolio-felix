@@ -26,7 +26,8 @@ await sleep(2500);
 const path = join(dir, 't.json');
 await page.tracing.start({ path, categories: [...(process.env.DIRTY ? ['disabled-by-default-devtools.timeline.invalidationTracking'] : []), 'devtools.timeline', 'disabled-by-default-devtools.timeline.frame', 'toplevel', 'viz', 'gpu', 'cc', 'blink'] });
 await sleep(200);
-if (!process.env.NOCLICK) await page.evaluate(() => document.querySelectorAll('[data-go]')[1].click());
+if (process.env.THEME) await page.evaluate(() => document.querySelector('[data-theme-toggle]').click());
+else if (!process.env.NOCLICK) await page.evaluate(() => document.querySelectorAll('[data-go]')[1].click());
 await sleep(1200);
 await page.tracing.stop();
 await browser.close();
@@ -54,6 +55,7 @@ if (process.env.DIRTY) {
   for (const e of ev) if (/StyleInvalidator|ScheduleStyleRecalculation|StyleRecalcInvalidationTracking|InvalidationTracking/.test(e.name)) { const d = e.args?.data ?? {}; const k = `${e.name} ${d.nodeName ?? ''} ${d.reason ?? d.invalidationList?.[0]?.classes ?? ''}`.slice(0, 120); inv[k] = (inv[k] ?? 0) + 1; }
   console.log(Object.entries(inv).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([k, v]) => `${v}x ${k}`).join(' | '));
 }
+// (WASHLOG) frame gaps placed against the wash's phases, read from its animations' timeline.
 const draws = ev.filter((e) => e.name === 'DirectRenderer::DrawFrame').map((e) => e.ts).sort((a, b) => a - b);
 const gaps = draws.slice(1).map((t, i) => (t - draws[i]) / 1000);
 console.log('frames drawn', draws.length, 'in 1.4 s; gaps >25ms:', gaps.filter((g) => g > 25).map((g) => g.toFixed(0)).join(' '));

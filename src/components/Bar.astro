@@ -188,11 +188,11 @@ const { panels, home } = Astro.props;
   new MutationObserver(label).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
   /**
-   * Switches the site's theme. The new edition spreads out in a circle from `from.x`/`from.y` (the
-   * toggle, by default), or, given `from.rect`, opens out from that rectangle to the edges: how a
-   * live app on the page (src/scripts/live.ts) passes on a theme it switched itself.
+   * Switches the site's theme: the new edition fades in over the whole page. A live app on the page
+   * (src/scripts/live.ts) passes on a theme it switched itself through this too.
    */
-  const switchTheme = (from?: { x: number; y: number } | { rect: DOMRect }) => {
+  let busy = false;
+  const switchTheme = () => {
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     // Recordings hand off to the other edition's video on the same frame (src/scripts/handoff.ts);
     // the new edition shows once they're on it, or after a short cap.
@@ -207,78 +207,50 @@ const { panels, home } = Astro.props;
       label();
       return Promise.all(waits);
     };
-    // The new edition spreads out in a circle from the toggle, where the browser supports it.
-    // Transitions stay suspended meanwhile, so the page is snapshotted once instead of animating piece by piece.
+    // A wash of the new edition's background covers the page, the theme flips under it, and the wash
+    // lifts off the new page. The flip repaints everything (the page, and every preview in its own
+    // process); under an opaque layer that frame is never seen, and the only motion is that layer's
+    // opacity, which the compositor runs on its own. (A circle from the toggle, then a cross-fade of
+    // two snapshots, both repainted or recomposited the whole page while moving.)
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } };
-    // Previews run in frames of their own process (src/scripts/player.ts): they take the new edition
-    // when this event says so, never earlier. A frame that switched while the page waits for its new
-    // snapshot would show the new edition over the frozen page, then the old one again under it.
-    // The reveal's shape, for the previews: they take the new edition as the circle's edge reaches
-    // each of them (src/scripts/player.ts times it from this), never all at once at the start.
-    const reveal = (fromSwitch = true) =>
-      document.dispatchEvent(
-        new CustomEvent('theme:reveal', {
-          detail: fromSwitch && !reduce ? { x: parseFloat(root.style.getPropertyValue('--vt-x')) || innerWidth, y: parseFloat(root.style.getPropertyValue('--vt-y')) || 0, duration: 600 } : undefined,
-        }),
-      );
-    root.setAttribute('data-theme-switching', '');
+    // Previews (src/scripts/player.ts) take the new edition with the page, under the wash.
+    const reveal = () => document.dispatchEvent(new CustomEvent('theme:reveal'));
+    if (busy) return;
     const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-theme-switching')));
-    if (!doc.startViewTransition || reduce) {
+    if (reduce) {
+      root.setAttribute('data-theme-switching', '');
       void apply();
       reveal();
       return done();
     }
-    if (from && 'rect' in from) {
-      const { top, right, bottom, left } = from.rect;
-      root.style.setProperty('--vt-inset', `${top}px ${innerWidth - right}px ${innerHeight - bottom}px ${left}px`);
-      root.dataset.vt = 'theme-rect';
-    } else {
-      const r = btn?.getBoundingClientRect();
-      root.style.setProperty('--vt-x', `${from?.x ?? (r ? r.left + r.width / 2 : innerWidth)}px`);
-      root.style.setProperty('--vt-y', `${from?.y ?? (r ? r.top + r.height / 2 : 0)}px`);
-      root.dataset.vt = 'theme';
-    }
-    const vt = doc.startViewTransition(apply);
-    // From the first frame of the reveal: the old page is a still, the new one shows only inside the circle.
-    // The circle times the previews' switch to its sweep over them; the rectangle (an app's own
-    // switch, opening from its window) begins at the app that switched, which is already new —
-    // everything takes the edition at once there.
-    vt.ready.then(() => reveal(!from || !('rect' in from)), () => reveal(false));
-    vt.finished.finally(() => {
-      delete root.dataset.vt;
+    busy = true;
+    const wash = document.createElement('div');
+    wash.className = 'theme-wash';
+    wash.style.background = next === 'dark' ? '#0a0a0c' : '#f2f1ed';
+    document.body.append(wash);
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    void (async () => {
+      await wash.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }).finished;
+      // Transitions stay suspended across the flip (set now, under the wash: it restyles the page too).
+      root.setAttribute('data-theme-switching', '');
+      reveal();
+      await Promise.race([apply(), new Promise((r) => setTimeout(r, 200))]);
+      // Two frames: the new page styled, painted and committed before the wash lifts.
+      await frame();
+      await frame();
+      await wash.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, easing: 'cubic-bezier(0, 0, 0.2, 1)', fill: 'forwards' }).finished;
+      wash.remove();
+      busy = false;
       done();
-    });
+    })();
   };
   window.__faTheme = switchTheme;
 
-  // Where this page's viewport sits on the screen, from the pointer: a point inside a copy of this site
-  // running inside itself maps to this page through it exactly, whatever the frame's scale and lean.
-  let screenDX: number | undefined;
-  let screenDY = 0;
-  addEventListener(
-    'pointermove',
-    (e) => {
-      screenDX = e.screenX - e.clientX;
-      screenDY = e.screenY - e.clientY;
-    },
-    { passive: true },
-  );
-  window.__faScreen = (sx: number, sy: number) => (screenDX === undefined ? undefined : { x: sx - screenDX, y: sy - screenDY });
-
-  btn?.addEventListener('click', (e) => {
-    // In a copy of this site running inside itself, the switch is the page's around it: it spreads
-    // from this toggle, where it is on screen, over both.
+  btn?.addEventListener('click', () => {
+    // In a copy of this site running inside itself, the switch is the page's around it: both fade over
+    // together.
     const host = window !== window.top && window.frameElement ? (window.parent as Window) : undefined;
-    if (host?.__faTheme) {
-      // The click's own point on the screen when there's one (the frame may be scaled and tilted);
-      // otherwise the toggle's center, mapped through the frame's box.
-      const at = e.detail > 0 ? host.__faScreen?.(e.screenX, e.screenY) : undefined;
-      const f = window.frameElement!.getBoundingClientRect();
-      const k = f.width / innerWidth;
-      const r = btn.getBoundingClientRect();
-      return host.__faTheme(at ?? { x: f.left + (r.left + r.width / 2) * k, y: f.top + (r.top + r.height / 2) * k });
-    }
+    if (host?.__faTheme) return host.__faTheme();
     switchTheme();
   });
 </script>

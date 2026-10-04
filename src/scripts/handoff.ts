@@ -6,7 +6,7 @@
  * The toggle (Bar.astro) fires `theme:switch` right before the flip, with `waitUntil` for promises
  * the flip waits on. The incoming video seeks to where the outgoing one will be once it has started
  * (a start time learned from the last switches), and the flip waits only for that frame, not for
- * playback, so the click stays responsive; the circle reveal covers the moment it takes to start.
+ * playback, so the click stays responsive; the fade covers the moment it takes to start.
  * Only one video decodes, apart from that moment.
  */
 // Plates hold <tape-player> elements too; define it before any plate script drives one.

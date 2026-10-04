@@ -293,16 +293,14 @@ const replay = `async #replay(a: Action) {
 
           <h2 id="themes">Themes, in both directions</h2>
           <p>
-            The site’s theme switch is a view transition too: the new edition spreads in a circle from the toggle. The apps’ theme attribute
-            changes in the same frame, so the circle covers them as well.
+            The site’s theme switch is a view transition too: the new edition fades in over the old one. It used to spread in a circle
+            from the toggle, and the circle cost a repaint of the whole page on every frame; a fade only blends two pictures. The apps take
+            their new edition as the fade starts, so it covers them as well.
           </p>
           <p>
-            It works the other way round. Switch a product’s theme in its own settings and the site takes the opposite edition, opening out
-            from the app’s window to the edges of the screen. This site’s toggle, inside the copy of itself, hands the click to the page
-            around it, so one circle covers both. Placing that circle took a detail: the frame is scaled, and tilted toward the pointer, so
-            mapping the toggle through the frame’s box put the circle a few pixels off. The click’s screen coordinates aren’t off. The
-            outer page knows where its viewport sits on the screen from any pointer event, and the circle starts within a pixel of where
-            you clicked.
+            It works the other way round. Switch a product’s theme in its own settings and the site takes the opposite edition, and the
+            window’s bar follows the app on the same frame. This site’s toggle, inside the copy of itself, hands the click to the page
+            around it, so one fade covers both.
           </p>
 
           <h2 id="cost">What it costs</h2>

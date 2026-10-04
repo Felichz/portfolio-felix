@@ -175,6 +175,7 @@ export class Session {
   #done = 0;
   #busy: Promise<void> = Promise.resolve();
   #last = 0;
+  #seenPlaying = false;
   #timer = 0;
   #disposed = false;
   #restore = new Map<string, string | null>();
@@ -371,7 +372,13 @@ export class Session {
     const p = this.player;
     const t = this.#now;
     // The tape went back while playing (it looped, or was replayed): start over from its checkpoint.
-    if (!p.paused && t < this.#last - 300) return void this.#reboot();
+    // But a tape's FIRST play is not that: a session boots from the end while its tape rests at 0
+    // (never played, a still), and then the slide activates and plays from the start — that is a
+    // beginning, and rebooting on it killed the session mid-goLive (the window then opened over the
+    // tape, input dead, the ghost the only thing answering).
+    const wasPlaying = this.#seenPlaying;
+    if (!p.paused) this.#seenPlaying = true;
+    if (wasPlaying && !p.paused && t < this.#last - 300) return void this.#reboot();
     this.#last = Math.max(this.#last, t);
     const actions = this.tape.actions ?? [];
     while (actions[this.#done] && actions[this.#done]!.t <= t) {

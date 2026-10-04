@@ -51,6 +51,6 @@ export type ToHost =
   | { k: 'escape' }
   /** The app switched its own theme. */
   | { k: 'theme-app' }
-  /** This site, running in the stage, had its theme toggle used: from a point in the stage's viewport. */
-  | { k: 'theme-toggle'; x: number; y: number }
+  /** This site, running in the stage, had its theme toggle used. */
+  | { k: 'theme-toggle' }
   | { k: 'hover'; on: boolean };
