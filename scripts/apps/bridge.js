@@ -107,58 +107,39 @@
     handoff.running = !freeze;
     handoff.offset = ms - realBase;
     timers.forEach(schedule);
-    pump();
     if (tick)
       timers.forEach(function (t) {
         if (t.every && typeof t.fn === 'function') t.fn.apply(window, t.args);
       });
   };
 
-  // ---- Frames. requestAnimationFrame follows the hold, not the frozen clock: a booting or replaying
-  // app is frozen and still has to paint (readiness itself is reported from two frames); an app
-  // nobody sees fires nothing. Seen, its callbacks run on every `pace`-th vsync, so a preview asks
-  // for a metronome it can hold instead of a sprint it stutters through. A callback that
-  // re-registers itself runs on the next due frame, as it would in the raw browser.
+  // ---- Frames. While nobody can see the app (held), requestAnimationFrame callbacks wait instead of
+  // running: an unseen app paints nothing. Otherwise they run on the browser's own frames, with the
+  // browser's own timestamp, untouched: an app animates at the display's rate, as it would anywhere.
   var realRaf = window.requestAnimationFrame.bind(window);
-  var rafCallbacks = new Map();
-  var rafSeq = 1;
-  var rafLoop = false;
-  var vsyncs = 0;
-  var pace = handoff.pace || 1;
+  var realCaf = window.cancelAnimationFrame.bind(window);
   var held = false;
-  var tickFrame = function () {
-    rafLoop = false;
-    if (held) return;
-    if (++vsyncs % pace === 0 && rafCallbacks.size) {
-      var cbs = Array.from(rafCallbacks.values());
-      rafCallbacks.clear();
-      for (var i = 0; i < cbs.length; i++) {
-        try {
-          cbs[i](now());
-        } catch (e) {}
-      }
-    }
-    pump();
-  };
-  var pump = function () {
-    if (!rafLoop && !held && rafCallbacks.size) {
-      rafLoop = true;
-      realRaf(tickFrame);
-    }
-  };
+  var waiting = new Map();
+  var rafSeq = 1e6;
   window.requestAnimationFrame = function (cb) {
-    var id = rafSeq++;
-    rafCallbacks.set(id, typeof cb === 'function' ? cb : function () {});
-    pump();
+    if (!held) return realRaf(cb);
+    var id = ++rafSeq;
+    waiting.set(id, cb);
     return id;
   };
   window.cancelAnimationFrame = function (id) {
-    rafCallbacks.delete(id);
+    if (waiting.delete(id)) return;
+    realCaf(id);
   };
-  handoff.setPace = function (n) {
-    pace = Math.max(1, Math.min(4, n | 0));
-    pump();
+  var release = function () {
+    var cbs = Array.from(waiting.values());
+    waiting.clear();
+    cbs.forEach(function (cb) {
+      realRaf(cb);
+    });
   };
+  // (Kept for pages built against the earlier bridge, which paced frames: now a no-op.)
+  handoff.setPace = function () {};
 
   /**
    * Holds the clock where it is (nothing timed fires) while nobody can see the app, or lets it run on
@@ -180,7 +161,7 @@
     }
     held = !!on;
     timers.forEach(schedule);
-    pump();
+    if (!held) release();
   };
 
   // ---- The backend, as the scene got it

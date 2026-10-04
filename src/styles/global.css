@@ -717,9 +717,6 @@ html.live-ok:not(.lights-used) .plate[data-app] .light--zoom::after {
 /* The window a preview opens in (src/scripts/live.ts), at the room the screen has, where the app is
    laid out at its own size. It morphs from and back into the plate with a view transition of the
    window alone: the page stays live under it, stepping back. */
-html.thawing { overflow: hidden; }
-/* (Its scrollbar's room stays, so the page doesn't shift sideways under the window.) */
-html.thawing.thawing-gutter { scrollbar-gutter: stable; }
 .thaw { position: fixed; inset: 0; z-index: 1000; cursor: zoom-out; }
 /* (A plate for its themed chrome and its tape rules.) */
 .thaw-window.plate {

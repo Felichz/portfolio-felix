@@ -40,6 +40,10 @@ const SCRIPT = {
         this.dispatchEvent(new Event('playing'));
       };
     }),
+  noghost: () =>
+    customElements.whenDefined('tape-player').then(() => {
+      customElements.get('tape-player').prototype.ghost = () => {};
+    }),
   noprogress: () => {
     const set = CSSStyleDeclaration.prototype.setProperty;
     CSSStyleDeclaration.prototype.setProperty = function (k, ...rest) {

@@ -326,8 +326,6 @@ async function zoom(plate: HTMLElement) {
   const ox = r.left + r.width / 2;
   const oy = r.top + r.height / 2;
   layers.forEach((el) => (el.style.transformOrigin = `${ox}px ${oy}px`));
-  // A page that scrolls keeps its scrollbar's room while it can't scroll, so it doesn't shift.
-  root.classList.toggle('thawing-gutter', root.scrollHeight > root.clientHeight);
   const stepping = (forward: boolean, duration: number) =>
     layers.map((el) => {
       const a = el.animate(
@@ -347,12 +345,9 @@ async function zoom(plate: HTMLElement) {
     else home.moveBefore(motion, homeNext);
     plate.style.visibility = open ? 'hidden' : '';
     overlay.style.visibility = open ? '' : 'hidden';
-    root.classList.toggle('thawing', open);
-    layers.forEach((el) => (el.inert = open));
-    // A measuring switch (scripts/perf): hide the page entirely while the window is open, to price
-    // what the inert, paused page behind the window costs the machine. Decides whether previews
-    // deserve a colder backdrop than the paused, inert page they already have.
-    if (new URLSearchParams(location.search).has('freeze')) layers.forEach((el) => (el.style.visibility = open ? 'hidden' : ''));
+    // (The page behind isn't made inert, nor its overflow hidden: either one restyles or relays out
+    // the whole page, 15-45 ms, in the very frame the morph captures. The overlay covers the screen
+    // and takes the pointer; scrolling and focus are kept to the window below, by listeners.)
   };
   /**
    * The morph is a view transition of the window alone, while the page, live under it, steps back
@@ -399,11 +394,8 @@ async function zoom(plate: HTMLElement) {
 
   // ---- In
   document.dispatchEvent(new CustomEvent('thaw:open'));
-  // While this preview has the machine, it has all of it: every other tape lets its document go (a
-  // later play rebuilds it from cache) and every other app — held, unseen — goes, to boot warm at
-  // its tape's end when its preview is used again. Nothing renders behind the window's back.
-  for (const p of document.querySelectorAll('tape-player')) if (p !== player) (p as TapePlayer).send({ k: 'unload' });
-  for (const l of lives.values()) if (l !== app && l.state !== 'none' && !l.inWindow) l.drop();
+  // (Other apps stay as they are, held and unseen; tearing documents down here would cost the morph's
+  // first frames, and building them again would cost the way back.)
   // Not live yet (a click before the hover finished): it becomes live in the window.
   void app.goLive().then(() => {
     player.frame?.focus();
@@ -444,7 +436,9 @@ async function zoom(plate: HTMLElement) {
     returns.forEach((a) => a.cancel());
     layers.forEach((el) => (el.style.transformOrigin = ''));
     overlay.remove();
-    root.classList.remove('thawing-gutter');
+    removeEventListener('wheel', onWheel, true);
+    removeEventListener('keydown', onScrollKey, true);
+    document.removeEventListener('focusin', onFocus);
     document.dispatchEvent(new CustomEvent('thaw:close'));
     zooming = false;
   };
@@ -453,6 +447,22 @@ async function zoom(plate: HTMLElement) {
     e.preventDefault();
     void close();
   };
+  // The page under the window doesn't scroll (the app scrolls itself, in its own frame), and focus
+  // stays in the window: what inert and a hidden overflow did, without restyling the page.
+  const SCROLL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' ']);
+  const onWheel = (e: WheelEvent) => e.preventDefault();
+  const onScrollKey = (e: KeyboardEvent) => {
+    if (!SCROLL_KEYS.has(e.key)) return;
+    if (e.key === ' ' && (e.target as Element).closest?.('a, button, input, textarea, select')) return;
+    e.preventDefault();
+  };
+  const onFocus = (e: FocusEvent) => {
+    if (overlay.contains(e.target as Node)) return;
+    (player.frame ?? overlay.querySelector<HTMLElement>('[data-light]'))?.focus();
+  };
+  addEventListener('wheel', onWheel, { capture: true, passive: false });
+  addEventListener('keydown', onScrollKey, true);
+  document.addEventListener('focusin', onFocus);
   // Escape in the app comes from the stage, which lets the app's own dialogs and menus take it first.
   const onEscape = () => void close();
   addEventListener('keydown', onKey, true);

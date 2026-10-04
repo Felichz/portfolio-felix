@@ -319,14 +319,12 @@ const glowCSS = projects
     background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 34%, transparent), transparent);
     opacity: 0.75;
   }
-  /* The window leans toward the pointer, with a light sheen that follows it. */
-  .slide-media :global(.plate) {
-    transform: perspective(1600px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-    transition: transform 0.7s var(--ease-out), box-shadow 0.6s var(--ease-out);
-  }
-  .slide-media:is(:hover, :has(:global(.plate[data-hover]))) :global(.plate) { transform: perspective(1600px) translateY(-4px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
-  .slide-media[data-tilting] :global(.plate) { transition: transform 0.15s linear, box-shadow 0.6s var(--ease-out); }
-  /* On the window itself, so it moves with the lean and the lift. The light is painted once and only
+  /* The window lifts toward the pointer, with a light sheen that follows it. It doesn't lean: the
+     window holds the app, in a process of its own, and any change of its 3D angle has that app
+     rasterized again at the new one, on every move of the pointer. A lift is a plain 2D move. */
+  .slide-media :global(.plate) { transition: translate 0.7s var(--ease-out), box-shadow 0.6s var(--ease-out); }
+  .slide-media:is(:hover, :has(:global(.plate[data-hover]))) :global(.plate) { translate: 0 -4px; }
+  /* On the window itself, so it moves with the lift. The light is painted once and only
      moved (src/scripts/fx.ts sets --sx/--sy): following the pointer never repaints the window. */
   .slide-media :global(.tilt-sheen) {
     position: absolute;

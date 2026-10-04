@@ -27,6 +27,10 @@ export function initFx() {
     let raf = 0;
     // The sheen: a light painted once, moved across the window (see .tilt-sheen in Work.astro).
     el.querySelector('.plate')?.insertAdjacentHTML('beforeend', '<span class="tilt-sheen" aria-hidden="true"></span>');
+    const sheen = el.querySelector<HTMLElement>('.tilt-sheen');
+    // A window holding a live app doesn't lean (each new angle would have the app rasterized again):
+    // only its sheen follows the pointer, set on the sheen alone so nothing else restyles.
+    const lean = !el.querySelector('.plate[data-app]');
     el.addEventListener('pointermove', (e) => {
       if (!fine.matches || reduce.matches) return;
       cancelAnimationFrame(raf);
@@ -34,11 +38,13 @@ export function initFx() {
         const r = el.getBoundingClientRect();
         const x = (e.clientX - r.left) / r.width;
         const y = (e.clientY - r.top) / r.height;
-        el.style.setProperty('--rx', `${(0.5 - y) * max}deg`);
-        el.style.setProperty('--ry', `${(x - 0.5) * max}deg`);
-        el.style.setProperty('--sx', `${x * r.width}px`);
-        el.style.setProperty('--sy', `${y * r.height}px`);
-        el.setAttribute('data-tilting', '');
+        if (lean) {
+          el.style.setProperty('--rx', `${(0.5 - y) * max}deg`);
+          el.style.setProperty('--ry', `${(x - 0.5) * max}deg`);
+        }
+        (sheen ?? el).style.setProperty('--sx', `${x * r.width}px`);
+        (sheen ?? el).style.setProperty('--sy', `${y * r.height}px`);
+        if (!el.hasAttribute('data-tilting')) el.setAttribute('data-tilting', '');
       });
     });
     el.addEventListener('pointerleave', () => {
