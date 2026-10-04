@@ -26,7 +26,7 @@ const gate = process.argv.includes('--gate');
 const throttle = process.argv.includes('--throttle');
 const browser = await puppeteer.launch({
   executablePath: ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome'].find(existsSync),
-  headless: false, defaultViewport: null, userDataDir: mkdtempSync(join(tmpdir(), 'perf-check-')),
+  headless: false, defaultViewport: null, userDataDir: process.env.PROFILE || mkdtempSync(join(tmpdir(), 'perf-check-')),
   args: ['--window-size=1600,1047', '--window-position=0,0', '--lang=en-US', '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-features=CalculateNativeWinOcclusion', ...(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(/ (?=--)/) : [])],
   ignoreDefaultArgs: ['--enable-automation'],
 });
