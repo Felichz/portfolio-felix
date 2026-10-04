@@ -18,6 +18,20 @@ const browser = await puppeteer.launch({
 });
 const [page] = await browser.pages();
 if (process.argv[2]) await page.evaluateOnNewDocument((css) => window === top && addEventListener('DOMContentLoaded', () => document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`)), process.argv[2]);
+if (process.env.THEME)
+  await page.evaluateOnNewDocument(() => {
+    if (window !== top) return;
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (...args) {
+      const a = animate.apply(this, args);
+      if (this.classList?.contains('theme-wash')) {
+        const k = args[0][0].opacity === 0 ? 'in' : 'out';
+        console.timeStamp(`wash-${k}-start`);
+        a.finished.then(() => console.timeStamp(`wash-${k}-end`));
+      }
+      return a;
+    };
+  });
 await page.goto(`${BASE}/#work`, { waitUntil: 'load' });
 await page.mouse.move(1530, 900, { steps: 4 });
 await sleep(9000);
@@ -55,7 +69,20 @@ if (process.env.DIRTY) {
   for (const e of ev) if (/StyleInvalidator|ScheduleStyleRecalculation|StyleRecalcInvalidationTracking|InvalidationTracking/.test(e.name)) { const d = e.args?.data ?? {}; const k = `${e.name} ${d.nodeName ?? ''} ${d.reason ?? d.invalidationList?.[0]?.classes ?? ''}`.slice(0, 120); inv[k] = (inv[k] ?? 0) + 1; }
   console.log(Object.entries(inv).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([k, v]) => `${v}x ${k}`).join(' | '));
 }
-// (WASHLOG) frame gaps placed against the wash's phases, read from its animations' timeline.
+// (WASHLOG) frame gaps placed against the wash's phases.
+if (process.env.THEME) {
+  const marks = Object.fromEntries(ev.filter((e) => e.name === 'TimeStamp' && /wash-/.test(e.args?.data?.message ?? '')).map((e) => [e.args.data.message, e.ts]));
+  const d = ev.filter((e) => e.name === 'DirectRenderer::DrawFrame').map((e) => e.ts).sort((a, b) => a - b);
+  const phase = (t) => (t < marks['wash-in-start'] ? 'before' : t < marks['wash-in-end'] ? 'fading in' : t < marks['wash-out-start'] ? 'covered' : t < marks['wash-out-end'] ? 'fading out' : 'after');
+  const by = {};
+  for (let i = 1; i < d.length; i++) {
+    const g = (d[i] - d[i - 1]) / 1000;
+    const ph = phase(d[i]);
+    (by[ph] ??= []).push(g);
+  }
+  for (const [ph, gs] of Object.entries(by)) console.log(`  ${ph.padEnd(11)} frames ${String(gs.length).padStart(3)}  worst ${Math.max(...gs).toFixed(0).padStart(4)} ms  over 25 ms: ${gs.filter((g) => g > 25).length}`);
+  console.log('  phases ms:', ['wash-in-start', 'wash-in-end', 'wash-out-start', 'wash-out-end'].map((k) => k + '=' + Math.round(((marks[k] ?? 0) - marks['wash-in-start']) / 1000)).join(' '));
+}
 const draws = ev.filter((e) => e.name === 'DirectRenderer::DrawFrame').map((e) => e.ts).sort((a, b) => a - b);
 const gaps = draws.slice(1).map((t, i) => (t - draws[i]) / 1000);
 console.log('frames drawn', draws.length, 'in 1.4 s; gaps >25ms:', gaps.filter((g) => g > 25).map((g) => g.toFixed(0)).join(' '));

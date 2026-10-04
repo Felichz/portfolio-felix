@@ -230,15 +230,24 @@ const { panels, home } = Astro.props;
     document.body.append(wash);
     const frame = () => new Promise((r) => requestAnimationFrame(r));
     void (async () => {
-      await wash.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }).finished;
+      // Not quite opaque (0.995 is the same to the eye): under a fully opaque layer the compositor
+      // rasterizes nothing, and the new page's raster would land in the wash's first frames out.
+      await wash.animate([{ opacity: 0 }, { opacity: 0.995 }], { duration: 160, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' }).finished;
       // Transitions stay suspended across the flip (set now, under the wash: it restyles the page too).
       root.setAttribute('data-theme-switching', '');
+      const applied = apply();
       reveal();
-      await Promise.race([apply(), new Promise((r) => setTimeout(r, 200))]);
-      // Two frames: the new page styled, painted and committed before the wash lifts.
-      await frame();
-      await frame();
-      await wash.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, easing: 'cubic-bezier(0, 0, 0.2, 1)', fill: 'forwards' }).finished;
+      await Promise.race([applied, new Promise((r) => setTimeout(r, 200))]);
+      // The wash lifts once the new page is drawn: frames coming at their pace again (three in a row,
+      // each under 25 ms), or after 600 ms at most.
+      const until = performance.now() + 600;
+      let last = Number(await frame());
+      for (let steady = 0; steady < 3 && performance.now() < until; ) {
+        const t = Number(await frame());
+        steady = t - last < 25 ? steady + 1 : 0;
+        last = t;
+      }
+      await wash.animate([{ opacity: 0.995 }, { opacity: 0 }], { duration: 260, easing: 'cubic-bezier(0, 0, 0.2, 1)', fill: 'forwards' }).finished;
       wash.remove();
       busy = false;
       done();
