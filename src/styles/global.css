@@ -127,24 +127,18 @@
    its own theme (src/scripts/live.ts), out from that app's window to the edges. One snapshot of the
    page, animated on the compositor; nothing else transitions while it runs. */
 :root:is([data-vt='theme'], [data-vt='theme-rect'])::view-transition-old(root) { animation: none; }
-/* The circle reveals through a mask whose size and position move together, its gradient's center
-   pinned to the toggle: cheaper per frame than an animated clip-path, which re-rasters the whole
-   snapshot layer every frame (measured: a third of the toggle's cost, and no CSS lever — units,
-   steps, resolution — moved it). Chrome ignores mask keyframes written for the view-transition
-   pseudos, so the animation is made from the page with the Web Animations API, on the pseudo
-   directly (Bar.astro); here the mask sits closed at the toggle until that animation opens it. */
-:root[data-vt='theme']::view-transition-new(root) {
-  mask-image: radial-gradient(circle at 50% 50%, #000 49.9%, transparent 50%);
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 49.9%, transparent 50%);
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-  mask-size: 0 0;
-  -webkit-mask-size: 0 0;
-  mask-position: var(--vt-x, 100%) var(--vt-y, 0);
-  -webkit-mask-position: var(--vt-x, 100%) var(--vt-y, 0);
-}
-:root[data-vt='theme-rect']::view-transition-new(root) { animation: theme-reveal-rect 0.5s var(--ease-io); }
+/* The circle, as it always looked: an animated clip-path on the new snapshot. A mask driven by the
+   Web Animations API painted cheaper per frame — but Chrome rendered the masked snapshot blank:
+   a white wave, the real page only after the animation (measured on pixels, then reverted). The
+   clip-path re-rasters the snapshot layer every frame; that cost is the price of the true picture,
+   and it stands. */
+:root[data-vt='theme']::view-transition-new(root) { animation: theme-reveal 0.6s var(--ease-io); }
+:root[data-vt='theme-rect']::view-transition-new(root) { animation: theme-reveal-rect 0.6s var(--ease-io); }
 :root:is([data-vt='theme'], [data-vt='theme-rect']) * { view-transition-name: none !important; }
+@keyframes theme-reveal {
+  from { clip-path: circle(0 at var(--vt-x, 100%) var(--vt-y, 0)); }
+  to { clip-path: circle(150vmax at var(--vt-x, 100%) var(--vt-y, 0)); }
+}
 @keyframes theme-reveal-rect {
   from { clip-path: inset(var(--vt-inset) round 12px); }
   to { clip-path: inset(0 round 0); }
