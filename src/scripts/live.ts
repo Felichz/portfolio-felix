@@ -636,7 +636,7 @@ export function initLive() {
   let warmBusy = false;
   let lastChange = 0;
   const quiet = () =>
-    !zooming && !document.hidden && !document.documentElement.classList.contains('deck-fast') && !document.querySelector('.thaw') && performance.now() - lastChange > 900 &&
+    !zooming && !document.hidden && !document.documentElement.classList.contains('deck-fast') && !document.querySelector('.thaw') && !document.documentElement.hasAttribute('data-theme-switching') && performance.now() - lastChange > 900 &&
     // ...and not while the visitor's hand is on a preview: hovering, or the app live under it.
     ![...lives.values()].some((l) => l.state !== 'none' && (l.plate.matches(':hover') || l.plate.hasAttribute('data-hover') || l.state === 'live'));
   const warmStep = () => {

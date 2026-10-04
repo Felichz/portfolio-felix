@@ -11,7 +11,9 @@ export function initWarm() {
   const seen = new Set<string>();
   const warm = () => {
     for (const img of document.querySelectorAll<HTMLImageElement>('img[loading="lazy"]')) {
-      if (img.complete || getComputedStyle(img).display === 'none') continue;
+      // The other edition's variant (display:none) warms too: it is exactly what a theme toggle
+      // will ask for, and its decode is the toggle's worst surprise.
+      if (img.complete) continue;
       const src = img.currentSrc || img.src;
       if (!src || seen.has(src)) continue;
       seen.add(src);

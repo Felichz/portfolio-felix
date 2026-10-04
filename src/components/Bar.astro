@@ -227,7 +227,30 @@ const { panels, home } = Astro.props;
       root.style.setProperty('--vt-y', `${from?.y ?? (r ? r.top + r.height / 2 : 0)}px`);
       root.dataset.vt = 'theme';
     }
-    doc.startViewTransition(apply).finished.finally(() => {
+    const vt = doc.startViewTransition(apply);
+    // The circle, opened from the page: mask keyframes written for the view-transition pseudos are
+    // ignored by the browser, but the Web Animations API reaches the pseudo directly. Size and
+    // position move together, so the gradient's center stays pinned to the toggle while the circle
+    // grows past every corner of any screen. (src/styles/global.css holds the closed mask this
+    // animation opens; the rectangle variant, from a live app's own switch, keeps its clip-path.)
+    if (!from || !('rect' in from)) {
+      const x = parseFloat(root.style.getPropertyValue('--vt-x')) || innerWidth;
+      const y = parseFloat(root.style.getPropertyValue('--vt-y')) || 0;
+      vt.ready
+        .then(() => {
+          root
+            .animate(
+              [
+                { maskSize: '0px 0px', maskPosition: `${x}px ${y}px` },
+                { maskSize: '12000px 12000px', maskPosition: `${x - 6000}px ${y - 6000}px` },
+              ],
+              { pseudoElement: '::view-transition-new(root)', duration: 500, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', fill: 'forwards' },
+            )
+            .addEventListener('error', () => {});
+        })
+        .catch(() => {});
+    }
+    vt.finished.finally(() => {
       delete root.dataset.vt;
       done();
     });
