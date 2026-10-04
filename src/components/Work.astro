@@ -296,6 +296,10 @@ const glowCSS = projects
   .slide[data-pre] { visibility: visible; transition: none !important; }
   .slide[data-pre] :is(.slide-media, .slide-head > *, .slide-side > *) { opacity: 0 !important; transform: none !important; transition: none !important; }
   .slide[data-state='active'] { visibility: visible; transition-delay: 0s; z-index: 1; }
+  /* While a slide comes in, its preview is the still (the tape's own first frame): its stage, a frame
+     of another process, stays unrendered until the slide has landed. Its first raster then comes when
+     nothing on the page is moving, instead of inside the slide's transition. */
+  .slide:not([data-settled]) :global(.stage-frame) { visibility: hidden; }
 
   .slide-media {
     position: relative;
@@ -467,6 +471,7 @@ const glowCSS = projects
     const pos = root.querySelector<HTMLElement>('[data-pos]');
     const reduce = matchMedia('(prefers-reduced-motion: reduce)');
     const HOLD = 3200; // time on the final still after a recording ends
+    const SETTLE = 800; // a slide's transition in; its recording starts once it's over
     const STILL = 8500; // time per product without a recording
 
     let index = Number(root.dataset.start ?? 0);
@@ -578,9 +583,12 @@ const glowCSS = projects
         prerastered.delete(slides[j]!);
         count0();
       });
+      slides.forEach((s) => s.removeAttribute('data-settled'));
       clearTimeout(change2);
       change2 = window.setTimeout(() => {
         change2 = 0;
+        // Landed: the recording starts over its still, on the slide that now holds still itself.
+        slides[j]!.setAttribute('data-settled', '');
         roll();
         // The app behind this product warms its bytes now, seconds before anything boots them.
         plateOf(j)?.querySelector<HTMLElement & { warm?: () => void }>('tape-player')?.warm?.();
@@ -596,7 +604,7 @@ const glowCSS = projects
         if (li && strip && strip.scrollWidth > strip.clientWidth) {
           strip.scrollTo({ left: li.offsetLeft - strip.clientWidth / 2 + li.offsetWidth / 2, behavior: reduce.matches ? 'instant' : 'smooth' });
         }
-      }, 120);
+      }, reduce.matches ? 0 : SETTLE);
     };
 
     const setAuto = (on: boolean) => {

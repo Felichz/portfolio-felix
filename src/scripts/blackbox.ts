@@ -7,10 +7,18 @@
  * arrays are exposed as `window.__bb` for the perf scripts to read.
  *
  * The recorder starts on the visitor's first input, like everything else on the page: page-load
- * audits pay nothing for it.
+ * audits pay nothing for it. And it runs only when measuring (the perf scripts set `perf` in
+ * sessionStorage, or add ?perf to the address): its frame loop keeps the page's main thread awake on
+ * every vsync, and then every running animation is restyled there too, composited or not. For
+ * visitors that cost half of a core while a preview played.
  */
 export function initBlackbox() {
   if (window !== window.top) return;
+  let measuring = new URLSearchParams(location.search).has('perf');
+  try {
+    measuring ||= sessionStorage.getItem('perf') === '1';
+  } catch {}
+  if (!measuring) return;
   type Loaf = { t: number; d: number };
   type Dump = { gap: number; at: number; [k: string]: unknown };
   const frames: number[] = [];

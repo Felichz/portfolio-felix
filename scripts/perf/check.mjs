@@ -36,6 +36,9 @@ page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 await page.evaluateOnNewDocument(() => {
   if (window !== window.top) return;
+  try {
+    sessionStorage.setItem('perf', '1'); // the page's black box runs only when measuring
+  } catch {}
   const F = (window.__frames = []);
   const tick = (t) => { F.push(t); requestAnimationFrame(tick); };
   requestAnimationFrame(tick);
