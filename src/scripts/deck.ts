@@ -208,7 +208,13 @@ export function initDeck() {
     pill();
   }).observe(stage);
 
-  document.addEventListener('deck:refresh', glow);
+  // Read on the next frame: right after a product change the panel's styles are dirty, and reading
+  // them here would force a full layout (container queries) and then a second style pass.
+  let glowFrame = 0;
+  document.addEventListener('deck:refresh', () => {
+    cancelAnimationFrame(glowFrame);
+    glowFrame = requestAnimationFrame(glow);
+  });
   new MutationObserver(glow).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
   setActive(nearest());

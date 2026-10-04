@@ -53,11 +53,11 @@
       .tape-cursor svg { display: block; transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1); transform-origin: 4.6px 2.3px; }
       .tape-cursor.down svg { transform: scale(0.84); }
 
-      /* The live app: it runs under the tape at the recorded 1440x900, scaled like the tape, invisible
-         until it takes over. (Tried content-visibility: hidden while unseen — a booting app would cost
-         parse and script, not paint — but a non-rendered document never fires its frames, and the app's
-         readiness is reported from two of them: every boot hung. The opacity stays; the paint is what
-         the boot's quarter pace keeps cheap.) In a window it's laid out at the stage's own size. */
+      /* The live app runs under the tape at the recorded 1440x900, scaled like the tape: drawn, but
+         covered. So it's rasterized while it boots and follows, and the compositor skips what the
+         opaque tape covers; going live only hides the tape, with nothing left to paint for the first
+         time. (At opacity 0 the app was never rasterized until the swap, which then paid for it.)
+         In a window it's laid out at the stage's own size. */
       .live-app {
         position: absolute;
         top: 0;
@@ -67,14 +67,12 @@
         border: 0;
         transform-origin: 0 0;
         transform: scale(var(--live-k, 1));
-        opacity: 0;
         pointer-events: none;
       }
-      .live-app.shown { opacity: 1; pointer-events: auto; transition: opacity 0.16s ease-out; }
+      tape-core { z-index: 1; }
+      .live-app.shown { pointer-events: auto; }
+      html:has(.live-app.shown) tape-core { visibility: hidden; }
       html[data-window] .live-app { width: 100%; height: 100%; transform: none; }
-      @media (prefers-reduced-motion: reduce) {
-        .live-app.shown { transition: none; }
-      }
     </style>
   </head>
   <body>
