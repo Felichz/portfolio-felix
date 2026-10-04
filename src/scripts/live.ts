@@ -300,7 +300,7 @@ async function zoom(plate: HTMLElement) {
       <div class="thaw-screen"></div>
     </div>
     <div class="thaw-actions">
-      ${action(caseStudy, 'Case study', ICONS.doc)}${action(live, 'Live site', ICONS.out)}${action(source, 'Source', ICONS.code)}
+      ${action(caseStudy, 'Case study', ICONS.doc)}${action(live, 'Website', ICONS.out)}${action(source, 'Source', ICONS.code)}
       <p class="thaw-hint"><kbd>Esc</kbd> or click outside to return</p>
     </div>`;
   const win = overlay.querySelector<HTMLElement>('.thaw-window')!;
