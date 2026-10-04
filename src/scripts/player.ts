@@ -26,20 +26,59 @@ addEventListener('message', (e: MessageEvent<ToHost>) => {
 /** A stage that hasn't answered by then is loaded again from this page's own origin. */
 const PATIENCE = 3000;
 
-// A theme switch reaches the stages when its reveal starts (Bar.astro: theme:reveal), not when the
-// page's theme attribute flips: a stage paints in its own process, so switching it while the page
-// waits for its new snapshot showed the new edition for a moment, then the old one again, before the
-// circle brought it. Started, the old page is a still and the new edition shows only inside the
-// circle, so the stage's switch lands there. Nothing waits on the stages either.
+// A theme switch reaches each stage as the reveal's circle reaches IT — not all of them at the
+// start. A stage paints in its own process and its snapshot reaches the page's view transition
+// asynchronously: switched early, its new edition showed for a moment over the frozen page, then
+// the old one again, and the circle brought the new one only later (the flash-and-back). Switched
+// under the moving edge, neither race has room: the edge is right there, and it masks everything.
 let themeId = 0;
-const sendTheme = () => {
-  const id = ++themeId;
-  players.forEach((p) => p.send({ k: 'theme', theme: appTheme(), id }));
+const sendTheme = (p: TapePlayer) => {
+  p.send({ k: 'theme', theme: appTheme(), id: ++themeId });
 };
-document.addEventListener('theme:reveal', sendTheme);
+/** When the circle's edge (clip-path, 150vmax over `duration` with --ease-io) covers a point
+    `d` px from its origin: the easing, cubic-bezier(0.65, 0, 0.35, 1), inverted by nested bisection. */
+const EASE: [number, number, number, number] = [0.65, 0, 0.35, 1];
+const bezierY = (t: number) => {
+  const [x1, y1, x2, y2] = EASE;
+  const u = 1 - t;
+  return 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t;
+};
+const bezierX = (t: number) => {
+  const [x1, , x2] = EASE;
+  const u = 1 - t;
+  return 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t;
+};
+const arrival = (d: number, radius: number, duration: number) => {
+  const p = Math.min(1, d / radius);
+  let lo = 0;
+  let hi = 1;
+  for (let i = 0; i < 20; i++) {
+    const mid = (lo + hi) / 2;
+    // The animation's eased progress at wall-time mid: y(bezier(x⁻¹(mid))).
+    let l2 = 0;
+    let h2 = 1;
+    for (let j = 0; j < 20; j++) {
+      const m = (l2 + h2) / 2;
+      bezierX(m) < mid ? (l2 = m) : (h2 = m);
+    }
+    bezierY((l2 + h2) / 2) < p ? (lo = mid) : (hi = mid);
+  }
+  return duration * ((lo + hi) / 2);
+};
+document.addEventListener('theme:reveal', (e) => {
+  const { x, y, duration } = (e as CustomEvent<{ x: number; y: number; duration: number }>).detail ?? {};
+  if (x === undefined) return players.forEach((p) => sendTheme(p));
+  const radius = 1.5 * Math.max(innerWidth, innerHeight);
+  for (const p of players) {
+    if (!p.frame) continue;
+    const r = p.closest?.('.plate')?.getBoundingClientRect();
+    const d = r ? Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)) : radius;
+    setTimeout(() => sendTheme(p), Math.min(arrival(d, radius, duration), duration - 20));
+  }
+});
 // (A theme set any other way, without the switch: the stages follow at once.)
 new MutationObserver(() => {
-  if (!document.documentElement.hasAttribute('data-theme-switching')) sendTheme();
+  if (!document.documentElement.hasAttribute('data-theme-switching')) players.forEach((p) => sendTheme(p));
 }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 export class TapePlayer extends HTMLElement {
