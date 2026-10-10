@@ -80,7 +80,7 @@ spacing:
 
 The site behaves like a desktop app in a fixed window. A bar on top, a rail of section dots down the left edge, and a vertical deck of full-height sections that moves one section per gesture: Intro, Work, Experience, About on the home page; Overview, Story, Engineering, Screens, Specs on each case study. The document itself never scrolls; the deck does. When something needs more room than the window has, that one section or card scrolls inside itself, the way a pane does in an app.
 
-The room has light. A warm ambient glow drifts behind everything, over a faint dot grid and a film grain. Each panel names the colors the light drifts to: the house jade on the intro, the active product's accent on the work showcase and on a case study. Surfaces are frosted: translucent, blurred, a hairline ring and a lit top edge. Nothing is flat, and nothing shouts.
+The room has light. A warm ambient glow sits behind everything, over a faint dot grid and a film grain. Each panel names the colors the light takes: the house jade on the intro, the active product's accent on the work showcase and on a case study. Surfaces are frosted: translucent, blurred, a hairline ring and a lit top edge. Nothing is flat, and nothing shouts.
 
 Experience and projects are kept apart on purpose. Work is the portfolio: five products, shown as products. Experience is the CV: roles on a continuous timeline, with the detail of each role below. The positioning is a senior IC who owns problems end to end; no single metric carries it (the 100k-row filtering is one example among several).
 
@@ -111,7 +111,7 @@ One `go()` in `src/scripts/deck.ts` drives everything:
 
 ## Typography
 
-- **Archivo**, variable width and weight, is the house face. The intro name is set one glyph at a time: each letter widens from 62% to 112% on arrival and swells toward the pointer afterwards.
+- **Archivo**, variable width and weight, is the house face. The intro name is set one glyph at a time: each letter rises into place on arrival, and swells toward the pointer afterwards along the width axis.
 - **Newsreader italic** for short editorial asides ("building interfaces people can trust.", "I'd like to hear about it.").
 - **Product faces** (Inter, Newsreader, Bricolage Grotesque, Martian Mono) set every product name, in the rail, the intro shelf, the case study title and the build sheet.
 - Labels are small caps-style uppercase at 86% width with open tracking.
