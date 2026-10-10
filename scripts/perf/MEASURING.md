@@ -62,6 +62,7 @@ Product change on `[::1]`, injected CSS, two alternations of two rounds each (sw
 So the cost of a product change in one process is the product's own stage: its tape playing and the app booting under it, both on the page's main thread (the trace attributes ~100 ms of JavaScript in the second, all in the app's bundle). The slide's CSS isn't it.
 
 - **DWELL 300 instead of 600** (the app boots sooner): worse on the product change, 86–87 fps and 15–20% against 90–91 fps and 12–14%, three alternations each. Rejected. It would only shorten the hover to live by about 50 ms.
+  The gate on the same origin, three alternations, IDS=lifeui: hover to live 299, 318, 362 ms at 600 against 318, 304, 358 ms at 300 (no median gain), and the hover phase's hitches 5.5–6.2% at 600 against 5.6–9.7% at 300. Rejected on both.
 - **Window opening and scroll** show no cost on this 100 Hz panel: scroll holds 100 fps with 0% hitches at both origins, and the gate's window phases hold 100 fps with 0%. Nothing there to eliminate here.
 
 Left for a decision, because each changes something visible: play the tape only after the app is booted, or boot the app later than the second after a click (a longer DWELL trades the hover to live for a calmer click).
