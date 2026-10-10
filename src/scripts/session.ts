@@ -494,12 +494,11 @@ export class Session {
     }
   }
 
-  // ---- The cadence. The bridge fires the app's frames on every `pace`-th vsync: half cadence in a
-  // preview to start (a scaled-down picture can't show the difference), full in a window. A small loop
-  // then watches this document's own frame intervals — the stage shares the app's process, so its
-  // frames feel what the app's rendering costs — and settles the app at the highest steady pace the
-  // machine holds. Steadiness is the point, not the number: a metronome at 60 reads as smoother than
-  // a lottery between 42 and 63.
+  // ---- The app's decorative motion. A small loop watches this document's own frame intervals — the
+  // stage shares the app's process, so its frames feel what the app's rendering costs. While they run
+  // slow, the app's endless animations (a pulse, a spinner) rest; once they're steady again, they run.
+  // `pace` is how slow the loop judges the frames to be, in vsyncs: 1 is steady. A preview starts at 2
+  // (rested), a window at 1.
   #pace = 1;
   #vsync = 8.33;
   #paceTimer = 0;
@@ -547,8 +546,8 @@ export class Session {
     n > 1 ? this.#restDecorative() : this.#wakeDecorative();
   }
 
-  /** Pauses the app's endless animations — a pulse, a spinner: decorative by definition — so the pace
-     the loop settles on is one the app can actually hold. They run again at full cadence. */
+  /** Pauses the app's endless animations — a pulse, a spinner: decorative by definition — so a slow
+     app sheds what nobody needs. They run again once its frames are steady. */
   #restDecorative() {
     const doc = this.frame?.contentDocument;
     if (!doc) return;

@@ -138,8 +138,6 @@
       realRaf(cb);
     });
   };
-  // (Kept for pages built against the earlier bridge, which paced frames: now a no-op.)
-  handoff.setPace = function () {};
 
   /**
    * Holds the clock where it is (nothing timed fires) while nobody can see the app, or lets it run on
