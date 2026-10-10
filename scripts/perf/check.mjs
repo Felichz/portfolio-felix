@@ -21,6 +21,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const out = join(here, 'out');
 mkdirSync(out, { recursive: true });
 const BASE = process.env.BASE ?? 'http://localhost:4391';
+// The display's refresh rate: a blank page holds it when the machine is free. 240 by default; set DISPLAY_HZ on
+// a screen that runs slower (this laptop's active panel is 100 Hz).
+const HZ = Number(process.env.DISPLAY_HZ ?? 240);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const gate = process.argv.includes('--gate');
 const throttle = process.argv.includes('--throttle');
@@ -54,8 +57,8 @@ const ceiling = await page.evaluate(() => new Promise((done) => {
   const tick = (t) => { ts.push(t); ts.length < 61 ? requestAnimationFrame(tick) : done([...ts.slice(1).map((x, i) => x - ts[i])].sort((a, b) => a - b)[30]); };
   requestAnimationFrame(tick);
 }));
-if (!throttle && ceiling > 8.4) {
-  console.log(`GATE: the machine is busy (a blank page holds ${Math.round(1000 / ceiling)} fps; it should hold 240+). Close what's running and run it again — otherwise the numbers would be about that, not about the site.`);
+if (!throttle && 1000 / ceiling < HZ * 0.9) {
+  console.log(`GATE: the machine is busy (a blank page holds ${Math.round(1000 / ceiling)} fps; it should hold ${HZ}+; DISPLAY_HZ sets that). Close what's running and run it again — otherwise the numbers would be about that, not about the site.`);
   await browser.close();
   process.exit(2);
 }
@@ -139,7 +142,7 @@ for (const id of ids) {
 // ---- Frame budgets
 const frames = await page.evaluate(() => window.__frames.slice());
 const bb = await page.evaluate(() => (window.__bb ? window.__bb.dumps : []));
-const VSYNC = 1000 / 240;
+const VSYNC = 1000 / HZ;
 const pct = (a, p) => (a.length ? a[Math.min(a.length - 1, Math.floor((a.length - 1) * p))] : 0);
 let bad = 0;
 console.log('\nphase               fps  p99ms  maxms  janky  dropped' + (gate ? '  gate' : ''));
