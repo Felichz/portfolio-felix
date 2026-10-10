@@ -27,10 +27,6 @@ interface Handoff {
   setClock?: (ms: number, freeze?: boolean, tick?: boolean) => void;
   /** Installed by the bridge: holds the app's clock where it is (nothing timed fires), or lets it run on. */
   hold?: (on: boolean) => void;
-  /** Installed by the bridge: the app's frames fire on every `n`-th vsync (1 = full cadence). */
-  setPace?: (n: number) => void;
-  /** The pace to start at, read by the bridge before the app's code runs (4: unseen, booting). */
-  pace?: number;
 }
 declare global {
   interface Window {
@@ -240,10 +236,6 @@ export class Session {
       socket: tape.app.socket,
       at: cp.t,
       route: tape.app.spa ? tape.app.entry.replace(/\/$/, '') + cp.route : undefined,
-      // Unseen while it boots and follows its tape, the app runs at a quarter of the screen's
-      // cadence: nothing it shows can be watched yet, and a quarter of the paint leaves the machine
-      // to the page. goLive sets the pace it keeps.
-      pace: 4,
     };
     (window.__live ??= {})[this.id] = this.handoff;
 
@@ -552,20 +544,9 @@ export class Session {
   #setPace(n: number) {
     if (n === this.#pace) return;
     this.#pace = n;
-    this.#applyPace();
     n > 1 ? this.#restDecorative() : this.#wakeDecorative();
   }
 
-  /** The page can cap the pace: its frames are the ones the app's render can starve (the stage's own
-     look at its frames can't see GPU time). The lower of the two wins. */
-  paceCap = 4;
-  setPaceCap(n: number) {
-    this.paceCap = Math.max(1, Math.min(4, n | 0));
-    this.#applyPace();
-  }
-  #applyPace() {
-    this.handoff.setPace?.(Math.min(this.#pace, this.paceCap));
-  }
   /** Pauses the app's endless animations — a pulse, a spinner: decorative by definition — so the pace
      the loop settles on is one the app can actually hold. They run again at full cadence. */
   #restDecorative() {
