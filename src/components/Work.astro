@@ -300,17 +300,22 @@ const glowCSS = projects
      of another process, stays unrendered until the slide has landed. Its first raster then comes when
      nothing on the page is moving, instead of inside the slide's transition. */
   .slide:not([data-settled]) :global(.stage-frame) { visibility: hidden; }
+  /* The slides that aren't showing skip their own style and layout: a product change restyles every
+     slide's subtree otherwise (about a third of a change's element work). A slide being pre-rastered
+     keeps its content, so its textures still get built. */
+  .slide:not([data-state='active']):not([data-pre]) { content-visibility: hidden; }
 
   .slide-media {
     position: relative;
     display: block;
     border-radius: var(--radius);
     opacity: 0;
-    transform: translateX(var(--from, 4%)) scale(0.98);
+    transform: translateX(4%) scale(0.98);
     transform-origin: 50% 60%;
     transition: opacity 0.6s var(--ease-out), transform 0.9s var(--ease-out);
   }
-  .slide[data-state='before'] { --from: -4%; }
+  /* Stated on the media itself: an inherited custom property would restyle every slide's subtree on each change. */
+  .slide[data-state='before'] .slide-media { transform: translateX(-4%) scale(0.98); }
   .slide[data-state='active'] .slide-media { opacity: 1; transform: none; transition-delay: 0.08s; }
   .slide[data-state='active'] .slide-media :global(.plate) { view-transition-name: var(--vt-shot); }
   /* The product's color glows behind its window, and pools on the floor under it. */
