@@ -129,8 +129,9 @@ const strengths = [
     animation-delay: calc(var(--i) * 45ms + 120ms);
   }
   :global(.framed) .ch { opacity: 1; animation: none; }
+  /* Opacity and position only: a font-stretch or font-weight tween reflows the name on every frame. */
   @keyframes letter-in {
-    from { opacity: 0; font-stretch: 62%; font-weight: 300; transform: translateY(0.16em); }
+    from { opacity: 0; transform: translateY(0.16em); }
   }
 
   .intro-role {
@@ -249,14 +250,17 @@ const strengths = [
       if (!fine.matches || reduce.matches) return;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        for (const c of chars) {
-          const r = c.getBoundingClientRect();
+        // Every rect is read before any letter is written: a read after a write would lay the name
+        // out again, once per letter.
+        const rects = chars.map((c) => c.getBoundingClientRect());
+        chars.forEach((c, i) => {
+          const r = rects[i]!;
           const dx = (e.clientX - (r.left + r.width / 2)) / (r.width * 2.2);
           const dy = (e.clientY - (r.top + r.height / 2)) / (r.height * 1.4);
           const k = Math.exp(-(dx * dx + dy * dy));
           c.style.setProperty('--w', `${112 + 13 * k}%`);
           c.style.setProperty('--wt', `${820 + 80 * k}`);
-        }
+        });
       });
     });
     name.addEventListener('pointerleave', () => {
