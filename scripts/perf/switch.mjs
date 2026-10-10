@@ -21,6 +21,13 @@ const CSS = {
   noshadow: '.plate { box-shadow: none !important; }',
   awake: ".slide .stage-frame { visibility: visible !important; } .slide:not([data-state='active']) .stage-frame { opacity: 0 !important; }",
   nobar: '.rail-progress { display: none !important; }',
+  plateTx: '.slide-media .plate { transition: translate 0.7s var(--ease-out) !important; }',
+  pool: '.slide-media::before { display: none !important; }',
+  ambientTx: '.ambient, .cursor-light { transition: none !important; }',
+  lightTx: '.cursor-light { transition: none !important; }',
+  rail: '.rail-item, .rail-item *, .rail-progress { transition: none !important; }',
+  cvSlides: "article.slide:not([data-state='active']):not([data-pre]) { content-visibility: hidden; }",
+  cvOff: "article.slide:not([data-state='active']) { content-visibility: visible !important; }",
 };
 const variants = (process.argv[2] ?? 'base').split(',');
 const rounds = Number(process.env.ROUNDS ?? 2);
