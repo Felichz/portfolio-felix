@@ -239,8 +239,8 @@ a:hover { text-decoration-thickness: 2px; }
   contain: strict;
   /* One compositor layer for the whole background, not one per sublayer. */
   will-change: transform;
-  /* Only this layer animates the light; the root just holds the colors, so nothing else restyles. */
-  transition: --glow 0.9s var(--ease-io), --glow-2 0.9s var(--ease-io);
+  /* No transition on the light's color: a change of product repaints this fixed layer once, not on
+     every frame of a fade (a 0.9 s fade of the full layer cost more frames than it was worth). */
 }
 .ambient::before {
   content: '';
@@ -257,11 +257,8 @@ a:hover { text-decoration-thickness: 2px; }
   opacity: var(--grain);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-/* While the page is being flung (src/scripts/deck.ts), the light steps between panels' colors
-   instead of drifting: a drift repaints this whole fixed layer on every frame, panel after panel.
-   The reveals cut their transitions for the same reason — at that speed they're invisible either
-   way, and at rest they arrive already placed. */
-:root.deck-fast .ambient { transition: none; }
+/* The reveals cut their transitions while the page is being flung (src/scripts/deck.ts): at that
+   speed they're invisible either way, and at rest they arrive already placed. */
 :root.deck-fast [data-reveal] { transition: none !important; }
 /* The cursor light (src/scripts/field.ts): a soft pool and a small canvas of dots around the pointer,
    both moved with transforms, so a frame only touches that area. They sit outside .ambient so the
@@ -273,8 +270,7 @@ a:hover { text-decoration-thickness: 2px; }
   pointer-events: none;
   overflow: hidden;
   contain: strict;
-  /* The pool follows the room's color change like .ambient does. */
-  transition: --glow 0.9s var(--ease-io);
+  /* The pool takes the room's color at once, with .ambient. */
 }
 .ambient-light,
 .ambient-field {
