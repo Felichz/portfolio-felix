@@ -149,7 +149,7 @@ if (process.env.LABEL) {
   for (const e of ev) {
     if (e.ph !== "X" || e.name !== "FunctionCall" || !e.dur) continue;
     const d = e.args?.data ?? {};
-    if (!/localhost:4391/.test(d.url ?? "")) continue;
+    if (!(d.url ?? "").startsWith(BASE)) continue;
     const k = `${(d.url || "").split("/").pop().slice(0, 40)}:${d.lineNumber}:${d.functionName || "(anon)"}`;
     js.set(k, (js.get(k) ?? 0) + e.dur / 1000);
   }

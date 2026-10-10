@@ -44,3 +44,24 @@ Measured 2026-10-10, `dist` built from commit 1f72444, the laptop's 100 Hz panel
 Open, known costs in both: the first boot of a product's app (KatArch on the gate) blocks the page for about 1.7 s, and the theme wash's covered frame runs 100 ms or more under the veil. Neither is fixed.
 
 Earlier reference, on the 240 Hz panel, before the containment: product change 36–43 fps with 71–80% of the second in hitches at HEAD; 100–160 fps with 20–30% after the containment (it is the same measure on a different panel, so compare it only with itself).
+
+## Found by elimination (same-process origin, 2026-10-10)
+
+Product change on `[::1]`, injected CSS, two alternations of two rounds each (switch.mjs). Median fps and share of the second in hitches:
+
+| Variant | fps | hitches |
+|---|---|---|
+| base | 90 | 14–16% |
+| `.stage-frame` hidden (`display: none`) | 100 | 0% |
+| `.stage-frame` hidden (`visibility`) | 96 | 9% |
+| `tape-player` hidden | 100 | 0% |
+| `.plate` shadow off | 91 | 14% |
+| `.slide-media` transition off | 90 | 15% |
+| `.ambient` / cursor glow off | 88 | 19% |
+
+So the cost of a product change in one process is the product's own stage: its tape playing and the app booting under it, both on the page's main thread (the trace attributes ~100 ms of JavaScript in the second, all in the app's bundle). The slide's CSS isn't it.
+
+- **DWELL 300 instead of 600** (the app boots sooner): worse on the product change, 86–87 fps and 15–20% against 90–91 fps and 12–14%, three alternations each. Rejected. It would only shorten the hover to live by about 50 ms.
+- **Window opening and scroll** show no cost on this 100 Hz panel: scroll holds 100 fps with 0% hitches at both origins, and the gate's window phases hold 100 fps with 0%. Nothing there to eliminate here.
+
+Left for a decision, because each changes something visible: play the tape only after the app is booted, or boot the app later than the second after a click (a longer DWELL trades the hover to live for a calmer click).

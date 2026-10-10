@@ -27,6 +27,8 @@ const CSS = {
   lightTx: '.cursor-light { transition: none !important; }',
   rail: '.rail-item, .rail-item *, .rail-progress { transition: none !important; }',
   cvSlides: "article.slide:not([data-state='active']):not([data-pre]) { content-visibility: hidden; }",
+  stageVis: '.stage-frame { visibility: hidden !important; }',
+  tapeOff: 'tape-player { display: none !important; }',
   cvOff: "article.slide:not([data-state='active']) { content-visibility: visible !important; }",
 };
 const variants = (process.argv[2] ?? 'base').split(',');
