@@ -1,7 +1,7 @@
 ---
 from: win
-at: 2026-10-11T15:51:54.232Z
+at: 2026-10-11T16:12:56.793Z
 branch: live-apps
-head: f00809c
+head: 724142e
 ---
-live-apps f00809c. 4x findings sent to mac (layout ~250-320 ms per product click, source not found yet; page scroll hot function in deck.ts). Me: layout source of the product click; mac: rebase + Iris numbers.
+PAUSED at Felix's request. live-apps 724142e. Handed off to mac (it may integrate live-apps under CLAUDE.md's rules). No claims held. On return: read the channel first.
