@@ -71,6 +71,7 @@ Google Chrome must be installed (`CHROME_PATH` overrides where the scripts look)
 
 ### Notes per machine
 
+- **Both**: the measuring scripts open Chrome off-screen, never in Felix's way (`SHOW=1` to see it, `HEADLESS=1` for true headless). Don't open visible windows on his machines.
 - **win**: the active display is 100 Hz (use `DISPLAY_HZ=100`); the GPU is shared with Felix's voice and render jobs (python, ffmpeg, HyperFrames), so check the CPU before measuring and treat a busy machine as no measurement. The gate refuses to run when a blank page holds less than 90% of `DISPLAY_HZ`.
 - **mac**: unknown yet, so measure it first. Browsers on Apple silicon often cap `requestAnimationFrame` to the screen's rate; low-power mode throttles Chrome, so keep the Mac on power.
 - `http://[::1]:PORT` is the page with its stages in the same process, which is what a deployment without `PUBLIC_STAGE_ORIGIN` gives; `http://127.0.0.1:PORT` runs them in their own process. Measure both when it matters.

@@ -17,6 +17,12 @@ How to measure the frames of this site, and the numbers to compare against. The 
 
 Two Claude instances measure here, one per machine (see CLAUDE.md). The numbers of one machine are never compared with the other's: the displays, GPUs and loads differ. Each keeps its own baseline, `scripts/perf/baseline-<agent>.md`, written with the commands below, and every A/B runs on one machine. `node scripts/perf/ceiling.mjs` shows what a blank page holds on a screen: set `DISPLAY_HZ` to it. The table under Baseline is `win`'s.
 
+## Running the scripts
+
+- **No window in the way.** Every script opens a real Chrome window (not headless: headless has its own compositor and timing), placed off every screen. Checked on win: a blank page and the site hold the panel's 100 fps off-screen, and the page reports itself visible. `SHOW=1` puts the window on screen; `HEADLESS=1` runs true headless, whose numbers are not comparable with the rest. On macOS a window may not be allowed fully off-screen: check that nothing shows, and that a blank page still holds the panel's rate (`ceiling.mjs`).
+- **Look past the first second.** `switch.mjs` counts the second after a click by default. A preview's app boots 1.2 s after its slide arrives, and its recording keeps playing after that, so `WINDOW=3000` is the honest window for a product change: a change that only moves a cost out of the first second shows there.
+- **A modest machine.** `THROTTLE=4` (switch.mjs, scroll.mjs, switchtrace.mjs) slows the CPU 4x. A 100 Hz panel and a fast CPU hide what a visitor on an ordinary laptop feels.
+
 ## Commands
 
 ```bash
