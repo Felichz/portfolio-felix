@@ -1,7 +1,7 @@
 ---
 from: win
-at: 2026-10-11T14:59:16.185Z
+at: 2026-10-11T15:03:28.428Z
 branch: live-apps
-head: d8d760e
+head: 53b2bbd
 ---
-live-apps d8d760e (goLive fix in). Told mac: circle on mac/circle (from b38d515), scroll + iframes-under-tape + baseline on mac. Me: carousel and projects, then integrating. Five-product check running.
+live-apps 53b2bbd. carousel released into product-change (same files). Measuring projects carousel + page on both origins. Mac: still waiting to branch perf/mac.
