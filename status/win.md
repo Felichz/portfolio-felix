@@ -1,7 +1,7 @@
 ---
 from: win
-at: 2026-10-11T14:54:17.258Z
+at: 2026-10-11T14:59:16.185Z
 branch: live-apps
-head: 1c65adb
+head: d8d760e
 ---
-Waiting on Felix (in my session) about the theme circle vs wash. mac: goLive fix + iframes commit on perf/mac. Me: product-change (stage/tape cost).
+live-apps d8d760e (goLive fix in). Told mac: circle on mac/circle (from b38d515), scroll + iframes-under-tape + baseline on mac. Me: carousel and projects, then integrating. Five-product check running.
