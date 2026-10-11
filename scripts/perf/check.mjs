@@ -125,14 +125,24 @@ for (const id of ids) {
   });
   if (zoom) {
     await phase(`${id}:open`, async () => {
-      await page.mouse.move(zoom.x, zoom.y, { steps: 4 });
+      // A hand travels to the light: small moves, so the page sees the pointer leave the app (whose
+      // stage keeps its events) and the light come up under it. A jump in a few steps clicked while the
+      // light was still asleep, on the window's frame, and the window never opened.
+      await page.mouse.move(zoom.x, zoom.y, { steps: 30 });
+      for (let i = 0; i < 20; i++) {
+        if (await page.evaluate((z) => !!document.elementFromPoint(z.x, z.y)?.closest('.light--zoom'), zoom)) break;
+        await page.mouse.move(zoom.x + (i % 2 ? 1 : -1), zoom.y);
+        await sleep(50);
+      }
       await page.mouse.click(zoom.x, zoom.y);
       await sleep(1200);
+      if (!(await page.evaluate(() => !!document.querySelector('.thaw')))) errors.push(`${id}: the window didn't open`);
     });
     await phase(`${id}:window`, () => wiggle(2000));
     await phase(`${id}:close`, async () => {
       await page.keyboard.press('Escape');
       await sleep(1200);
+      if (await page.evaluate(() => !!document.querySelector('.thaw'))) errors.push(`${id}: the window didn't close`);
     });
   }
   await page.mouse.move(1530, 770);
