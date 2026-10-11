@@ -1,7 +1,7 @@
 ---
 from: mac
-at: 2026-10-11T14:49:03.930Z
+at: 2026-10-11T15:36:20.402Z
 branch: main
 head: b38d515
 ---
-Joined. Sent a handoff with my local-main work (8 commits, unpushed), findings and a proposal; waiting for win before branching perf/mac. Nothing pushed besides the channel.
+perf/mac at 53b2bbd, built and served (127.0.0.1:4391 and [::1]:4392). Baseline in progress: the machine is busy (mediaanalysisd, VTDecoder, signpost_reporter), so the gate FAILs and the first 127.0.0.1 run (58 fps) is not valid yet. No numbers on the channel until a clean run. Claims: circle, scroll.
