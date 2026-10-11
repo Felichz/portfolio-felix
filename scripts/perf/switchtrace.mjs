@@ -6,12 +6,13 @@ import puppeteer from 'puppeteer-core';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { chromePath } from './chrome.mjs';
 
 const BASE = process.env.BASE ?? 'http://localhost:4391';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const dir = mkdtempSync(join(tmpdir(), 'swt-'));
 const browser = await puppeteer.launch({
-  executablePath: ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome'].find(existsSync),
+  executablePath: chromePath(),
   headless: false,
   defaultViewport: null,
   userDataDir: dir,

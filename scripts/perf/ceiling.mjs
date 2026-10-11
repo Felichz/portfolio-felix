@@ -3,9 +3,10 @@ import puppeteer from 'puppeteer-core';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { chromePath } from './chrome.mjs';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const browser = await puppeteer.launch({
-  executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: false, defaultViewport: null,
+  executablePath: chromePath(), headless: false, defaultViewport: null,
   userDataDir: mkdtempSync(join(tmpdir(), 'perf-ceil-')),
   args: ['--window-size=1600,1047', '--window-position=0,0', '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-features=CalculateNativeWinOcclusion', ...(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(' ') : [])],
   ignoreDefaultArgs: ['--enable-automation'],

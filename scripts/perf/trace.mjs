@@ -13,6 +13,7 @@ import { mkdirSync, mkdtempSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { chromePath } from './chrome.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const BASE = process.env.BASE ?? 'http://localhost:4391';
@@ -24,7 +25,7 @@ mkdirSync(out, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const browser = await puppeteer.launch({
-  executablePath: ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome'].find(existsSync),
+  executablePath: chromePath(),
   headless: false,
   defaultViewport: null,
   userDataDir: mkdtempSync(join(tmpdir(), 'perf-trace-')),

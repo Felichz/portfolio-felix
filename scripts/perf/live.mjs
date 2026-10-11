@@ -16,13 +16,14 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { chromePath } from './chrome.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const BASE = process.env.BASE ?? 'http://localhost:4391';
 const label = process.argv.slice(2).find((a) => !a.startsWith('--')) ?? 'run';
 const quick = process.argv.includes('--quick');
 const only = process.argv.find((a) => a.startsWith('--only='))?.slice(7).split(',');
-const chrome = ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome'].find(existsSync);
+const chrome = chromePath();
 const W = 1600;
 const H = 960;
 

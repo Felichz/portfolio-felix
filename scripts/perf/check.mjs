@@ -17,6 +17,7 @@ import { mkdtempSync, mkdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { chromePath } from './chrome.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const out = join(here, 'out');
 mkdirSync(out, { recursive: true });
@@ -28,7 +29,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const gate = process.argv.includes('--gate');
 const throttle = process.argv.includes('--throttle');
 const browser = await puppeteer.launch({
-  executablePath: ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/google-chrome'].find(existsSync),
+  executablePath: chromePath(),
   headless: false, defaultViewport: null, userDataDir: process.env.PROFILE || mkdtempSync(join(tmpdir(), 'perf-check-')),
   args: ['--window-size=1600,1047', '--window-position=0,0', '--lang=en-US', '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-features=CalculateNativeWinOcclusion', ...(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(/ (?=--)/) : [])],
   ignoreDefaultArgs: ['--enable-automation'],
