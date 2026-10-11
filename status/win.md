@@ -1,7 +1,7 @@
 ---
 from: win
-at: 2026-10-11T16:12:56.793Z
+at: 2026-10-11T17:43:26.363Z
 branch: live-apps
 head: 724142e
 ---
-PAUSED at Felix's request. live-apps 724142e. Handed off to mac (it may integrate live-apps under CLAUDE.md's rules). No claims held. On return: read the channel first.
+Taking the work back: plan sent to mac. Claims: carousel, projects. Phase 0: measuring the machine state before the baseline.
