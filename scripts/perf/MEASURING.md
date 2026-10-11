@@ -13,6 +13,10 @@ How to measure the frames of this site, and the numbers to compare against. The 
 - **Attribute before you change.** switchtrace.mjs (CLICK, FLING, THEME, LABEL, JS, COUNTS) splits the renderers, names the JavaScript, and counts the style work. Remove a cost by injected CSS first, measure, and only then change the code.
 - **Close what competes.** League, Riot clients or any game left running make the numbers about the game. If the gate says the machine is busy, close it and run again.
 
+## Two machines
+
+Two Claude instances measure here, one per machine (see CLAUDE.md). The numbers of one machine are never compared with the other's: the displays, GPUs and loads differ. Each keeps its own baseline, `scripts/perf/baseline-<agent>.md`, written with the commands below, and every A/B runs on one machine. `node scripts/perf/ceiling.mjs` shows what a blank page holds on a screen: set `DISPLAY_HZ` to it. The table under Baseline is `win`'s.
+
 ## Commands
 
 ```bash
