@@ -12,6 +12,10 @@ Felix writes in Spanish: answer him in Spanish. Code, comments, commits, docs an
 - No secrets in commits, messages or logs. Don't kill processes you didn't start (Felix runs voice and render jobs on his machines): if one is in the way, tell him and wait.
 - A change that alters what the visitor sees or when it happens is Felix's call: describe it, hold it on a branch, ask him in the session.
 
+## What Felix wants first
+
+Said by Felix on 2026-10-11, to both instances. The common things must be fluid for everyone, on modest machines too: **the page's scroll, the interaction with the projects carousel, and the projects themselves**. The window that opens over a preview, and the theme switch, come after. Where the two clash, he keeps his choice and gives up frames: the theme switch is the **circle** (a radial reveal from the toggle), not a fade, even if it doesn't reach 60 fps. A preview's window opens with the app live, not over its recording.
+
 ## Two Claudes, one repo
 
 Two instances work in parallel on the same goal, **making the portfolio fast**: `win` (Felix's Windows laptop) and `mac` (his Mac). The identity comes from the platform; `COORD_AGENT=win|mac` overrides it. There is one final state: `live-apps`. `win` is the integrator: it is the only one that moves `live-apps`.
