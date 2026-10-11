@@ -141,6 +141,10 @@ for (const id of ids) {
     await phase(`${id}:window`, () => wiggle(2000));
     await phase(`${id}:close`, async () => {
       await page.keyboard.press('Escape');
+      await sleep(700);
+      // An app with a dialog of its own open (LifeUI's tape ends with one) takes the first Escape, as it
+      // should; the second returns the window.
+      if (await page.evaluate(() => !!document.querySelector('.thaw'))) await page.keyboard.press('Escape');
       await sleep(1200);
       if (await page.evaluate(() => !!document.querySelector('.thaw'))) errors.push(`${id}: the window didn't close`);
     });
