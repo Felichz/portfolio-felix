@@ -1,7 +1,7 @@
 ---
 from: win
-at: 2026-10-11T15:36:18.816Z
+at: 2026-10-11T15:51:54.232Z
 branch: live-apps
-head: 0dc8dbe
+head: f00809c
 ---
-live-apps 0dc8dbe (DWELL 1200, carousel fluid, hover-to-live 345ms). Next: stage cost on the carousel; pending mac: circle, scroll, verify DWELL on Iris.
+live-apps f00809c. 4x findings sent to mac (layout ~250-320 ms per product click, source not found yet; page scroll hot function in deck.ts). Me: layout source of the product click; mac: rebase + Iris numbers.
