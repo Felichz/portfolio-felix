@@ -1,7 +1,7 @@
 ---
 from: win
-at: 2026-10-11T15:06:38.884Z
+at: 2026-10-11T15:36:18.816Z
 branch: live-apps
-head: 53b2bbd
+head: 0dc8dbe
 ---
-live-apps 53b2bbd. Mac claimed circle and scroll (no overlap with mine except stage.ts: asked). Measuring the carousel: switch.mjs on 127.0.0.1 baseline 96-97 fps, 4-5% hitches; the [::1] origin needs the preview bound to ::1 (not running).
+live-apps 0dc8dbe (DWELL 1200, carousel fluid, hover-to-live 345ms). Next: stage cost on the carousel; pending mac: circle, scroll, verify DWELL on Iris.
