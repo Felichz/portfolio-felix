@@ -10,7 +10,7 @@ import puppeteer from 'puppeteer-core';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { chromePath } from './chrome.mjs';
+import { chromePath, windowPosition } from './chrome.mjs';
 
 const BASE = process.env.BASE ?? 'http://localhost:4391';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -42,10 +42,10 @@ async function run(name) {
   const dir = mkdtempSync(join(tmpdir(), 'fc-'));
   const browser = await puppeteer.launch({
     executablePath: chromePath(),
-    headless: false,
+    headless: !!process.env.HEADLESS,
     defaultViewport: null,
     userDataDir: dir,
-    args: ['--window-size=1600,1047', '--window-position=0,0', '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-features=CalculateNativeWinOcclusion'],
+    args: ['--window-size=1600,1047', `--window-position=${windowPosition()}`, '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-features=CalculateNativeWinOcclusion'],
     ignoreDefaultArgs: ['--enable-automation'],
   });
   const [page] = await browser.pages();

@@ -1,13 +1,13 @@
 // FPS while scrolling the portfolio itself: slow wheel down through every panel, then fling back up.
 import puppeteer from 'puppeteer-core';
 import { writeFileSync } from 'node:fs';
-import { chromePath } from './chrome.mjs';
+import { chromePath, windowPosition } from './chrome.mjs';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const BASE = process.env.BASE ?? 'http://localhost:4391';
 const browser = await puppeteer.launch({
   executablePath: chromePath(),
-  headless: false, defaultViewport: null,
-  args: ['--window-size=1600,1047', '--window-position=0,0', '--lang=en-US', '--no-first-run',
+  headless: !!process.env.HEADLESS, defaultViewport: null,
+  args: ['--window-size=1600,1047', `--window-position=${windowPosition()}`, '--lang=en-US', '--no-first-run',
     '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling',
     '--disable-features=CalculateNativeWinocclusion'],
   ignoreDefaultArgs: ['--enable-automation'],

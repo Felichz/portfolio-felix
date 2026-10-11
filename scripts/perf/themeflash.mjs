@@ -10,17 +10,17 @@ import sharp from 'sharp';
 import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { chromePath } from './chrome.mjs';
+import { chromePath, windowPosition } from './chrome.mjs';
 
 const BASE = process.env.BASE ?? 'http://localhost:4391';
 const ID = process.argv[2] ?? 'lifeui';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const browser = await puppeteer.launch({
   executablePath: chromePath(),
-  headless: false,
+  headless: !!process.env.HEADLESS,
   defaultViewport: null,
   userDataDir: mkdtempSync(join(tmpdir(), 'tf-')),
-  args: ['--window-size=1600,1047', '--window-position=0,0', '--no-first-run', '--disable-features=CalculateNativeWinOcclusion'],
+  args: ['--window-size=1600,1047', `--window-position=${windowPosition()}`, '--no-first-run', '--disable-features=CalculateNativeWinOcclusion'],
 });
 const [page] = await browser.pages();
 await page.goto(`${BASE}/#work/${ID}`, { waitUntil: 'load' });

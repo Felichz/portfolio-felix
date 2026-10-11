@@ -13,7 +13,7 @@ import { mkdirSync, mkdtempSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromePath } from './chrome.mjs';
+import { chromePath, windowPosition } from './chrome.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const BASE = process.env.BASE ?? 'http://localhost:4391';
@@ -26,10 +26,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const browser = await puppeteer.launch({
   executablePath: chromePath(),
-  headless: false,
+  headless: !!process.env.HEADLESS,
   defaultViewport: null,
   userDataDir: mkdtempSync(join(tmpdir(), 'perf-trace-')),
-  args: ['--window-size=1600,1047', '--window-position=0,0', '--lang=en-US', '--no-first-run', '--disable-extensions', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-features=CalculateNativeWinOcclusion', ...(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(' ') : [])],
+  args: ['--window-size=1600,1047', `--window-position=${windowPosition()}`, '--lang=en-US', '--no-first-run', '--disable-extensions', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', '--disable-features=CalculateNativeWinOcclusion', ...(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(' ') : [])],
   ignoreDefaultArgs: ['--enable-automation'],
 });
 const [page] = await browser.pages();

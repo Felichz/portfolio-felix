@@ -1,5 +1,5 @@
 /**
- * Measures the home page's showcase with its live apps, in headful Chrome (headless has no real
+ * Measures the home page's showcase with its live apps, in headless Chrome (HEADFUL=1 for a window; headless has no real
  * compositor timing). Against a built site served locally (npx astro preview --port 4391):
  *
  *   node scripts/perf/live.mjs [label] [--quick]
@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { chromePath } from './chrome.mjs';
+import { chromePath, windowPosition } from './chrome.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const BASE = process.env.BASE ?? 'http://localhost:4391';
@@ -29,12 +29,12 @@ const H = 960;
 
 const browser = await puppeteer.launch({
   executablePath: chrome,
-  headless: false,
+  headless: !!process.env.HEADLESS,
   defaultViewport: null,
   userDataDir: mkdtempSync(join(tmpdir(), 'perf-live-')),
   args: [
     `--window-size=${W},${H + 87}`,
-    '--window-position=0,0',
+    `--window-position=${windowPosition()}`,
     '--lang=en-US',
     '--no-first-run',
     '--no-default-browser-check',

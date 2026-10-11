@@ -6,20 +6,22 @@ import puppeteer from 'puppeteer-core';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { chromePath } from './chrome.mjs';
+import { chromePath, windowPosition } from './chrome.mjs';
 
 const BASE = process.env.BASE ?? 'http://localhost:4391';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const dir = mkdtempSync(join(tmpdir(), 'swt-'));
 const browser = await puppeteer.launch({
   executablePath: chromePath(),
-  headless: false,
+  headless: !!process.env.HEADLESS,
   defaultViewport: null,
   userDataDir: dir,
-  args: ['--window-size=1600,1047', '--window-position=0,0', '--no-first-run', '--disable-features=CalculateNativeWinOcclusion'],
+  args: ['--window-size=1600,1047', `--window-position=${windowPosition()}`, '--no-first-run', '--disable-features=CalculateNativeWinOcclusion'],
   ignoreDefaultArgs: ['--enable-automation'],
 });
 const [page] = await browser.pages();
+// THROTTLE=4 slows the CPU 4x (a modest machine).
+if (process.env.THROTTLE) await page.emulateCPUThrottling(Number(process.env.THROTTLE));
 if (process.argv[2]) await page.evaluateOnNewDocument((css) => window === top && addEventListener('DOMContentLoaded', () => document.head.insertAdjacentHTML('beforeend', `<style>${css}</style>`)), process.argv[2]);
 if (process.env.THEME)
   await page.evaluateOnNewDocument(() => {
@@ -160,7 +162,7 @@ if (process.env.LABEL) {
 // (PAGEINV=1) the invalidations and layouts of the page's own renderer only (the one hosting localhost).
 if (process.env.PAGEINV) {
   const pagePids = new Set();
-  for (const e of ev) if (typeof e.args?.data?.url === "string" && /^http:\/\/localhost:/.test(e.args.data.url) && e.args.data.frame) pagePids.add(e.pid);
+  for (const e of ev) if (typeof e.args?.data?.url === "string" && e.args.data.url.startsWith(BASE) && e.args.data.frame) pagePids.add(e.pid);
   const why = {};
   for (const e of ev) {
     if (!pagePids.has(e.pid)) continue;
@@ -175,7 +177,7 @@ if (process.env.PAGEINV) {
 // layouts and paints. Compare these between CSS variants; they don't depend on the machine's speed.
 if (process.env.COUNTS) {
   const pagePids = new Set();
-  for (const e of ev) if (typeof e.args?.data?.url === "string" && /^http:\/\/localhost:/.test(e.args.data.url) && e.args.data.frame) pagePids.add(e.pid);
+  for (const e of ev) if (typeof e.args?.data?.url === "string" && e.args.data.url.startsWith(BASE) && e.args.data.frame) pagePids.add(e.pid);
   let recalcs = 0, elems = 0, layouts = 0, paints = 0, draws = 0;
   for (const e of ev) {
     if (!pagePids.has(e.pid)) continue;

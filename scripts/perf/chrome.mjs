@@ -14,3 +14,9 @@ export function chromePath() {
   if (!found) throw new Error('Chrome not found: install Google Chrome, or set CHROME_PATH to its executable.');
   return found;
 }
+
+/**
+ * Where the measuring window goes. A real window (not headless) keeps the real GPU and the screen's
+ * vsync; off every screen, it measures the same without getting in the way. SHOW=1 puts it on screen.
+ */
+export const windowPosition = () => (process.env.SHOW ? '0,0' : '-10000,-10000');

@@ -9,7 +9,7 @@ import puppeteer from 'puppeteer-core';
 import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { chromePath } from './chrome.mjs';
+import { chromePath, windowPosition } from './chrome.mjs';
 
 const BASE = process.env.BASE ?? 'http://localhost:4391';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -38,10 +38,10 @@ const rounds = Number(process.env.ROUNDS ?? 2);
 async function run(variant) {
   const browser = await puppeteer.launch({
     executablePath: chromePath(),
-    headless: false,
+    headless: !!process.env.HEADLESS,
     defaultViewport: null,
     userDataDir: mkdtempSync(join(tmpdir(), 'sw-')),
-    args: ['--window-size=1600,1047', '--window-position=0,0', '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-features=CalculateNativeWinOcclusion'],
+    args: ['--window-size=1600,1047', `--window-position=${windowPosition()}`, '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-features=CalculateNativeWinOcclusion'],
     ignoreDefaultArgs: ['--enable-automation'],
   });
   const [page] = await browser.pages();
@@ -65,8 +65,11 @@ async function run(variant) {
       document.querySelectorAll('[data-go]')[i].click();
       return t;
     }, i);
-    await sleep(1100);
-    const f = await page.evaluate((t0) => window.__f.filter((t) => t >= t0 && t <= t0 + 1000), t0);
+    // WINDOW=ms: how long after the click the frames count (default 1 s). Longer shows what an early
+    // boot moves out of the first second.
+    const WIN = Number(process.env.WINDOW ?? 1000);
+    await sleep(WIN + 100);
+    const f = await page.evaluate((args) => window.__f.filter((t) => t >= args.t0 && t <= args.t0 + args.win), { t0, win: WIN });
     const gaps = f.slice(1).map((t, k) => t - f[k]);
     res.push({ fps: f.length, worst: Math.max(...gaps), janky: gaps.filter((g) => g > 1000 / 60).reduce((a, g) => a + g, 0) / 10 });
     await sleep(1400);
