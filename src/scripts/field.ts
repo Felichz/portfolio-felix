@@ -65,7 +65,9 @@ export function initField() {
   };
 
   const readColor = () => {
-    color = getComputedStyle(root).getPropertyValue('--glow').trim() || color;
+    // deck.ts sets --glow inline on the root, so its value is there without a style flush (a computed read
+    // here recalculated the whole page on every product change, twice). The computed value stays the fallback.
+    color = root.style.getPropertyValue('--glow').trim() || getComputedStyle(root).getPropertyValue('--glow').trim() || color;
     dark = root.dataset.theme === 'dark';
     kick();
   };

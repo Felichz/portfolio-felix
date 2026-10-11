@@ -13,6 +13,8 @@ const browser = await puppeteer.launch({
   ignoreDefaultArgs: ['--enable-automation'],
 });
 const [page] = await browser.pages();
+  // THROTTLE=4 slows the CPU 4x: a modest machine, to see what a 100 Hz panel hides.
+  if (process.env.THROTTLE) await page.emulateCPUThrottling(Number(process.env.THROTTLE));
 await page.evaluateOnNewDocument(() => {
   if (window !== window.top) return;
   const P = (window.__perf = { frames: [], loaf: [], marks: [] });
