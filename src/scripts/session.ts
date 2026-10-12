@@ -178,6 +178,8 @@ export class Session {
   #restore = new Map<string, string | null>();
   #fit?: ResizeObserver;
   #going?: Promise<void>;
+  /** Ends the boot's wait for a tape resting at its start (see #boot). */
+  #decide?: (v?: unknown) => void;
   #held: Animation[] | null = null;
   /** The app's long-running animations, waiting while it's unseen (see #rest). */
   #resting = new Set<Animation>();
@@ -204,6 +206,16 @@ export class Session {
     mark(this.id, 'boot');
     this.tape = await loadTape(`/tapes/${this.id}.json`);
     const tape = this.tape;
+    // A tape resting at its start is a still or about to play: the showcase starts a slide's tape a
+    // moment after the app's dwell has asked for the boot. Booted from the end then, the app stayed
+    // ahead of the tape (every recorded click already made) until it went live, or rebooted on the
+    // next event. So it waits, briefly, for the tape to decide; a visitor asking for the app now
+    // decides for it.
+    const p = this.player;
+    if (p.paused && p.currentTime === 0)
+      await Promise.race([new Promise((r) => p.addEventListener('playing', r, { once: true })), new Promise((r) => (this.#decide = r)), sleep(1000)]);
+    this.#decide = undefined;
+    if (this.#disposed) return;
     const t = this.#now;
     const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpoints[0]!;
     this.#done = (tape.actions ?? []).filter((a) => a.t <= cp.t).length;
@@ -416,6 +428,7 @@ export class Session {
    * times it's asked for, it happens once.
    */
   goLive() {
+    this.#decide?.();
     return (this.#going ??= this.#goLive());
   }
 
