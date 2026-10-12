@@ -413,6 +413,10 @@ async function zoom(plate: HTMLElement) {
   const steps = stepping(true, FLIGHT);
   await morph(true, FLIGHT, steps);
   overlay.classList.add('landed');
+  // The window takes the screen, so the app takes the site's edition: previews show the other one,
+  // and once landed the site switches, which turns the app to the edition the visitor was reading in.
+  // Closing switches back (see close): the site takes the edition the app had in its window.
+  window.__faTheme?.();
 
   // ---- Leaving
   let closing = false;
@@ -438,6 +442,7 @@ async function zoom(plate: HTMLElement) {
     returns.forEach((a) => a.cancel());
     layers.forEach((el) => (el.style.transformOrigin = ''));
     overlay.remove();
+    window.__faTheme?.();
     removeEventListener('wheel', onWheel, true);
     removeEventListener('keydown', onScrollKey, true);
     document.removeEventListener('focusin', onFocus);
