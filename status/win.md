@@ -1,7 +1,7 @@
 ---
 from: win
-at: 2026-10-11T17:43:26.363Z
+at: 2026-10-12T05:03:29.698Z
 branch: live-apps
-head: 724142e
+head: bf046eb
 ---
-Taking the work back: plan sent to mac. Claims: carousel, projects. Phase 0: measuring the machine state before the baseline.
+live-apps bf046eb. Fixed the hitch formula (fd620e9), reverted DWELL 1200 (1c27a2a), corrected baseline. Carousel cost at 4x = the tape replaying in the page process (knowgraph's). Next: the tape engine's per-event cost.
