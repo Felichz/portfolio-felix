@@ -71,7 +71,7 @@ async function run(variant) {
     await sleep(WIN + 100);
     const f = await page.evaluate((args) => window.__f.filter((t) => t >= args.t0 && t <= args.t0 + args.win), { t0, win: WIN });
     const gaps = f.slice(1).map((t, k) => t - f[k]);
-    res.push({ fps: f.length, worst: Math.max(...gaps), janky: gaps.filter((g) => g > 1000 / 60).reduce((a, g) => a + g, 0) / 10 });
+    res.push({ fps: f.length, worst: Math.max(...gaps), janky: (gaps.reduce((a, g) => a + Math.max(0, g - 1000 / 60), 0) / WIN) * 100 });
     await sleep(1400);
   }
   await browser.close();

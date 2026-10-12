@@ -33,7 +33,8 @@ await page.evaluateOnNewDocument(() => {
   // Mark each panel as it becomes the deck's active one.
   document.addEventListener('deck:change', (e) => P.mark('panel:' + e.detail.id));
 });
-await page.goto(BASE + '/', { waitUntil: 'load' });
+// PATH_=/work/katarch/ measures a case study instead of the home page.
+await page.goto(BASE + (process.env.PATH_ ?? '/'), { waitUntil: 'load' });
 await sleep(2500);
 await page.mouse.move(800, 500);
 await page.mouse.wheel({ deltaY: 60 }); // first input
@@ -89,7 +90,7 @@ for (const ph of phases) {
   console.log(
     ph.name.padEnd(18), String(Math.round(f.length / (span / 1000))).padStart(4),
     pct(iv, 0.95).toFixed(1).padStart(6), String(Math.round(iv.at(-1) ?? 0)).padStart(5),
-    ((iv.filter((d) => d > 1000 / 60).reduce((a, d) => a + d, 0) / span) * 100).toFixed(1).padStart(5) + '%',
+    ((iv.reduce((a, d) => a + Math.max(0, d - 1000 / 60), 0) / span) * 100).toFixed(1).padStart(5) + '%',
     String(iv.reduce((a, d) => a + Math.max(0, Math.round(d / VSYNC) - 1), 0)).padStart(7),
     String(lo.length).padStart(5), ' ' + top,
   );

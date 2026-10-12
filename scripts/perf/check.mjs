@@ -167,7 +167,7 @@ for (const ph of phases) {
   const span = Math.max(1, ph.t1 - ph.t0);
   const p99 = +pct(iv, 0.99).toFixed(1);
   const max = Math.round(iv.at(-1) ?? 0);
-  const janky = +((iv.filter((d) => d > 1000 / 60).reduce((a, d) => a + d, 0) / span) * 100).toFixed(1);
+  const janky = +((iv.reduce((a, d) => a + Math.max(0, d - 1000 / 60), 0) / span) * 100).toFixed(1);
   const dropped = iv.reduce((a, d) => a + Math.max(0, Math.round(d / VSYNC) - 1), 0);
   const transient = /:(arrive|hover|open)$/.test(ph.name);
   const [p99Max, maxMax] = transient ? [100, 500] : [16.7, 100];
