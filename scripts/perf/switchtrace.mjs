@@ -1,7 +1,7 @@
 // A trace of one product change (after the warm-up), summarized by thread: what fills the second after
 // the click. node scripts/perf/switchtrace.mjs [css-to-inject]
 // Env: CLICK=<index> (which product, default 1); FLING=1 (a fast wheel up instead of a click);
-// THEME=1 (the theme toggle); STACK=1 (the JavaScript behind each layout; STACK=dump for the raw event).
+// THEME=1 (the theme toggle); WINDOW=<ms> (how long the trace runs after the click, default 1200); STACK=1 (the JavaScript behind each layout; STACK=dump for the raw event).
 import puppeteer from 'puppeteer-core';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -48,7 +48,7 @@ await sleep(200);
 if (process.env.THEME) await page.evaluate(() => document.querySelector('[data-theme-toggle]').click());
 else if (process.env.FLING) { await page.mouse.move(800, 500); for (let i = 0; i < 10; i++) { await page.mouse.wheel({ deltaY: -600 }); await sleep(12); } }
 else if (!process.env.NOCLICK) await page.evaluate((i) => document.querySelectorAll('[data-go]')[i].click(), Number(process.env.CLICK ?? 1));
-await sleep(1200);
+await sleep(Number(process.env.WINDOW ?? 1200));
 await page.tracing.stop();
 await browser.close();
 const ev = JSON.parse(readFileSync(path, 'utf8')).traceEvents;
