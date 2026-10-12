@@ -20,7 +20,12 @@
         overflow: hidden;
       }
       /* The tape: the recorded viewport, scaled to cover the stage, and a drawn cursor. */
-      tape-core { position: absolute; inset: 0; overflow: hidden; contain: strict; --tape-k: 1; }
+      tape-core,
+      reel-core { position: absolute; inset: 0; overflow: hidden; contain: strict; --tape-k: 1; }
+      /* A film: the recorded viewport covering the stage from its top left corner, like the tape. Only
+         the edition shown is drawn. */
+      .reel-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 0 0; visibility: hidden; }
+      .reel-video.shown { visibility: visible; }
       .tape-frame {
         position: absolute;
         top: 0;
@@ -69,9 +74,10 @@
         transform: scale(var(--live-k, 1));
         pointer-events: none;
       }
-      tape-core { z-index: 1; }
+      tape-core,
+      reel-core { z-index: 1; }
       .live-app.shown { pointer-events: auto; }
-      html:has(.live-app.shown) tape-core { visibility: hidden; }
+      html:has(.live-app.shown) :is(tape-core, reel-core) { visibility: hidden; }
       html[data-window] .live-app { width: 100%; height: 100%; transform: none; }
     </style>
   </head>

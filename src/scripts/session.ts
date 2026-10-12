@@ -9,6 +9,7 @@
  * page around the stage hears about it through `hooks`.
  */
 import { loadTape, type Action, type Exchange, type IdbDump, type Tape, type TapeCore } from './tape';
+import type { ReelCore } from './reel';
 
 interface Handoff {
   app: string;
@@ -184,7 +185,7 @@ export class Session {
 
   constructor(
     public id: string,
-    public player: TapeCore,
+    public player: TapeCore | ReelCore,
     public opts: SessionOptions,
   ) {
     this.booted = this.#boot();

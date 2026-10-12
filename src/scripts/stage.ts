@@ -7,6 +7,7 @@
  * seeds its storage and drives it directly, as the page used to.
  */
 import { TapeCore } from './tape';
+import { ReelCore } from './reel';
 import { Session } from './session';
 import type { ToHost, ToStage } from './stage-protocol';
 
@@ -16,7 +17,9 @@ const root = document.documentElement;
 let host: { win: Window; origin: string } | undefined;
 const post = (m: ToHost) => (host ? host.win.postMessage(m, host.origin) : parent.postMessage(m, '*'));
 
-const core = document.createElement('tape-core') as TapeCore;
+// A preview with a film (scripts/tapes/reel.mjs) plays it instead of rebuilding its tape's DOM.
+const REELS = (import.meta.env.PUBLIC_REELS ?? 'knowgraph').split(',');
+const core = document.createElement(REELS.includes(id) ? 'reel-core' : 'tape-core') as TapeCore | ReelCore;
 core.setAttribute('src', `/tapes/${id}.json`);
 document.body.append(core);
 let title = id;
@@ -97,7 +100,10 @@ addEventListener('message', (e: MessageEvent<ToStage>) => {
     case 'theme':
       core.theme = m.theme;
       session?.syncTheme();
-      return void nextFrames().then(() => post({ k: 'ack', id: m.id }));
+      // (A film shows the new edition once its video has the frame: bounded, the switch is waiting.)
+      return void Promise.race(['themed' in core ? core.themed : undefined, new Promise((r) => setTimeout(r, 150))])
+        .then(() => nextFrames())
+        .then(() => post({ k: 'ack', id: m.id }));
     case 'boot':
       session ??= newSession();
       return;
