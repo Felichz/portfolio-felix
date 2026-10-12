@@ -29,7 +29,7 @@ const FLIGHT = 560; // the window's morph, ms
 /** Its curve: a gentle start and a long settle, shared by the window and the page behind it. */
 const CURVE = 'cubic-bezier(0.45, 0, 0.15, 1)';
 /** How long a preview is on screen before its app boots. */
-const DWELL = 1200;
+const DWELL = 600;
 /** Apps the visitor used that are kept (held) when their previews leave the screen. */
 const KEEP = 2;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)');
