@@ -4,6 +4,8 @@
  * injected CSS, alternating, to find what the change's frames pay for.
  *
  *   node scripts/perf/switch.mjs [variant,variant]   (ROUNDS=2)
+ *   CLICKS=1,0,1,0: the products clicked, by rail index (default: a tour of all); each is also reported
+ *   on its own, by the product it arrives at.
  */
 import puppeteer from 'puppeteer-core';
 import { existsSync, mkdtempSync } from 'node:fs';
@@ -61,7 +63,7 @@ async function run(variant) {
   // Let the first input's warm-up (stages built in turn) finish, as a visitor reading would.
   await sleep(9000);
   const res = [];
-  for (const i of [1, 2, 3, 4, 0, 2, 4]) {
+  for (const i of (process.env.CLICKS ?? '1,2,3,4,0,2,4').split(',').map(Number)) {
     const t0 = await page.evaluate((i) => {
       const t = performance.now();
       document.querySelectorAll('[data-go]')[i].click();
@@ -73,7 +75,7 @@ async function run(variant) {
     await sleep(WIN + 100);
     const f = await page.evaluate((args) => window.__f.filter((t) => t >= args.t0 && t <= args.t0 + args.win), { t0, win: WIN });
     const gaps = f.slice(1).map((t, k) => t - f[k]);
-    res.push({ fps: f.length, worst: Math.max(...gaps), janky: (gaps.reduce((a, g) => a + Math.max(0, g - 1000 / 60), 0) / WIN) * 100 });
+    res.push({ to: i, fps: f.length, worst: Math.max(...gaps), janky: (gaps.reduce((a, g) => a + Math.max(0, g - 1000 / 60), 0) / WIN) * 100 });
     await sleep(1400);
   }
   await browser.close();
@@ -87,4 +89,8 @@ console.log('variant     fps(1s after click)  worst frame ms  % of the second in
 for (const v of variants) {
   const r = out[v];
   console.log(v.padEnd(12), String(med(r.map((x) => x.fps))).padStart(8), med(r.map((x) => x.worst)).toFixed(0).padStart(14), (med(r.map((x) => x.janky)).toFixed(0) + '%').padStart(14), '   worsts:', r.map((x) => Math.round(x.worst)).join(' '));
+  for (const to of [...new Set(r.map((x) => x.to))].sort()) {
+    const s = r.filter((x) => x.to === to);
+    console.log(`  -> ${to}`.padEnd(12), String(med(s.map((x) => x.fps))).padStart(8), med(s.map((x) => x.worst)).toFixed(0).padStart(14), (med(s.map((x) => x.janky)).toFixed(1) + '%').padStart(14), '   hitches:', s.map((x) => x.janky.toFixed(1)).join(' '));
+  }
 }
