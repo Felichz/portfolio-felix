@@ -1,28 +1,31 @@
 # Baseline: win
 
-Machine: Windows laptop, active display NVIDIA panel at 100 Hz (`DISPLAY_HZ=100`), GPU shared with voice and render jobs (kept idle for these runs). Commit 53b2bbd (live-apps), dist built from it.
+Machine: Windows laptop, active display NVIDIA panel at 100 Hz (`DISPLAY_HZ=100`), idle while measured (checked: under 1 s of CPU per 4 s). Chrome headful, off-screen (`scripts/perf/chrome.mjs`). Commit 1c27a2a (live-apps), dist built from it.
 
-Each number is the median of three alternated runs (`switch.mjs base`, `ROUNDS=2`).
+Hitch share = the time each late frame runs over one 60 Hz frame (16.7 ms), as a share of the window (fd620e9). Earlier numbers in this file and in commit messages used a formula that counted whole late frames and was about five times too high; these are the measured values.
 
-| Origin | Product change: fps | hitches |
-|---|---|---|
-| `http://127.0.0.1` (stage in its own process) | 96–97 | 4–5% |
-| `http://[::1]` (stage in the page's process; a deployment without `PUBLIC_STAGE_ORIGIN`) | 90–92 | 10–13% |
+## Product change (`switch.mjs base`, two rounds per run, alternated, three runs)
 
-Gate (`DISPLAY_HZ=100`): five products live in 105–124 ms after hover; window phases 98–100 fps; open 87–92 fps with 12–16% hitches (transient).
+| Origin | Window | fps | hitches |
+|---|---|---|---|
+| `127.0.0.1` (stage in its own process) | 3 s | 292–293 (about 97/s) | 2% |
+| `[::1]` (stage in the page's process: production today without `PUBLIC_STAGE_ORIGIN`) | 3 s | 277 (about 92/s) | 6% |
+| `[::1]`, CPU 4x | 3 s | 186–192 (about 63/s) | 27–29% |
 
-Scroll (`scroll.mjs`): 100 fps, 0–2% hitches on both origins.
+Worst frames at 4x: 600–650 ms on the fourth click, the cold one. At 1x the worst is 250–280 ms.
 
-## After 0dc8dbe (DWELL 1200) and f00809c (cursor light), with the honest window
+Elimination at 4x, `[::1]`, three seconds, the hitch share: the app hidden (`.live-app`) 28–29%: no change. The whole stage hidden (`.stage-frame`): 10–11%. The tape alone hidden (`tape-player`): 10–11%. So the cost in one process is the recording replaying in the page's process. In the trace, the largest tape (KnowGraph, the one the first click lands on) has a 158 KB snapshot, 93 pointer events and 40 hover events; the others are smaller.
 
-Product change over the three seconds after each click (`WINDOW=3000`, `switch.mjs base`, two alternated runs; the fps column counts frames over the window, so read the hitches):
+`DWELL` 600 against 1200 (reverted in 1c27a2a): no difference at 1x over three seconds (6–7% and 6%). The first-second gain it showed was the boot moving out of the window.
 
-| Origin | hitches |
-|---|---|
-| `127.0.0.1` (stage in its own process) | 14–16% |
-| `[::1]` (stage in the page's process), DWELL 1200 | 35–37% |
-| `[::1]`, DWELL 600 (before 0dc8dbe) | 40–44% |
+## Scroll (`scroll.mjs`)
 
-So DWELL 1200 helps a little over three seconds (the first second alone said 10–13% to 4–6%, which overstated it: the boot moved past the window). The cost that stays in one process is the product's own stage, in the page's process: its recording playing and its app booting and laying out (KnowGraph's DOM and its fonts in the trace), not the slide's CSS.
+| Page | Speed | fps | hitches |
+|---|---|---|---|
+| home, `[::1]` | 1x | 100 | 0% |
+| home, `[::1]` | 4x | 95–96 | 3–4% |
+| KatArch case study, `[::1]` | 4x | 100 | 0–0.2% |
 
-At 4x CPU (`THROTTLE=4`), `[::1]`, first second: product change ~64–67 fps and 31–40% hitches (three runs per variant); the page's main thread spends ~250–320 ms in layout per click, from the app's DOM. Page scroll at 4x: 92–94 fps, 7.5–9.3% hitches, with 43–58 ms of self time in Base.astro's bundle (deck.ts) per fling.
+## Gate (`check.mjs --gate`, `DISPLAY_HZ=100`)
+
+PASS on the five products (last full run: 12 phases over budget before the window fix; re-run before trusting). Hover to live 105–124 ms at DWELL 600; not re-measured at 1200.

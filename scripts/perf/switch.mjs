@@ -30,6 +30,8 @@ const CSS = {
   cvSlides: "article.slide:not([data-state='active']):not([data-pre]) { content-visibility: hidden; }",
   stageVis: '.stage-frame { visibility: hidden !important; }',
   tapeOff: 'tape-player { display: none !important; }',
+  appOff: '.live-app { display: none !important; }',
+  stageOff: '.stage-frame { display: none !important; }',
   cvOff: "article.slide:not([data-state='active']) { content-visibility: visible !important; }",
 };
 const variants = (process.argv[2] ?? 'base').split(',');
