@@ -298,7 +298,7 @@ const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpo
       </p>
       <p>
         <strong>PlaySync</strong> was the hard one: a room on a WebSocket server, and a YouTube player. For the room, a stand-in server
-        of about 200 lines runs inside the app. It rebuilds the room as it was at the checkpoint from the messages the scene’s socket
+        of about 230 lines runs inside the app. It rebuilds the room as it was at the checkpoint from the messages the scene’s socket
         received (the playback state, the chat, who’s there), moves the recorded server clock onto the app’s, and plays the other
         participant’s later messages at the moments they arrived. What you do gets the answers the real server would give: your
         messages appear, play and pause stay in sync, the queue works. The scene ran against the real server with its clock pinned to
@@ -594,8 +594,7 @@ const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpo
           change pays for it, most of all on a slow CPU.
         </li>
         <li>
-          Some endpoints aren’t recorded: LoLImpact’s live game and draft tool, KnowGraph’s AI mentor, the storyboard PlaySync asks
-          for when it loads a video. In the live apps they show their own error states.
+          Some endpoints aren’t recorded: LoLImpact’s live game and draft tool, KnowGraph’s AI mentor. In the live apps they show their own error states.
         </li>
         <li>On phones and touch screens, previews stay tapes and links stay links.</li>
         <li>
