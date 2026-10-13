@@ -38,8 +38,13 @@ const canMove = 'moveBefore' in Element.prototype;
 
 declare global {
   interface Window {
-    /** The site's theme switch (Bar.astro): the new edition fades in over the whole page. */
-    __faTheme?: (opts?: { instant?: boolean }) => void;
+    /**
+     * The site's theme switch (Bar.astro): a circle from a point, or opening out from a rectangle; or,
+     * `instant`, with no motion of its own, for a caller that animates it (the window's morph).
+     */
+    __faTheme?: (from?: { x: number; y: number } | { rect: DOMRect }, opts?: { instant?: boolean }) => void;
+    /** Maps a point on the screen to this page's viewport (Bar.astro), once the pointer has moved here. */
+    __faScreen?: (screenX: number, screenY: number) => { x: number; y: number } | undefined;
   }
   interface Element {
     moveBefore(node: Node, child: Node | null): void;
@@ -369,7 +374,7 @@ async function zoom(plate: HTMLElement) {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
     if (!doc.startViewTransition || reduce.matches) {
       swap(open);
-      window.__faTheme?.({ instant: true });
+      window.__faTheme?.(undefined, { instant: true });
       page.forEach((a) => a.play());
       return;
     }
@@ -381,7 +386,7 @@ async function zoom(plate: HTMLElement) {
       swap(open);
       plate.classList.toggle('live-vt-shape', !open);
       win.classList.toggle('live-vt-shape', open);
-      window.__faTheme?.({ instant: true });
+      window.__faTheme?.(undefined, { instant: true });
     });
     await vt.ready.catch(() => {});
     page.forEach((a) => a.play());
@@ -591,17 +596,25 @@ export function initLive() {
     if (!plate || plate.dispatchEvent(pass)) scrollBy(dx, dy);
   });
   document.addEventListener('stage:theme-app', (e) => {
-    // A theme the app switched itself is the site's too: the site takes the other edition.
+    // A theme the app switched itself is the site's too: the site takes the other edition, opening out
+    // from the app's window to the edges.
     const at = (e.target as Element).closest<HTMLElement>('.thaw-window, .plate') ?? (e.target as HTMLElement);
     // The app has already painted its new edition; its window's bar takes it on this frame, before the
-    // switch's snapshot, instead of with the fade. (The app's new edition is the site's
+    // switch's snapshot, instead of when the reveal reaches it. (The app's new edition is the site's
     // current one; the site is about to take the other.)
     at.dataset.chrome = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
     document.addEventListener('theme:reveal', () => delete at.dataset.chrome, { once: true });
-    window.__faTheme?.();
+    window.__faTheme?.({ rect: at.getBoundingClientRect() });
   });
-  // This site, opened in its own stage, had its toggle used: the switch is this page's.
-  document.addEventListener('stage:theme-toggle', () => window.__faTheme?.());
+  document.addEventListener('stage:theme-toggle', (e) => {
+    // This site, opened in its own stage, had its toggle used: the switch spreads from that point.
+    const { x, y } = (e as CustomEvent<{ x: number; y: number }>).detail;
+    const frame = (e.target as TapePlayer).frame;
+    if (!frame) return;
+    const r = frame.getBoundingClientRect();
+    const k = r.width / (frame.offsetWidth || r.width);
+    window.__faTheme?.({ x: r.left + x * k, y: r.top + y * k });
+  });
 
   // -------------------------------------------------------------------------------------------------
   // Warming previews ahead of their turn: a stage mounts its tape (fetch, first frame, fonts, a filmed
