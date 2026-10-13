@@ -38,11 +38,8 @@ const canMove = 'moveBefore' in Element.prototype;
 
 declare global {
   interface Window {
-    /**
-     * The site's theme switch (Bar.astro): a circle from a point, or opening out from a rectangle; or,
-     * `instant`, with no motion of its own, for a caller that animates it (the window's morph).
-     */
-    __faTheme?: (from?: { x: number; y: number } | { rect: DOMRect }, opts?: { instant?: boolean }) => void;
+    /** The site's theme switch (Bar.astro): a circle from a point, or opening out from a rectangle. */
+    __faTheme?: (from?: { x: number; y: number } | { rect: DOMRect }) => void;
     /** Maps a point on the screen to this page's viewport (Bar.astro), once the pointer has moved here. */
     __faScreen?: (screenX: number, screenY: number) => { x: number; y: number } | undefined;
   }
@@ -304,7 +301,7 @@ async function zoom(plate: HTMLElement) {
   // own edition; the window's bar has only its lights.
   const action = (a: HTMLAnchorElement | null, label: string, i: string) =>
     a ? `<a class="btn btn--sm" href="${a.href}"${a.target === '_blank' ? ' target="_blank" rel="noopener"' : ''}>${i}${label}</a>` : '';
-  overlay.innerHTML = `<div class="thaw-window plate plate--chrome" data-state="playing">
+  overlay.innerHTML = `<div class="thaw-window plate plate--chrome" data-state="playing" data-match>
       <div class="thaw-bar">${lightsHTML('window', name)}</div>
       <div class="thaw-screen"></div>
     </div>
@@ -366,29 +363,28 @@ async function zoom(plate: HTMLElement) {
    * window lands where the plate will be once the page is forward again, not where it is when the
    * transition starts (still stepped back), so nothing moves when it ends.
    *
-   * The site's theme switches with it, both ways: a preview shows the app in the other edition from
-   * the site, but a window takes the screen, so there the app shows the edition the visitor was reading
-   * in, and back in its preview the site takes the edition the app had in its window. The switch is
-   * part of the same transition: the page is captured too, and its two editions cross-fade on the
-   * morph's curve while the window's two pictures do.
+   * The app's edition switches with it, both ways: a preview shows the app in the other edition from
+   * the site, but a window takes the screen, so there it shows the site's own, the page behind in the
+   * same one; back in its preview it takes the other again. The site's theme stays. The window's two
+   * pictures, the preview's and the window's, cross-fade over the morph.
    */
   const morph = async (open: boolean, duration: number, page: Animation[], land?: DOMRect) => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
     if (!doc.startViewTransition || reduce.matches) {
       swap(open);
-      window.__faTheme?.(undefined, { instant: true });
+      player.matchTheme(open);
       page.forEach((a) => a.play());
       return;
     }
     root.style.setProperty('--live-d', `${duration}ms`);
     root.style.setProperty('--live-ease', CURVE);
-    root.classList.add('live-vt', 'live-vt-theme', open ? 'live-vt-in' : 'live-vt-out');
+    root.classList.add('live-vt', open ? 'live-vt-in' : 'live-vt-out');
     (open ? plate : win).classList.add('live-vt-shape');
     const vt = doc.startViewTransition(() => {
       swap(open);
       plate.classList.toggle('live-vt-shape', !open);
       win.classList.toggle('live-vt-shape', open);
-      window.__faTheme?.(undefined, { instant: true });
+      player.matchTheme(open);
     });
     await vt.ready.catch(() => {});
     page.forEach((a) => a.play());
@@ -404,7 +400,7 @@ async function zoom(plate: HTMLElement) {
       }
     }
     await vt.finished.catch(() => {});
-    root.classList.remove('live-vt', 'live-vt-theme', 'live-vt-in', 'live-vt-out');
+    root.classList.remove('live-vt', 'live-vt-in', 'live-vt-out');
     plate.classList.remove('live-vt-shape');
     win.classList.remove('live-vt-shape');
   };
@@ -603,8 +599,10 @@ export function initLive() {
     const at = (e.target as Element).closest<HTMLElement>('.thaw-window, .plate') ?? (e.target as HTMLElement);
     // The app has already painted its new edition; its window's bar takes it on this frame, before the
     // switch's snapshot, instead of when the reveal reaches it. (The app's new edition is the site's
-    // current one; the site is about to take the other.)
-    at.dataset.chrome = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+    // current one, or in a window, which shows the site's own, the other; the site is about to take
+    // the other.)
+    const site = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+    at.dataset.chrome = at.hasAttribute('data-match') ? (site === 'dark' ? 'light' : 'dark') : site;
     document.addEventListener('theme:reveal', () => delete at.dataset.chrome, { once: true });
     window.__faTheme?.({ rect: at.getBoundingClientRect() });
   });

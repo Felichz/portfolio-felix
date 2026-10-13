@@ -190,11 +190,9 @@ const { panels, home } = Astro.props;
   /**
    * Switches the site's theme. The new edition spreads out in a circle from `from.x`/`from.y` (the
    * toggle, by default), or, given `from.rect`, opens out from that rectangle to the edges: how a
-   * live app on the page (src/scripts/live.ts) passes on a theme it switched itself. `instant` flips it
-   * with no motion of its own, every preview at once, for a caller that animates the change itself (a
-   * window's morph, which is a view transition already: two can't run at once).
+   * live app on the page (src/scripts/live.ts) passes on a theme it switched itself.
    */
-  const switchTheme = (from?: { x: number; y: number } | { rect: DOMRect }, { instant = false } = {}) => {
+  const switchTheme = (from?: { x: number; y: number } | { rect: DOMRect }) => {
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     // Recordings hand off to the other edition's video on the same frame (src/scripts/handoff.ts);
     // the new edition shows once they're on it, or after a short cap.
@@ -226,9 +224,9 @@ const { panels, home } = Astro.props;
       );
     root.setAttribute('data-theme-switching', '');
     const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-theme-switching')));
-    if (!doc.startViewTransition || reduce || instant) {
+    if (!doc.startViewTransition || reduce) {
       void apply();
-      reveal(!instant);
+      reveal();
       return done();
     }
     if (from && 'rect' in from) {

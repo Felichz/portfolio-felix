@@ -16,7 +16,10 @@
 import { STAGE_ORIGIN } from './origin';
 import type { ToHost, ToStage } from './stage-protocol';
 
-const appTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+const siteTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+/** The app's edition in a preview: the other one from the site's (a plate prints its product in the
+    opposite edition); in a window, which takes the screen, the site's own (`matchSite`). */
+const appTheme = (p?: TapePlayer) => (p?.matchSite ? siteTheme() : siteTheme() === 'dark' ? 'light' : 'dark');
 const players = new Set<TapePlayer>();
 
 addEventListener('message', (e: MessageEvent<ToHost>) => {
@@ -33,7 +36,7 @@ const PATIENCE = 3000;
 // under the moving edge, neither race has room: the edge is right there, and it masks everything.
 let themeId = 0;
 const sendTheme = (p: TapePlayer) => {
-  p.send({ k: 'theme', theme: appTheme(), id: ++themeId });
+  p.send({ k: 'theme', theme: appTheme(p), id: ++themeId });
 };
 /** When the circle's edge (clip-path, 150vmax over `duration` with --ease-io) covers a point
     `d` px from its origin: the easing, cubic-bezier(0.65, 0, 0.35, 1), inverted by nested bisection. */
@@ -88,6 +91,8 @@ export class TapePlayer extends HTMLElement {
   #frame?: HTMLIFrameElement;
   /** Where its stage is from: another site when there is one (src/scripts/origin.ts). */
   origin = STAGE_ORIGIN;
+  /** Shows the app in the site's own edition, not the other one: while it's in a window. */
+  matchSite = false;
   #hello = false;
   #queue: ToStage[] = [];
   #duration = NaN;
@@ -187,6 +192,12 @@ export class TapePlayer extends HTMLElement {
   }
 
   /** A message for the stage (it waits until the stage is there). */
+  /** The app in the site's edition (in a window) or the other one (in its preview), from now on. */
+  matchTheme(on: boolean) {
+    this.matchSite = on;
+    sendTheme(this);
+  }
+
   send(m: ToStage) {
     if (!this.#frame && m.k === 'theme') return;
     this.#post(m);
@@ -244,7 +255,7 @@ export class TapePlayer extends HTMLElement {
         const queue = this.#queue;
         this.#queue = [];
         const name = this.closest('[data-slide], section')?.querySelector('.slide-name, #cs-name')?.textContent?.replace(/\s+/g, ' ').trim() ?? this.tapeId;
-        this.#frame!.contentWindow?.postMessage({ k: 'init', theme: appTheme(), title: `${name}, live` } satisfies ToStage, this.origin);
+        this.#frame!.contentWindow?.postMessage({ k: 'init', theme: appTheme(this), title: `${name}, live` } satisfies ToStage, this.origin);
         if (this.#loop) queue.unshift({ k: 'loop', on: true });
         for (const q of queue) this.#frame!.contentWindow?.postMessage(q, this.origin);
         return;
