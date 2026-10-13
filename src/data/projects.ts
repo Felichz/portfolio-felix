@@ -383,7 +383,7 @@ export const projects: Project[] = [
     source: 'https://github.com/Felichz/portfolio-felix',
     role: 'Solo: design, frontend and the recording pipeline',
     stack: ['Astro', 'TypeScript', 'Hand-written CSS', 'Custom elements', 'Web Animations API', 'View Transitions', 'Puppeteer and the Chrome DevTools Protocol', 'Vercel'],
-    scale: ['~7,900 lines of TypeScript, Astro, CSS and scripts', '9 components', '6 tapes, 230 KB gzipped for the five products', 'Light and dark'],
+    scale: ['~7,900 lines of TypeScript, Astro, CSS and scripts', '9 components', '6 tapes, 221 KB gzipped for the five products', 'Light and dark'],
     story: [
       'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one fixed window, sections that move one at a time, and an ambient light that takes the color of whatever you’re looking at.',
       'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. Every preview is now a tape instead, the product’s own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Once you’re using the page, the real app runs under the preview and keeps up with it. Put your pointer on it and it’s the app, in the state you were watching; its green light opens it in a window, still live.',
@@ -427,16 +427,16 @@ export const projects: Project[] = [
         },
         {
           title: 'Open in a window',
-          body: 'The green light moves the preview’s contents into a window over the page with moveBefore, which keeps an iframe’s state where a regular move would reload it. There the same app runs at its own size, and the window grows out of the preview in a view transition: a picture of the app scaled on the compositor while the app, laid out once at its new size, takes over. Red or yellow moves it back, still live.',
+          body: 'The green light moves the preview’s contents into a window over the page with moveBefore, which keeps an iframe’s state where a regular move would reload it. The window has the preview’s proportions and the app keeps its layout, recorded and run at 1152 by 720, so it grows out of the preview in a view transition that is a zoom of one picture, the app taking the site’s own edition on the way. Red or yellow moves it back, still live.',
         },
         {
           title: 'Measure',
-          body: 'Each step was checked against traces, pixels and Lighthouse. Resizing the app every frame ran at about 20 fps, so the window is a view transition, and its frames were checked one by one by stepping the animations’ time by hand. Booting after the first input keeps page-load audits from paying for any of it.',
+          body: 'Each step won an A/B on the same machine before it stayed: alternated builds, at least three runs, frames counted from inside the page, at full speed and with the CPU slowed four times. Each preview runs in a stage of its own document, which a second domain moves to its own process. Booting after the first input keeps page-load audits from paying for any of it. The write-up has the measurements, and the ideas that didn’t survive them.',
         },
       ],
       numbers: [
-        { value: '230 KB', label: 'the five products’ tapes, gzipped, in place of 17.7 MB of video' },
-        { value: '48 ms', label: 'where the window’s two pictures of the app cross over, while it’s still small' },
+        { value: '221 KB', label: 'the five products’ tapes, gzipped, in place of 17.7 MB of video' },
+        { value: '224 → 32 ms', label: 'of style work over three product changes at 4x CPU, after one computed-style read went' },
         { value: '100', label: 'Lighthouse accessibility, best practices and SEO, in every run with live apps in place' },
         { value: '235 fps', label: 'with the cursor light on, after moving it off a full-window canvas (82 before)' },
       ],
