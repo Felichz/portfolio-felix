@@ -145,9 +145,11 @@
 }
 /* A live preview's window (src/scripts/live.ts): a view transition of the window alone, while the page,
    live under it, steps back (or forward) on the same curve. The window has the preview's proportions
-   and the app keeps its layout (live.ts), so its two pictures differ only in their edition (in the
-   window the app takes the site's own): they dissolve into each other over the whole flight, on the
-   morph's curve, both ways. Two layers' opacity: compositor work only. */
+   (live.ts), so its two pictures, the app laid out for the preview and for the window (in the site's
+   own edition there), scale without stretching. They cross over in 150 ms as the morph starts, both
+   ways: quick enough that two layouts are never seen over each other for long, and at the start, so
+   the edition changes as the window moves, not once it has landed. Two layers' opacity: compositor
+   work only. */
 :root.live-vt, :root.live-vt :is(.bar, .plate, .slide-name, .ov-name) { view-transition-name: none !important; }
 :root.live-vt .live-vt-shape { view-transition-name: live-window !important; }
 :root.live-vt::view-transition-group(live-window) {
@@ -165,8 +167,8 @@
   height: 100%;
   object-fit: fill;
   mix-blend-mode: plus-lighter;
-  animation-duration: var(--live-d);
-  animation-timing-function: var(--live-ease);
+  animation-duration: 150ms;
+  animation-timing-function: linear;
   animation-fill-mode: both;
 }
 :root.live-vt::view-transition-old(live-window) { animation-name: live-pic-out; }

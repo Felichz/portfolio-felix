@@ -57,7 +57,7 @@
          covered. So it's rasterized while it boots and follows, and the compositor skips what the
          opaque tape covers; going live only hides the tape, with nothing left to paint for the first
          time. (At opacity 0 the app was never rasterized until the swap, which then paid for it.)
-         In a window too: the window has the preview's proportions, and the app only scales. */
+         In a window it's laid out at the stage's own size, 1:1. */
       .live-app {
         position: absolute;
         top: 0;
@@ -72,6 +72,7 @@
       tape-core { z-index: 1; }
       .live-app.shown { pointer-events: auto; }
       html:has(.live-app.shown) tape-core { visibility: hidden; }
+      html[data-window] .live-app { width: 100%; height: 100%; transform: none; }
     </style>
   </head>
   <body>
