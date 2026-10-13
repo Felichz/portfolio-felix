@@ -52,22 +52,33 @@ const walk = (dir) => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).is
 
 const only = process.argv.slice(2).find((a) => !a.startsWith('--'));
 
-// With --bridge, the built apps stay as they are and only get the current bridge (and its hash), in
-// place of the one they have: for a bridge change, without rebuilding every app from its repo.
+// With --bridge, the built apps stay as they are and only get the current bridge and stand-ins (and
+// the bridge's hash), in place of the ones they have: for a change to those, without rebuilding every
+// app from its repo.
 if (process.argv.includes('--bridge')) {
-  const bridge = readFileSync(resolve(here, 'bridge.js'), 'utf8');
-  const hash = `'sha256-${createHash('sha256').update(bridge).digest('base64')}'`;
-  for (const id of Object.keys(APPS)) {
+  const sha = (s) => `'sha256-${createHash('sha256').update(s).digest('base64')}'`;
+  for (const [id, app] of Object.entries(APPS)) {
     if (only && only !== id) continue;
+    // The portfolio's scripts in the page, in order: the bridge, then the stand-ins.
+    const scripts = ['bridge.js', ...(app.inject ?? [])].map((f) => readFileSync(resolve(here, f), 'utf8'));
+    const tag = `<script data-app="${id}">`;
     for (const file of walk(resolve(root, 'public/apps', id))) {
       if (extname(file) !== '.html') continue;
-      const text = readFileSync(file, 'utf8');
-      const start = text.indexOf(`<script data-app="${id}">`);
-      const end = text.indexOf('</script>', start);
+      let text = readFileSync(file, 'utf8');
+      let start = text.indexOf(tag);
       if (start < 0) continue;
-      const old = text.slice(start + `<script data-app="${id}">`.length, end);
-      const oldHash = `'sha256-${createHash('sha256').update(old).digest('base64')}'`;
-      writeFileSync(file, text.slice(0, start) + `<script data-app="${id}">${bridge}` + text.slice(end).replace(oldHash, hash));
+      let oldHash, hash;
+      for (const script of scripts) {
+        if (start < 0) break;
+        const end = text.indexOf('</script>', start);
+        const old = text.slice(start + tag.length, end);
+        // Each keeps the line endings the build has (a checkout's own would show as a change).
+        const next = script.replace(/\r?\n/g, old.includes('\r\n') ? '\r\n' : '\n');
+        if (oldHash === undefined) [oldHash, hash] = [sha(old), sha(next)];
+        text = text.slice(0, start) + tag + next + text.slice(end);
+        start = text.indexOf(tag, start + tag.length + next.length);
+      }
+      writeFileSync(file, text.replace(oldHash, hash));
     }
     console.log(`bridge updated in public/apps/${id}/`);
   }

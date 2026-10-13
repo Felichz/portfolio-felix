@@ -10,6 +10,8 @@
  * - What the other participant said later in the scene arrives at the same moments, on that clock.
  * - What the visitor does gets the answers the server would give: their own chat messages, play,
  *   pause, seek, the queue. In a room of two, the visitor is the host.
+ * - The video's storyboard (the frames that light the room) gets the server's answer when YouTube has
+ *   none, without going to the network: the app keeps lighting the room from the video's thumbnail.
  */
 (function () {
   var handoff;
@@ -17,6 +19,17 @@
     handoff = window.parent !== window && window.parent.__live && window.parent.__live[document.currentScript.dataset.app];
   } catch (e) {}
   if (!handoff || !handoff.socket) return;
+
+  // ---- The storyboard: no server to ask YouTube for it here.
+  var outerFetch = window.fetch;
+  window.fetch = function (input, init) {
+    var url = typeof Request !== 'undefined' && input instanceof Request ? input.url : String(input);
+    var u = new URL(url, location.href);
+    if (u.origin === location.origin && /^\/api\/youtube\/storyboard\//.test(u.pathname)) {
+      return Promise.resolve(new Response(JSON.stringify({ error: 'NO_STORYBOARD' }), { status: 404, headers: { 'content-type': 'application/json' } }));
+    }
+    return outerFetch.apply(this, arguments);
+  };
 
   var rec = handoff.socket.in.map(function (x) {
     return { t: x[0], m: JSON.parse(x[1]) };
