@@ -1,0 +1,706 @@
+---
+import { Code } from 'astro:components';
+import Plate from './Plate.astro';
+import { byId } from '../data/projects';
+
+// The portfolio case study's write-up (its own panel, #writeup): how this site shows its products, the
+// long version of the "How it works" chapter, written to be read top to bottom like a blog post.
+const lifeui = byId('lifeui')!;
+const playsync = byId('playsync')!;
+const self = byId('portfolio')!;
+const host = (url: string) => new URL(url).host;
+
+const sizes = [
+  { name: 'KatArch', video: '1.9 MB', tape: '59 KB' },
+  { name: 'KnowGraph', video: '2.3 MB', tape: '55 KB' },
+  { name: 'PlaySync', video: '6.6 MB', tape: '20 KB', note: '+ a 174 KB clip of its YouTube player' },
+  { name: 'LifeUI', video: '2.5 MB', tape: '46 KB' },
+  { name: 'LoLImpact', video: '4.4 MB', tape: '41 KB', note: '+ 59 KB of API answers, fetched when the app boots' },
+];
+
+// Where the frames went: each change, what it was measured with, before and after (commits on live-apps).
+const fixes = [
+  { what: 'The countdown and the tape’s cursor on the compositor; recorded changes applied only when they fall due', metric: 'Page main thread while a preview plays', before: '63–74%', after: '11%' },
+  { what: 'The flight recorder’s frame loop only when measuring', metric: 'Page main thread while a preview plays', before: '~52%', after: 'under 2%' },
+  { what: 'Previews in a stage of their own process', metric: 'Longest task on a product change', before: '170–190 ms', after: '~90 ms' },
+  { what: 'The room light reads its new colors on the next frame, not in the click’s handler', metric: 'Longest task on a product change', before: '80 ms', after: '44–64 ms' },
+  { what: 'Hidden slides get content-visibility: hidden', metric: 'Frames drawn in the second after a click', before: '46–60', after: '100–162' },
+  { what: 'The room light changes color at once, no transition', metric: 'Frames drawn in the second after a click', before: '50', after: '71' },
+  { what: 'The cursor light reads the glow from the inline style', metric: 'getPropertyValue over three clicks, 4x CPU', before: '224 ms', after: '32 ms' },
+  { what: 'The name’s letters animate opacity and position; the swell reads every rect before it writes', metric: 'Main thread over a fast scroll up', before: '1,169–1,442 ms', after: '515–536 ms' },
+  { what: 'Stages mount one at a time, in idle', metric: 'Worst frame arriving at LifeUI', before: '800 ms', after: '84 ms' },
+  { what: 'The live app waits drawn under its tape, not at opacity 0', metric: 'Hover to live', before: '300–400 ms', after: '110–160 ms' },
+];
+
+// Highlighted at build time, in both editions: the site's theme attribute picks one (see the styles).
+const shiki = { themes: { light: 'vitesse-light', dark: 'vitesse-dark' }, defaultColor: false } as const;
+
+const toc = [
+  ['w-constraints', 'What it had to do'],
+  ['w-tapes', 'Tapes: the DOM, not pixels'],
+  ['w-live', 'Going live, in the same state'],
+  ['w-backends', 'Products with a backend'],
+  ['w-stage', 'A stage per preview'],
+  ['w-measuring', 'Measuring before fixing'],
+  ['w-frames', 'Where the frames went'],
+  ['w-window', 'A window around the app'],
+  ['w-themes', 'Themes, in both directions'],
+  ['w-tried', 'What didn’t make it'],
+  ['w-cost', 'What it costs'],
+  ['w-left', 'What’s left'],
+];
+
+const scene = `async run(s) {
+  await s.checkpoint('step-3');
+  await s.wait(1300);
+  await s.click('.bottombar .btn--primary', { rest: 240 });
+  await s.wait(2600);
+  await s.checkpoint('step-4');
+  await s.click('.bottombar .btn--primary', { rest: 200 });
+  await s.wait(3200);
+  await s.checkpoint('step-5');
+}`;
+
+const pseudo = `// The app's stylesheet, with what a replay can't trigger mapped to attributes.
+const pseudo = /(?<!\\\\):(hover|focus-visible|focus-within|focus|active)\\b/g;
+rule.selectorText = rule.selectorText.replace(pseudo, (_, p) => \`[data-tape-\${p}]\`);`;
+
+const clock = `// Inside the app, before any of its code runs: Date and the timers follow a
+// clock the portfolio sets.
+handoff.setClock = function (ms, freeze, tick) {
+  base = ms;
+  realBase = RealDate.now();
+  frozen = !!freeze;
+  timers.forEach(schedule); // moving forward fires what fell due on the way
+};`;
+
+const replay = `async #replay(a: Action) {
+  this.handoff.setClock?.(this.#clockAt(a.t), true); // the moment it was recorded
+  const el = resolve(doc, a); // its element path, checked against a signature
+  if (a.kind === 'key') press(win, el, a.key);
+  else if (a.kind === 'input') type(win, el, a.value);
+  else click(win, el);
+  await quiet(win, doc); // until the DOM settles
+  this.handoff.setClock?.(this.#clockAt(this.#now), false); // running again
+}`;
+
+const protocol = `// What the page says to a stage, and what it hears back (stage-protocol.ts).
+type ToStage =
+  | { k: 'load' } | { k: 'play' } | { k: 'pause' } | { k: 'seek'; t: number }
+  | { k: 'theme'; theme: string; id: number }
+  | { k: 'boot' } | { k: 'live' } | { k: 'mode'; window: boolean }
+  | { k: 'hold'; on: boolean } | { k: 'drop' };
+type ToHost =
+  | { k: 'meta'; duration: number } | { k: 'playing'; t: number } | { k: 'ended' }
+  | { k: 'booted' } | { k: 'live' } | { k: 'pointer'; f: number } | { k: 'theme-app' };`;
+
+const contain = `/* Seven of the eight slides are hidden at any time. They keep their state,
+   and skip style, layout and paint until they're shown. */
+.slide:not([data-state='active']):not([data-pre]) { content-visibility: hidden; }`;
+
+const glow = `// Before: a computed style read, right after the deck set --glow on the root,
+// recalculated the whole page on every product change.
+color = getComputedStyle(root).getPropertyValue('--glow');
+// After: the value is already inline on the root.
+color = root.style.getPropertyValue('--glow').trim() || color;`;
+
+const boot = `// A tape resting at its start is a still or about to play. Booted from the
+// end then, the app stayed ahead of the tape. So it waits, briefly.
+if (p.paused && p.currentTime === 0)
+  await Promise.race([playing(p), decided, sleep(1000)]);
+const cp = checkpointAt(this.#now); // now it knows where the tape is`;
+---
+
+<article class="post" aria-labelledby="writeup-title">
+  <header class="post-head">
+    <p class="t-label">Write-up</p>
+    <h2 id="writeup-title" class="post-title">The previews are the apps</h2>
+    <p class="post-dek">
+      How this portfolio records its products as DOM instead of video, hands each recording over to the running app in the same
+      state, and keeps the page fluid while it does.
+    </p>
+    <p class="post-byline">
+      <span>Felix Andersson</span>
+      <span aria-hidden="true">·</span>
+      <time datetime="2026-10">October 2026</time>
+      <span aria-hidden="true">·</span>
+      <span>19 min read</span>
+    </p>
+  </header>
+
+  <div class="post-body">
+    <nav class="post-toc" aria-label="Contents">
+      <p class="t-label">Contents</p>
+      <ol>{toc.map(([id, label]) => <li><a href={`#${id}`}>{label}</a></li>)}</ol>
+    </nav>
+
+    <div class="prose-post">
+      <p class="lede">
+        Most portfolios show a product the way a store shows a TV: a screenshot, or a video on a loop. For a web app that has always
+        struck me as odd. A video of an interface is a stack of pictures of something the browser could draw itself, sharper, in
+        either theme, at any size.
+      </p>
+      <p>
+        So every product on this site is shown by the product. The preview you watch in the showcase is the app’s own DOM, replayed.
+        Once you start using the page, the real app boots underneath it and follows along; put your pointer on the preview and you’re
+        holding the app, in the state you were watching. Its green light opens it, larger, in a window. Five products work this
+        way, plus this site, which can open a copy of itself inside itself.
+      </p>
+      <p>
+        Getting it to work was the first half of the job. Keeping the page fluid while it works, on an ordinary laptop and not only on
+        mine, was the second, and most of what I learned is in the second half of this post: where the frames went, how I measured them, one measurement I got wrong,
+        and the ideas that didn’t survive the numbers.
+      </p>
+
+      <figure class="post-fig">
+        <Plate shot={lifeui.main} chrome={host(lifeui.live)} motion="lead" sizes="(min-width: 1100px) 900px, 92vw" />
+        <figcaption>LifeUI, as the showcase shows it. Scroll it into view and move your pointer onto it: from there, it’s the app.</figcaption>
+      </figure>
+
+      <h3 id="w-constraints">What it had to do</h3>
+      <p>Five constraints shaped everything else.</p>
+      <ul>
+        <li>
+          <strong>The page loads as if the previews were still screenshots.</strong> Nothing heavy before you do something, and nothing at
+          all for an audit that never touches the page.
+        </li>
+        <li>
+          <strong>The app takes over in exactly the state the preview shows.</strong> The same screen, the same open dialog, the same
+          second on a running timer.
+        </li>
+        <li><strong>One recording per product, for both themes.</strong> The videos needed two.</li>
+        <li>
+          <strong>No product gets rewritten for the portfolio.</strong> Each runs its own production build, with the smallest changes I
+          could manage.
+        </li>
+        <li>
+          <strong>The common things stay fluid on a modest machine.</strong> Scrolling the page, moving through the showcase and reading a
+          project come first; the window and the theme switch can spend a few frames, and only where I chose to spend them.
+        </li>
+      </ul>
+
+      <h3 id="w-tapes">Tapes: the DOM, not pixels</h3>
+      <p>
+        A tape is a product’s DOM over time. To make one, a scene drives the real build in headless Chrome, written like an end-to-end
+        test: seed the data, move a cursor the way a hand moves, click. This is KatArch’s, stepping a course chapter forward twice:
+      </p>
+      <Code code={scene} lang="js" {...shiki} />
+      <p>
+        Inside the page, a recorder takes a snapshot of the document and then writes down every change, with a timestamp. Scripts and
+        event handlers are dropped; what’s left is what the browser needs to paint the same frames again. Two choices kept it small and
+        correct. A change to a node’s children is stored as its whole new list of children, which stays right through moves and
+        reorders without tracking each insertion. And everything the DOM doesn’t carry is recorded as its own event: form values, scroll
+        offsets, the pointer, and the hover, focus and pressed states.
+      </p>
+      <p>
+        Those last ones matter because a replay has no pointer. The recorder copies the app’s stylesheet and rewrites the
+        pseudo-classes it can’t trigger into attributes; the player sets them as the recorded pointer moves, so a button lights up on
+        the tape exactly when it did in the scene.
+      </p>
+      <Code code={pseudo} lang="js" {...shiki} />
+      <p>
+        The player is a custom element. It rebuilds the snapshot in an iframe that can’t run scripts, applies each change at its time,
+        and draws the cursor. It also speaks the part of the video element’s API the showcase already used: play, pause, currentTime,
+        ended, a playing event. When the MP4s went away, the showcase that drove them didn’t change.
+      </p>
+      <p>
+        Two details took longer than the rest. Each of these apps switches theme with one attribute on its root element, so the player
+        sets it and a single tape plays in both editions. And some apps animate with <code>element.animate()</code>, which changes
+        what’s painted without touching the DOM: on KatArch’s first tape, the text of each step never appeared. The recorder now wraps
+        <code>element.animate()</code> to keep each animation’s keyframes and timing, and the player creates them again, paused,
+        setting their time from the tape’s clock, so they pause and seek with everything else.
+      </p>
+      <p>
+        Every tape is recorded at 1152 by 720 (why that size comes up with the window), and each product’s still, the picture a
+        preview shows before and after its recording, is now that recording’s last frame, rendered at 2x by a script. Making the still
+        from the tape surfaced two bugs nobody had seen. PlaySync’s chat box kept the text of a message after sending it, because the
+        app empties the field from code and the recorder only listened for typing; it now compares the fields it has seen on every DOM
+        change. And the filmed clip showed the browser’s own media controls once paused at the end: a document that can’t run scripts
+        gets them forced on its videos, so the tape’s stylesheet hides them.
+      </p>
+
+      <div class="post-table" role="region" aria-label="Preview sizes" tabindex="0">
+        <table>
+          <caption>Each product’s preview: the two videos it had, one per theme, and the tape that replaced them, gzipped.</caption>
+          <thead><tr><th scope="col">Product</th><th scope="col">Videos</th><th scope="col">Tape</th></tr></thead>
+          <tbody>
+            {
+              sizes.map((s) => (
+                <tr>
+                  <th scope="row">{s.name}</th>
+                  <td class="t-num">{s.video}</td>
+                  <td class="t-num">
+                    {s.tape}
+                    {s.note && <span class="post-note">{s.note}</span>}
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="w-live">Going live, in the same state</h3>
+      <p>
+        Each product’s build is copied into this site under <code>/apps/&lt;id&gt;/</code>, so it runs on the same origin as its
+        preview. That one decision makes the rest possible: the portfolio can seed the app’s storage before it boots, read its DOM, and
+        move its frame around the page.
+      </p>
+      <p>
+        The first script in each copied page is a small bridge. Outside the portfolio it does nothing. Inside it, it takes over the
+        app’s time:
+      </p>
+      <Code code={clock} lang="js" {...shiki} />
+      <p>
+        Nothing boots while the page loads. After your first input, a preview that has been on screen for 600 ms gets its app (one at a
+        time), booted under the tape from a checkpoint: a rest point where the recorder saved the app’s route, its storage and its
+        clock. From there the app keeps up. Each action the scene performed is replayed in the app when the tape reaches it, with the
+        app’s clock frozen at the moment it was recorded:
+      </p>
+      <Code code={replay} lang="ts" {...shiki} />
+      <p>
+        Clicks are found by their element path from the body, checked against a signature (tag, test id, label, text without numbers,
+        because a tab that read “Chat” in the scene can read “Chat 9” in the app). Text goes in through the input’s native value setter,
+        so the app’s framework sees it as typing. Between actions an unseen app’s clock stays frozen, so it has no reason to redraw
+        itself for nobody, and its long-running animations rest until it’s shown.
+      </p>
+      <p>
+        When your pointer reaches the preview, the tape steps aside for the app on the same frame. Until the app is ready, the tape
+        answers the pointer itself: its rewritten stylesheet styles whatever is under the cursor, so the preview reacts from the first
+        instant. From then on hovers, cursors and clicks belong to the app. The wheel doesn’t: it still scrolls the portfolio, because a
+        preview that swallowed the page’s scroll would be a trap.
+      </p>
+      <p>
+        One bug lived here unnoticed. The page asks for the boot after the 600 ms on screen; the showcase starts the slide’s recording
+        a moment later. At four times slower CPU I measured the boot arriving 120 to 540 ms before the play. The app read a tape resting
+        at zero as a still, booted from its last checkpoint, with every recorded click already made, and then sat in that end state
+        while the tape played from the start. Opening the window halfway through a recording showed the end state. I only found it
+        because a prototype (more on it below) made the app boot twice per arrival. The fix is small:
+      </p>
+      <Code code={boot} lang="ts" {...shiki} />
+
+      <h3 id="w-backends">Products with a backend</h3>
+      <p>LifeUI and KatArch only need a browser. The other three needed more.</p>
+      <p>
+        <strong>LoLImpact</strong> reads a Python API that needs a Riot key. Its scene runs against a local backend, served from its own
+        cache, and the recorder keeps every answer, fetching each game on the profile once so any of them opens. The answers ship in a
+        separate file, loaded only when the app boots, and the bridge’s <code>fetch</code> serves them.
+      </p>
+      <p>
+        <strong>KnowGraph</strong> keeps your study history in IndexedDB. Checkpoints dump every database to plain data, and before the
+        app boots the portfolio writes them back, which works because the frame is on the same origin.
+      </p>
+      <p>
+        <strong>PlaySync</strong> was the hard one: a room on a WebSocket server, and a YouTube player. For the room, a stand-in server
+        of about 200 lines runs inside the app. It rebuilds the room as it was at the checkpoint from the messages the scene’s socket
+        received (the playback state, the chat, who’s there), moves the recorded server clock onto the app’s, and plays the other
+        participant’s later messages at the moments they arrived. What you do gets the answers the real server would give: your
+        messages appear, play and pause stay in sync, the queue works. The scene ran against the real server with its clock pinned to
+        the page’s, so chat times read the same on the tape and in the app.
+      </p>
+      <p>
+        The YouTube player lives in a frame from another origin, which the recorder can’t read, so the scene also films it: a
+        screencast of the page during the scene, cropped to the player and encoded as a small clip that plays on the tape where the
+        frame was, on the tape’s time. In the live app the real player starts muted, which browsers let play inside a frame without a
+        tap.
+      </p>
+
+      <figure class="post-fig">
+        <Plate shot={playsync.main} chrome={host(playsync.live)} motion="lead" sizes="(min-width: 1100px) 900px, 92vw" />
+        <figcaption>
+          PlaySync: the video is the filmed clip until the app takes over; then it’s YouTube, and the room is the stand-in. Write in the
+          chat.
+        </figcaption>
+      </figure>
+
+      <p>
+        None of this rewrote a product. KnowGraph’s router learned the build’s base path, KnowGraph and PlaySync skip their service
+        worker inside another page, and PlaySync starts its video muted there. Each change sits on a <code>portfolio-embed</code>
+        branch of its repository. And when an app has a Content-Security-Policy, the copy step adds the bridge’s hash to it.
+      </p>
+
+      <h3 id="w-stage">A stage per preview</h3>
+      <p>
+        The first version built tapes and booted apps in frames inside the page. It worked, and every one of those frames shared the
+        page’s main thread: building a tape, booting an app, the app’s own rendering. So each preview moved into a stage, a small
+        document at <code>/stage/#&lt;id&gt;</code> that holds the tape and, when it’s asked for, the live app. The page keeps a
+        proxy element in the plate, <code>&lt;tape-player&gt;</code>, which speaks the same video API as before and forwards everything
+        to its stage as messages:
+      </p>
+      <Code code={protocol} lang="ts" {...shiki} />
+      <p>
+        The point of the split is the process. Chrome gives a frame its own process when it comes from another site, so a stage served
+        from a second domain renders, boots and runs its app without costing the page a frame, and stops rendering when it’s hidden. I
+        checked the obvious shortcut first: a sandboxed frame on the same site doesn’t get a process of its own. The app still lives on
+        the stage’s origin, so storage, IndexedDB and the bridge work as they did. And the window keeps working, because
+        <code>moveBefore</code> keeps a cross-site frame alive too, and a view transition can take its picture.
+      </p>
+      <p>
+        One environment variable, <code>PUBLIC_STAGE_ORIGIN</code>, names that second domain. Without it, stages load from the page’s
+        own origin and share its process; a stage that doesn’t answer in three seconds falls back to it as well. Production doesn’t
+        have the second domain yet, which is why every number below is measured both ways.
+      </p>
+
+      <h3 id="w-measuring">Measuring before fixing</h3>
+      <p>
+        The first rule I set myself was that nothing would stay because it looked faster. Every change had to win an A/B on the same
+        machine: the two builds alternated, at least three runs each, the median compared. The tools are small Puppeteer scripts in
+        <code>scripts/perf</code>, each one driving a real Chrome with the frames counted from inside the page.
+      </p>
+      <ul>
+        <li>
+          <code>switch.mjs</code> clicks through the showcase and reads the frames after each product change. Variants inject CSS that
+          switches one thing off (the stage, the tape, the app, a shadow, a transition), which is how the cost of a change gets
+          attributed by elimination instead of by guessing.
+        </li>
+        <li><code>scroll.mjs</code> flings the page through its sections, and a case study through its own.</li>
+        <li>
+          <code>check.mjs --gate</code> plays a visit per product (arrive, hover, use, open the window, close it) and fails if any phase
+          breaks its frame budget. It refuses to run when a blank page can’t hold the display’s refresh rate, because a busy machine
+          is no measurement.
+        </li>
+        <li>
+          <code>switchtrace.mjs</code> records a Chrome trace of one interaction and sums it per thread and per task, which is what
+          tells style from layout from paint from script.
+        </li>
+        <li>
+          A flight recorder in the page, on only while measuring, writes down what the page was doing whenever a frame takes longer
+          than 250 ms. Its first catch was an 800 ms freeze when three stages mounted at once.
+        </li>
+      </ul>
+      <p>
+        Three things about the setup mattered more than I expected. The browser window is real, not headless, because headless Chrome
+        has its own compositor and timing; it opens off every screen so it never gets in my way. A 100 Hz panel and a fast CPU hide
+        what an ordinary laptop feels, so most runs also slow the CPU four times. And the numbers have to be read past the first
+        second: a preview’s app boots after 600 ms, so a change that only moves that cost later looks like a win in the first second
+        and isn’t one over three.
+      </p>
+      <p>
+        The metric is the hitch share: the time each frame runs over one 60 Hz frame (16.7 ms), as a share of the window measured.
+        For a while I computed it wrong. The script summed every late frame’s whole length and divided by a constant that assumed a
+        one-second window, which made every hitch figure about five times too high. A second measuring setup on another machine
+        disagreed with mine, and that disagreement found it. Everything after that fix is in the corrected unit, the older numbers in
+        the commit history aren’t, and one decision I had made with them didn’t survive the correction.
+      </p>
+
+      <h3 id="w-frames">Where the frames went</h3>
+      <p>
+        The slow frames at the worst moments (a product turning over, a fast scroll, the window opening) mostly carried no script. They
+        were style, layout, paint and raster, so most of the fixes are about doing less of those, or doing them earlier.
+      </p>
+
+      <div class="post-table" role="region" aria-label="Changes and their measurements" tabindex="0">
+        <table>
+          <caption>
+            Each change, what it was measured with, before and after. Alternating builds or injected-CSS variants, on a Windows laptop;
+            the figures come from the commits that made each change.
+          </caption>
+          <thead><tr><th scope="col">Change</th><th scope="col">Measured</th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
+          <tbody>
+            {
+              fixes.map((f) => (
+                <tr>
+                  <th scope="row">{f.what}</th>
+                  <td>{f.metric}</td>
+                  <td class="t-num">{f.before}</td>
+                  <td class="t-num">{f.after}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        A few of those deserve the longer version. The showcase has eight slides and shows one; changing product set a state on all
+        eight, and each hidden slide’s subtree restyled anyway. Containment fixed it with one rule, and an exception for the slide
+        about to come in, which is made visible for two frames before its turn so its textures are rastered ahead:
+      </p>
+      <Code code={contain} lang="css" {...shiki} />
+      <p>
+        The cursor light was the most instructive one. On every product change, the deck set the room’s color on the root element,
+        and right after it the cursor light asked for the computed value. That one read forced the browser to recalculate the whole
+        page’s style before the frame. The value was already sitting in the root’s inline style:
+      </p>
+      <Code code={glow} lang="js" {...shiki} />
+      <p>
+        The name on the intro had a similar shape. Its letters came in by animating font width and weight, which reflows the name on
+        every frame, and the pointer’s swell read each letter’s box right after writing the previous one, a layout per letter. Now the
+        letters animate opacity and position only, and the swell reads every box before it writes any.
+      </p>
+      <p>
+        The rest was about timing work rather than removing it. Images are decoded before they first appear. The products beside the
+        active one have their stages build their tapes ahead of time, one at a time and only while the page is quiet, which is what
+        took the 800 ms freeze away. A product change is split across three frames: the rail answers first, the slide and the
+        countdown come next, the recording starts last, once the slide has landed. And the live app waits drawn under its tape instead
+        of invisible, so the compositor already has its pixels when the tape steps aside.
+      </p>
+      <p>
+        Where that leaves the product change, on the laptop’s 100 Hz panel, over the three seconds after a click: 2% of the time in
+        hitches with the stages in their own process, 6% with them in the page’s. At four times slower CPU, in the page’s process, it’s
+        27 to 29%, with the worst frame on the first, cold click. Hiding the app changes nothing in that number; hiding the tape takes
+        it to 10 or 11%. What a modest machine pays for is the recording replaying in the page’s process, which is exactly what a stage on
+        its own domain moves out.
+      </p>
+
+      <h3 id="w-window">A window around the app</h3>
+      <p>
+        The green light opens the app in a window over the page: the preview, larger, with the same layout.
+        <code>moveBefore</code> makes it cheap: unlike a regular DOM move, it keeps an iframe’s document alive, so the app you were
+        using is the one that opens, mid-dialog if that’s where you were. The window’s lights stay on the side your pointer is on, and
+        red and yellow close it, as on a Mac.
+      </p>
+      <p>The animation took four attempts.</p>
+      <ol>
+        <li>
+          The first flew a copy of the window and clipped it to the plate. The app’s content was cropped on the way, then snapped to its
+          real layout at the end.
+        </li>
+        <li>
+          The second resized the app every frame, so it reflowed as the window grew. It looked right and ran at about 20 frames per
+          second on this laptop’s GPU, because every frame meant painting the whole app again.
+        </li>
+        <li>
+          The third is a view transition of the window alone. The browser takes a picture of the app at its old size and scales it on
+          the compositor, while the app, laid out once at its new size, takes over.
+        </li>
+        <li>
+          The fourth removed the reason for two layouts. The window has the preview’s proportions, and the app keeps the preview’s
+          layout in it, only scaled. Opening is a zoom of one picture.
+        </li>
+      </ol>
+      <p>
+        The third looked off, and at full speed I couldn’t say why. DevTools’ animation speed doesn’t apply to view transitions, so I
+        paused every animation in the transition and stepped their time by hand, with a screenshot per step. The frames showed three
+        problems. The curve covered nearly 60% of the distance in its first 100 ms, then crawled. The pictures, scaled to cover the
+        window’s shape, painted outside it with the window’s shadow, a ghost over the page. And two layouts of the app overlapped. A
+        gentler curve and pictures clipped to the window’s box fixed the first two. On the way back, the window also lands where the
+        preview will be once the page has stepped forward again, not where it is while the page is still stepped back; that last frame
+        used to jump.
+      </p>
+      <p>
+        The overlap is what the fourth attempt solved. Two layouts of the same app, one for the preview and one for the window, can
+        only meet by crossing over, and every way of crossing over showed: quickly, it read as a jump; slowly, as two apps on top of
+        each other; stretched, as squeezed text. So there is one layout. Every tape is recorded at 1152 by 720, and the app runs at
+        exactly that size in the preview and in the window, scaled to fit. That size also fixed the opposite complaint: at the
+        original 1440 by 900, a window on a laptop showed the app at about 83% of its size. At 1152 it reads at about its real size
+        there, and larger on a bigger screen.
+      </p>
+      <p>
+        Two smaller decisions came with it. The page behind the window steps back by scaling down, never up, because scaling a layer
+        up re-rasters it, and it doesn’t restyle itself when the window opens: making the page inert or hiding its overflow cost 15 to
+        45 ms in the frame the transition captures, so scrolling and focus are kept to the window by listeners instead. And the window
+        no longer leans in 3D toward the pointer: it holds an app from another process, and every new angle had that app rasterized
+        again.
+      </p>
+
+      <h3 id="w-themes">Themes, in both directions</h3>
+      <p>
+        The site’s theme switch is a view transition too: the new edition spreads in a circle from the toggle. Previews show their
+        product in the opposite edition from the site, like a screenshot printed in the other theme, so every app switches with it.
+      </p>
+      <p>
+        The hard part was timing. A stage paints in its own process, and its picture reaches the page’s transition asynchronously. If
+        the stages switched when the circle started, a preview could flash to the new edition over the frozen page, go back to the old
+        one, and meet the new one again when the circle reached it. So each preview is told to switch when the circle’s edge arrives at
+        it. The circle’s radius grows on an easing curve, so the page inverts the curve, by bisection, to find the moment the edge
+        covers each plate’s center, and switches the stage right under the moving edge, where the flip can’t be seen.
+      </p>
+      <p>
+        It works the other way round. Switch a product’s theme in its own settings and the site follows, opening out from the app’s
+        window to the edges of the screen. This site’s toggle, inside the copy of itself, hands the click to the page around it, so one
+        circle covers both, starting within a pixel of where you clicked.
+      </p>
+      <p>
+        In a window the rule changes. The window takes the screen, so there the app shows the site’s own edition, and the page behind it
+        matches; back in its preview, it takes the opposite one again. That switch happens inside the window’s own transition, as its
+        two pictures cross-fade: two view transitions can’t run at once, so the circle isn’t available there.
+      </p>
+      <p>
+        The circle has a cost I chose to keep. Taking the transition’s pictures produces one long frame, 72 to 76 ms on this laptop.
+        For a few days the switch was a wash instead, a layer of the new background color fading in while the theme flipped under it,
+        which never went over 25 ms. It looked worse, and the circle came back.
+      </p>
+
+      <h3 id="w-tried">What didn’t make it</h3>
+      <p>
+        <strong>Video again, tied to the tape.</strong> Since the cost on a modest machine was the tape replaying, I tried the obvious
+        reversal: film each tape frame by frame, one video per edition on the tape’s own timeline, and keep the checkpoints, so the app
+        still boots in the state of any moment. At four times slower CPU, arrivals at KnowGraph went from 30–33% of the time in hitches
+        to 22–24%; at full speed, from 2–3% to 1–2%. It also gave up the tape answering the pointer while the app boots, sharpness past
+        the filmed size, a kilobyte budget (two editions at about 490 KB each, against a 55 KB tape) and the cold frame, which got worse.
+        The tape stayed. The prototype’s lasting result was the boot bug above.
+      </p>
+      <p>
+        <strong>Pacing the apps’ frames.</strong> For a while the bridge ran an app’s animation frames on a slower beat when the machine
+        struggled, and the page measured its own frames to send a ceiling down to it. When the bridge stopped pacing frames, the whole
+        chain kept running and reached nothing. It’s gone. What stays is simpler: an app that runs slow rests its endless decorative
+        animations, a pulse or a spinner, until its frames are steady again.
+      </p>
+      <p>
+        <strong>Waiting longer before booting.</strong> Booting a preview’s app 1.2 seconds after it’s on screen instead of 0.6 looked
+        clearly better over the first second after a product change. Over three seconds it measured the same: the cost had only moved
+        out of the window being read.
+      </p>
+      <p>
+        <strong>A circle drawn through a mask.</strong> Revealing the new theme through a mask instead of a clip-path was meant to spare
+        a repaint. The masked snapshot rendered blank.
+      </p>
+
+      <h3 id="w-cost">What it costs</h3>
+      <p>
+        Nothing here runs before your first input, and Lighthouse never gives one. On this laptop the scores move with whatever else it’s
+        doing, so I compared builds in alternating runs on the home page when the live apps first landed: with them it scored 99, 99,
+        100 and 88 for performance; the build before them, 89, 89, 69 and 100. Accessibility, best practices and SEO were 100 in every
+        run.
+      </p>
+      <p>
+        The five products’ previews went from 17.7 MB of video to 221 KB of tapes, gzipped, plus PlaySync’s clip. The copied builds add
+        12.9 MB to the deployment; an app’s files are fetched only once its preview is on screen and you’ve started using the page.
+      </p>
+
+      <h3 id="w-left">What’s left</h3>
+      <ul>
+        <li>
+          The second domain. Until <code>PUBLIC_STAGE_ORIGIN</code> points at one, the stages share the page’s process: 6% of the time
+          in hitches after a product change instead of 2%, and 27 to 29% on a slow CPU.
+        </li>
+        <li>
+          Some endpoints aren’t recorded: LoLImpact’s live game and draft tool, KnowGraph’s AI mentor, the storyboard PlaySync asks
+          for when you scrub. In the live apps they show their own error states.
+        </li>
+        <li>On phones and touch screens, previews stay tapes and links stay links.</li>
+        <li>
+          When a product changes, its tape is recorded again and its still made from it: two commands,
+          <code>node scripts/tapes/record.mjs &lt;id&gt;</code> and <code>scripts/tapes/still.mjs</code>, with the scene in the
+          repository.
+        </li>
+      </ul>
+
+      <p class="post-end">
+        The code is on <a href={self.source} target="_blank" rel="noopener">GitHub</a>: the recorder and the scenes in
+        <code>scripts/tapes</code>, the bridge and the stand-in room in <code>scripts/apps</code>, the player, the stages and the live
+        apps in <code>src/scripts</code>, and the measuring scripts in <code>scripts/perf</code>.
+      </p>
+    </div>
+  </div>
+
+</article>
+
+<style>
+  .post {
+    max-width: 1060px;
+    margin-inline: auto;
+    padding-block: clamp(20px, 5vh, 56px) 72px;
+  }
+  .post-head {
+    max-width: 720px;
+    margin: 0 auto 40px;
+  }
+  .post-head .t-label { margin-bottom: 14px; }
+  .post-title {
+    font: 800 clamp(2.4rem, 5.2vw, 4rem) / 1 var(--font);
+    font-stretch: 112%;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .post-dek {
+    margin-top: 18px;
+    font: italic 400 clamp(1.25rem, 2vw, 1.5rem) / 1.4 var(--serif);
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+  .post-byline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: 0.875rem;
+  }
+  .post-byline span:first-child { color: var(--ink); font-weight: 600; }
+
+  .post-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 720px) minmax(0, 1fr);
+    gap: 32px;
+  }
+  .prose-post { grid-column: 2; min-width: 0; }
+  .post-toc {
+    grid-column: 1;
+    grid-row: 1;
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    font-size: 0.8125rem;
+  }
+  .post-toc ol { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .post-toc a { color: var(--ink-2); text-decoration: none; }
+  .post-toc a:hover { color: var(--accent); }
+  @media (max-width: 1100px) {
+    .post-body { grid-template-columns: minmax(0, 1fr); }
+    .prose-post { grid-column: 1; width: 100%; max-width: 720px; justify-self: center; }
+    .post-toc { display: none; }
+  }
+
+  .prose-post > :is(p, ul, ol) {
+    font: 500 1.1875rem / 1.72 var(--serif);
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+  .prose-post > * + * { margin-top: 1.15em; }
+  .prose-post .lede::first-letter {
+    float: left;
+    margin: 0.08em 0.1em 0 0;
+    font: 800 3.4em / 0.8 var(--font);
+    color: var(--accent);
+  }
+  .prose-post :is(ul, ol) { padding-left: 1.2em; }
+  .prose-post li + li { margin-top: 0.5em; }
+  .prose-post strong { font-weight: 700; font-family: var(--font); font-size: 0.94em; }
+  .prose-post h3 {
+    margin-top: 2.4em;
+    font: 750 clamp(1.5rem, 2.4vw, 1.875rem) / 1.15 var(--font);
+    letter-spacing: -0.02em;
+    scroll-margin-top: 16px;
+  }
+  .prose-post a { color: var(--accent); }
+  .prose-post :not(pre) > code {
+    padding: 0.08em 0.36em;
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--ink) 7%, transparent);
+    font: 500 0.82em / 1 var(--mono);
+  }
+  /* Code blocks come from Astro's Code (Shiki): its own elements, hence :global. Each token carries both
+     editions' colors as variables; the site's theme attribute picks one. */
+  .prose-post :global(pre) {
+    margin: 0;
+    overflow-x: auto;
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    background: color-mix(in oklab, var(--ink) 5%, var(--bg));
+    box-shadow: inset 0 0 0 1px var(--line);
+    font: 500 0.8125rem / 1.65 var(--mono);
+    tab-size: 2;
+  }
+  .prose-post :global(pre.astro-code) { background: color-mix(in oklab, var(--ink) 5%, var(--bg)) !important; }
+  .prose-post :global(.astro-code span) { color: var(--shiki-light); }
+  :global(:root[data-theme='dark']) .prose-post :global(.astro-code span) { color: var(--shiki-dark); }
+  .post-fig { margin-block: 2.2em; }
+  .post-fig figcaption {
+    margin-top: 12px;
+    color: var(--ink-3);
+    font: italic 400 0.98rem / 1.5 var(--serif);
+    text-align: center;
+  }
+  .post-table { overflow-x: auto; margin-block: 2em; }
+  .post-table table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+  .post-table caption { caption-side: bottom; margin-top: 10px; color: var(--ink-3); font: italic 400 0.95rem / 1.5 var(--serif); text-align: left; }
+  .post-table :is(th, td) { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .post-table thead th { color: var(--ink-3); font-weight: 600; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .post-table td.t-num { white-space: nowrap; }
+  .post-note { display: block; color: var(--ink-3); font-size: 0.8125rem; }
+  .post-end { margin-top: 2.4em !important; padding-top: 1.4em; border-top: 1px solid var(--line); }
+</style>

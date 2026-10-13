@@ -14,4 +14,8 @@ export default defineConfig({
   build: {
     inlineStylesheets: 'auto',
   },
+  // The write-up moved into the portfolio's case study, as its own panel.
+  redirects: {
+    '/work/portfolio/how-its-built': '/work/portfolio/#writeup',
+  },
 });

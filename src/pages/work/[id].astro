@@ -3,6 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
 import Plate from '../../components/Plate.astro';
 import Icon from '../../components/Icon.astro';
+import Writeup from '../../components/Writeup.astro';
 import type { PanelLink } from '../../components/Bar.astro';
 import { projects, type Project } from '../../data/projects';
 
@@ -40,6 +41,8 @@ const panels: PanelLink[] = [
   { id: 'story', label: 'Story', icon: 'text' },
   { id: 'engineering', label: 'Engineering', icon: 'code' },
   ...(dive ? [{ id: 'how', label: 'How it works', icon: 'layers' } as PanelLink] : []),
+  // The long version of How it works, read in place (the portfolio's own case study).
+  ...(dive?.writeup ? [{ id: 'writeup', label: 'Write-up', icon: 'text' } as PanelLink] : []),
   { id: 'screens', label: 'Screens', icon: 'image' },
   { id: 'specs', label: 'Specs', icon: 'list' },
 ];
@@ -194,6 +197,14 @@ const panels: PanelLink[] = [
             ))}
           </dl>
         </div>
+      </section>
+    )
+  }
+
+  {
+    dive?.writeup && (
+      <section id="writeup" class="panel" data-label="Write-up" tabindex="-1" data-accent style={accent}>
+        <Writeup />
       </section>
     )
   }

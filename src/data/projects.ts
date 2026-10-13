@@ -76,7 +76,7 @@ export interface Project {
    */
   deepDive?: {
     title: string;
-    /** A long-form write-up of the same story, linked from the chapter. */
+    /** A long-form write-up of the same story, read in its own panel of the case study (the link to it). */
     writeup?: string;
     intro: string;
     steps: { title: string; body: string }[];
@@ -405,7 +405,7 @@ export const projects: Project[] = [
     ],
     deepDive: {
       title: 'From a video of the app to the app',
-      writeup: '/work/portfolio/how-its-built/',
+      writeup: '#writeup',
       intro:
         'Every product preview here used to be a pair of videos. The question was whether it could be the product itself, without paying for it in page weight or frames.',
       steps: [
