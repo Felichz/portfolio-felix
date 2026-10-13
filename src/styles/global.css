@@ -144,11 +144,10 @@
   to { clip-path: inset(0 round 0); }
 }
 /* A live preview's window (src/scripts/live.ts): a view transition of the window alone, while the page,
-   live under it, steps back (or forward) on the same curve. Two pictures of the app, each stretched to
-   the window's box: the one it had (laid out for the preview) and the one it has (laid out for the
-   window) dissolve into each other in 100 ms while the window is small, at the start on the way in and
-   at the end on the way back. Quick enough that the stretched picture is barely seen, slow enough that
-   the layout doesn't jump between two frames. Two layers' opacity: compositor work only. */
+   live under it, steps back (or forward) on the same curve. The window has the preview's proportions
+   and the app keeps its layout (live.ts), so its two pictures differ only in their edition (the theme
+   switches with the morph): they dissolve into each other over the whole flight, on the morph's curve,
+   both ways, as the page's two editions do. Two layers' opacity: compositor work only. */
 :root.live-vt, :root.live-vt :is(.bar, .plate, .slide-name, .ov-name) { view-transition-name: none !important; }
 :root.live-vt .live-vt-shape { view-transition-name: live-window !important; }
 /* The site switches theme with the morph (live.ts): the page is captured too, and its two editions
@@ -171,12 +170,10 @@
   height: 100%;
   object-fit: fill;
   mix-blend-mode: plus-lighter;
-  animation-duration: 100ms;
-  animation-timing-function: linear;
+  animation-duration: var(--live-d);
+  animation-timing-function: var(--live-ease);
   animation-fill-mode: both;
 }
-:root.live-vt-out::view-transition-old(live-window),
-:root.live-vt-out::view-transition-new(live-window) { animation-delay: calc(var(--live-d) - 100ms); }
 :root.live-vt::view-transition-old(live-window) { animation-name: live-pic-out; }
 :root.live-vt::view-transition-new(live-window) { animation-name: live-pic-in; }
 @keyframes live-pic-out { to { opacity: 0; } }
