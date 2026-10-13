@@ -148,7 +148,9 @@ root.addEventListener('pointerenter', () => post({ k: 'hover', on: true }));
 root.addEventListener('pointerleave', () => post({ k: 'hover', on: false }));
 
 // This site, opened in its own stage, hands its theme toggle on (see Bar.astro): the page around the
-// stage switches.
-window.__faTheme = () => post({ k: 'theme-toggle' });
+// stage switches, spreading from that point.
+window.__faTheme = (from) => {
+  if (from && 'x' in from) post({ k: 'theme-toggle', x: from.x, y: from.y });
+};
 
 post({ k: 'hello' });
