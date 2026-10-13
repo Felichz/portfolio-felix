@@ -111,8 +111,18 @@
     dirtyKids.clear();
     dirtyAttrs.clear();
     dirtyText.clear();
+    // A field the app set by code (a chat box emptied once its message is sent) fires no input event
+    // and changes no attribute: checked whenever the DOM changes.
+    for (const [el, v] of values) {
+      if (!el.isConnected || !ids.has(el)) values.delete(el);
+      else if (el.value !== v) {
+        values.set(el, el.value);
+        emit(['v', t, ids.get(el), el.value]);
+      }
+    }
     flushAnims();
   };
+  const values = new Map();
   const observer = new MutationObserver((records) => {
     for (const r of records) {
       if (r.type === 'childList') dirtyKids.add(r.target);
@@ -162,7 +172,10 @@
       actions.push({ t: T(), kind: 'input', path: pathOf(el), sig: sigOf(el), value: el.isContentEditable ? el.textContent : el.value });
     if (!ids.has(el)) return;
     if (el.type === 'checkbox' || el.type === 'radio') emit(['k', T(), idOf(el), el.checked ? 1 : 0]);
-    else if ('value' in el) emit(['v', T(), idOf(el), el.value]);
+    else if ('value' in el) {
+      values.set(el, el.value);
+      emit(['v', T(), idOf(el), el.value]);
+    }
   });
   const scrolled = new Set();
   let scrollFrame = 0;
