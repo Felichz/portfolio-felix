@@ -21,11 +21,11 @@ const sizes = [
 // Where the frames went: each change, what it was measured with, before and after (commits on live-apps).
 const fixes = [
   { what: 'The countdown and the tape’s cursor on the compositor; recorded changes applied only when they fall due', metric: 'Page main thread while a preview plays', before: '63–74%', after: '11%' },
-  { what: 'The flight recorder’s frame loop only when measuring', metric: 'Page main thread while a preview plays', before: '~52%', after: 'under 2%' },
+  { what: 'The flight recorder (added after the row above) runs its frame loop only when measuring', metric: 'Page main thread while a preview plays', before: '~52%', after: 'under 2%' },
   { what: 'Previews in a stage of their own process', metric: 'Longest task on a product change', before: '170–190 ms', after: '~90 ms' },
   { what: 'The room light reads its new colors on the next frame, not in the click’s handler', metric: 'Longest task on a product change', before: '80 ms', after: '44–64 ms' },
-  { what: 'Hidden slides get content-visibility: hidden', metric: 'Frames drawn in the second after a click', before: '46–60', after: '100–162' },
-  { what: 'The room light changes color at once, no transition', metric: 'Frames drawn in the second after a click', before: '50', after: '71' },
+  { what: 'Hidden slides get content-visibility: hidden', metric: 'Frames drawn in the second after a click, 240 Hz panel', before: '46–60', after: '100–162' },
+  { what: 'The room light changes color at once, no transition', metric: 'Frames drawn in the second after a click, 240 Hz panel', before: '50', after: '71' },
   { what: 'The cursor light reads the glow from the inline style', metric: 'getPropertyValue over three clicks, 4x CPU', before: '224 ms', after: '32 ms' },
   { what: 'The name’s letters animate opacity and position; the swell reads every rect before it writes', metric: 'Main thread over a fast scroll up', before: '1,169–1,442 ms', after: '515–536 ms' },
   { what: 'Stages mount one at a time, in idle', metric: 'Worst frame arriving at LifeUI', before: '800 ms', after: '84 ms' },
@@ -94,7 +94,7 @@ type ToHost =
   | { k: 'meta'; duration: number } | { k: 'playing'; t: number } | { k: 'ended' }
   | { k: 'booted' } | { k: 'live' } | { k: 'pointer'; f: number } | { k: 'theme-app' };`;
 
-const contain = `/* Seven of the eight slides are hidden at any time. They keep their state,
+const contain = `/* Five of the six slides are hidden at any time. They keep their state,
    and skip style, layout and paint until they're shown. */
 .slide:not([data-state='active']):not([data-pre]) { content-visibility: hidden; }`;
 
@@ -104,11 +104,17 @@ color = getComputedStyle(root).getPropertyValue('--glow');
 // After: the value is already inline on the root.
 color = root.style.getPropertyValue('--glow').trim() || color;`;
 
-const boot = `// A tape resting at its start is a still or about to play. Booted from the
-// end then, the app stayed ahead of the tape. So it waits, briefly.
+const boot = `// A tape resting at its start is a still or about to play: it waits, briefly,
+// for the tape to decide; a visitor asking for the app now decides for it.
+const p = this.player;
 if (p.paused && p.currentTime === 0)
-  await Promise.race([playing(p), decided, sleep(1000)]);
-const cp = checkpointAt(this.#now); // now it knows where the tape is`;
+  await Promise.race([
+    new Promise((r) => p.addEventListener('playing', r, { once: true })),
+    new Promise((r) => (this.#decide = r)),
+    sleep(1000),
+  ]);
+const t = this.#now;
+const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpoints[0];`;
 ---
 
 <article class="post" aria-labelledby="writeup-title">
@@ -148,8 +154,8 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
       </p>
       <p>
         Getting it to work was the first half of the job. Keeping the page fluid while it works, on an ordinary laptop and not only on
-        mine, was the second, and most of what I learned is in the second half of this post: where the frames went, how I measured them, one measurement I got wrong,
-        and the ideas that didn’t survive the numbers.
+        mine, was the second, and most of what I learned is in the second half of this post: where the frames went, how I measured
+        them, one measurement I got wrong, and the ideas that didn’t survive the numbers.
       </p>
 
       <figure class="post-fig">
@@ -272,9 +278,9 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
       </p>
       <p>
         One bug lived here unnoticed. The page asks for the boot after the 600 ms on screen; the showcase starts the slide’s recording
-        a moment later. At four times slower CPU I measured the boot arriving 120 to 540 ms before the play. The app read a tape resting
+        a moment later. At four times slower CPU I measured the boot arriving up to half a second before the play. The app read a tape resting
         at zero as a still, booted from its last checkpoint, with every recorded click already made, and then sat in that end state
-        while the tape played from the start. Opening the window halfway through a recording showed the end state. I only found it
+        while the tape played from the start. Opening the window halfway through a recording would have shown the end state. I only found it
         because a prototype (more on it below) made the app boot twice per arrival. The fix is small:
       </p>
       <Code code={boot} lang="ts" {...shiki} />
@@ -327,6 +333,28 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
         proxy element in the plate, <code>&lt;tape-player&gt;</code>, which speaks the same video API as before and forwards everything
         to its stage as messages:
       </p>
+      <figure class="post-fig arch">
+        <div class="arch-side">
+          <p class="arch-label">The page, in its process</p>
+          <div class="arch-box">
+            <code>&lt;tape-player&gt;</code>
+            <span>in the plate: the video API the showcase drives, and the window’s lights</span>
+          </div>
+        </div>
+        <div class="arch-wire" aria-hidden="true"><span>messages</span></div>
+        <div class="arch-side">
+          <p class="arch-label"><code>/stage/#&lt;id&gt;</code>, in its own process from a second domain</p>
+          <div class="arch-box">
+            <code>&lt;tape-core&gt;</code>
+            <span>the tape, rebuilt in a frame that can’t run scripts</span>
+          </div>
+          <div class="arch-box">
+            <code>/apps/&lt;id&gt;/</code>
+            <span>the live app and its bridge, under the tape, on the stage’s origin</span>
+          </div>
+        </div>
+        <figcaption>A preview, split in two: the page keeps a proxy; the stage holds the tape and the app.</figcaption>
+      </figure>
       <Code code={protocol} lang="ts" {...shiki} />
       <p>
         The point of the split is the process. Chrome gives a frame its own process when it comes from another site, so a stage served
@@ -338,13 +366,13 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
       <p>
         One environment variable, <code>PUBLIC_STAGE_ORIGIN</code>, names that second domain. Without it, stages load from the page’s
         own origin and share its process; a stage that doesn’t answer in three seconds falls back to it as well. Production doesn’t
-        have the second domain yet, which is why every number below is measured both ways.
+        have the second domain yet, which is why the product change below is measured both ways.
       </p>
 
       <h3 id="w-measuring">Measuring before fixing</h3>
       <p>
         The first rule I set myself was that nothing would stay because it looked faster. Every change had to win an A/B on the same
-        machine: the two builds alternated, at least three runs each, the median compared. The tools are small Puppeteer scripts in
+        machine: the two variants alternated, run for run, and the medians compared. The tools are small Puppeteer scripts in
         <code>scripts/perf</code>, each one driving a real Chrome with the frames counted from inside the page.
       </p>
       <ul>
@@ -412,8 +440,8 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
       </div>
 
       <p>
-        A few of those deserve the longer version. The showcase has eight slides and shows one; changing product set a state on all
-        eight, and each hidden slide’s subtree restyled anyway. Containment fixed it with one rule, and an exception for the slide
+        A few of those deserve the longer version. The showcase has six slides and shows one; changing product set a state on all
+        six, and each hidden slide’s subtree restyled anyway. Containment fixed it with one rule, and an exception for the slide
         about to come in, which is made visible for two frames before its turn so its textures are rastered ahead:
       </p>
       <Code code={contain} lang="css" {...shiki} />
@@ -439,8 +467,8 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
         Where that leaves the product change, on the laptop’s 100 Hz panel, over the three seconds after a click: 2% of the time in
         hitches with the stages in their own process, 6% with them in the page’s. At four times slower CPU, in the page’s process, it’s
         27 to 29%, with the worst frame on the first, cold click. Hiding the app changes nothing in that number; hiding the tape takes
-        it to 10 or 11%. What a modest machine pays for is the recording replaying in the page’s process, which is exactly what a stage on
-        its own domain moves out.
+        it to 10 or 11%. What a modest machine pays for is the recording replaying in the page’s process, which is what a stage on its own
+        domain should move out: at full speed it takes the change from 6% to 2%; at four times slower CPU I haven’t measured it yet.
       </p>
 
       <h3 id="w-window">A window around the app</h3>
@@ -481,10 +509,10 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
       <p>
         The overlap is what the fourth attempt solved. Two layouts of the same app, one for the preview and one for the window, can
         only meet by crossing over, and every way of crossing over showed: quickly, it read as a jump; slowly, as two apps on top of
-        each other; stretched, as squeezed text. So there is one layout. Every tape is recorded at 1152 by 720, and the app runs at
-        exactly that size in the preview and in the window, scaled to fit. That size also fixed the opposite complaint: at the
-        original 1440 by 900, a window on a laptop showed the app at about 83% of its size. At 1152 it reads at about its real size
-        there, and larger on a bigger screen.
+        each other; stretched, as squeezed text. So there is one layout, and one size for it. Giving the window the preview’s proportions with the tapes’ original 1440 by
+        900 layout made the app read small: on a laptop at 125% scaling the window is about 1,190 pixels wide, so the app showed at
+        about 83% of its size. Every tape is now recorded at 1152 by 720, and the app runs at exactly that size in the preview and in
+        the window, scaled to fit: about its real size in a window on that laptop, and larger on a bigger screen.
       </p>
       <p>
         Two smaller decisions came with it. The page behind the window steps back by scaling down, never up, because scaling a layer
@@ -509,7 +537,7 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
       <p>
         It works the other way round. Switch a product’s theme in its own settings and the site follows, opening out from the app’s
         window to the edges of the screen. This site’s toggle, inside the copy of itself, hands the click to the page around it, so one
-        circle covers both, starting within a pixel of where you clicked.
+        circle covers both, starting from where you clicked.
       </p>
       <p>
         In a window the rule changes. The window takes the screen, so there the app shows the site’s own edition, and the page behind it
@@ -527,9 +555,9 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
         <strong>Video again, tied to the tape.</strong> Since the cost on a modest machine was the tape replaying, I tried the obvious
         reversal: film each tape frame by frame, one video per edition on the tape’s own timeline, and keep the checkpoints, so the app
         still boots in the state of any moment. At four times slower CPU, arrivals at KnowGraph went from 30–33% of the time in hitches
-        to 22–24%; at full speed, from 2–3% to 1–2%. It also gave up the tape answering the pointer while the app boots, sharpness past
-        the filmed size, a kilobyte budget (two editions at about 490 KB each, against a 55 KB tape) and the cold frame, which got worse.
-        The tape stayed. The prototype’s lasting result was the boot bug above.
+        to 22–24%; at full speed, from 2–3% to 1–2%. The price was everything else. A film can’t answer the pointer while the app boots,
+        it blurs past the size it was filmed at, its two editions weigh about 490 KB each against a 55 KB tape, and the first, cold
+        arrival’s worst frame got longer (340–360 ms against 250–290). The tape stayed. The prototype’s lasting result was the boot bug above.
       </p>
       <p>
         <strong>Pacing the apps’ frames.</strong> For a while the bridge ran an app’s animation frames on a slower beat when the machine
@@ -549,31 +577,31 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
 
       <h3 id="w-cost">What it costs</h3>
       <p>
-        Nothing here runs before your first input, and Lighthouse never gives one. On this laptop the scores move with whatever else it’s
-        doing, so I compared builds in alternating runs on the home page when the live apps first landed: with them it scored 99, 99,
-        100 and 88 for performance; the build before them, 89, 89, 69 and 100. Accessibility, best practices and SEO were 100 in every
-        run.
+        No app boots before your first input, and Lighthouse never gives one. On the current build, served locally with compression,
+        three runs each on the home page and on this case study: performance 99 or 100, accessibility and SEO 100, total blocking time
+        0 ms, no layout shift. Best practices lost only the two HTTPS checks, which a local server can’t pass and the deployment does.
       </p>
       <p>
         The five products’ previews went from 17.7 MB of video to 221 KB of tapes, gzipped, plus PlaySync’s clip. The copied builds add
-        12.9 MB to the deployment; an app’s files are fetched only once its preview is on screen and you’ve started using the page.
+        12.9 MB to the deployment; an app’s code is fetched only once you’ve started using the page and its preview is on screen. Before that, a showcase in view
+        loads its stage, the tapes on screen and the fonts their stylesheets ask for.
       </p>
 
       <h3 id="w-left">What’s left</h3>
       <ul>
         <li>
-          The second domain. Until <code>PUBLIC_STAGE_ORIGIN</code> points at one, the stages share the page’s process: 6% of the time
-          in hitches after a product change instead of 2%, and 27 to 29% on a slow CPU.
+          The second domain. Until <code>PUBLIC_STAGE_ORIGIN</code> points at one, the stages share the page’s process, and a product
+          change pays for it, most of all on a slow CPU.
         </li>
         <li>
           Some endpoints aren’t recorded: LoLImpact’s live game and draft tool, KnowGraph’s AI mentor, the storyboard PlaySync asks
-          for when you scrub. In the live apps they show their own error states.
+          for when it loads a video. In the live apps they show their own error states.
         </li>
         <li>On phones and touch screens, previews stay tapes and links stay links.</li>
         <li>
           When a product changes, its tape is recorded again and its still made from it: two commands,
-          <code>node scripts/tapes/record.mjs &lt;id&gt;</code> and <code>scripts/tapes/still.mjs</code>, with the scene in the
-          repository.
+          <code>node scripts/tapes/record.mjs &lt;id&gt;</code>, then, against a build served locally,
+          <code>BASE=&lt;url&gt; node scripts/tapes/still.mjs &lt;id&gt; &lt;shot&gt;</code>, with the scene in the repository.
         </li>
       </ul>
 
@@ -694,6 +722,21 @@ const cp = checkpointAt(this.#now); // now it knows where the tape is`;
     color: var(--ink-3);
     font: italic 400 0.98rem / 1.5 var(--serif);
     text-align: center;
+  }
+  /* The stage diagram: two sides and the messages between them; stacked on a narrow screen. */
+  .arch { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.25fr); gap: 14px; align-items: center; }
+  .arch figcaption { grid-column: 1 / -1; }
+  .arch-side { display: grid; gap: 10px; padding: 14px; border-radius: var(--radius); box-shadow: inset 0 0 0 1px var(--line); }
+  .arch-label { color: var(--ink-3); font-size: 0.8125rem; }
+  .arch-box { display: grid; gap: 4px; padding: 12px 14px; border-radius: calc(var(--radius) - 4px); background: color-mix(in oklab, var(--accent) 9%, var(--bg)); }
+  .prose-post .arch :is(.arch-box, .arch-label) code { justify-self: start; padding: 0; background: none; font: 600 0.875rem / 1.3 var(--mono); color: var(--ink); }
+  .prose-post .arch .arch-label code { font-weight: 500; font-size: 0.8125rem; color: var(--ink-2); }
+  .arch-box span { color: var(--ink-2); font-size: 0.875rem; line-height: 1.4; }
+  .arch-wire { display: grid; justify-items: center; gap: 6px; color: var(--ink-3); font-size: 0.75rem; }
+  .arch-wire::before { content: ''; width: 64px; height: 1px; background: currentColor; box-shadow: 0 6px 0 currentColor; }
+  @media (max-width: 760px) {
+    .arch { grid-template-columns: minmax(0, 1fr); }
+    .arch-wire::before { width: 1px; height: 28px; box-shadow: 6px 0 0 currentColor; }
   }
   .post-table { overflow-x: auto; margin-block: 2em; }
   .post-table table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
