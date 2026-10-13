@@ -5,6 +5,8 @@ import type { ComponentProps } from 'astro/types';
 export interface PanelLink {
   id: string;
   label: string;
+  /** A shorter label for the phone's tab bar, where seven tabs share 320 px; the full one stays its name. */
+  short?: string;
   icon: ComponentProps<typeof Icon>['name'];
 }
 

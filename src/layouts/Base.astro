@@ -11,11 +11,13 @@ interface Props {
   image?: string;
   /** The panels of this page, in order: they drive the bar tabs, the dock and the deck. */
   panels: PanelLink[];
+  /** The panel the page opens on when its URL names none (a page that is one of another's panels). */
+  start?: string;
   /** Where the brand link and the dock's back action point. */
   home?: boolean;
 }
 
-const { title, description, image = '/og.png', panels, home = false } = Astro.props;
+const { title, description, image = '/og.png', panels, home = false, start } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image, Astro.site);
 
@@ -76,19 +78,25 @@ const person = {
     <a class="skip-link" href="#main">Skip to content</a>
     <Bar panels={panels} home={home} />
     <Dock panels={panels} />
-    <main id="main" class="stage" data-deck tabindex="-1">
+    <main id="main" class="stage" data-deck data-start={start} tabindex="-1">
       <slot />
     </main>
     <Viewer />
 
-    <!-- Open on the panel the URL names before the first paint, so a deep link never flashes the intro. -->
+    <!-- Open on the panel the URL names before the first paint, so a deep link never flashes the intro:
+         a panel (#story), something inside one (#w-measuring, a heading of the write-up), or, with no
+         hash, the page's own start panel. -->
     <script is:inline>
       (() => {
         const stage = document.querySelector('[data-deck]');
         if (!stage) return;
         const panels = [...stage.children].filter((p) => p.classList.contains('panel'));
         const id = decodeURIComponent(location.hash.slice(1)).split('/')[0];
-        const i = Math.max(0, panels.findIndex((p) => p.id === id));
+        let i = panels.findIndex((p) => p.id === id);
+        const inside = i < 0 && id ? document.getElementById(id) : null;
+        if (inside?.closest('.panel')) i = panels.indexOf(inside.closest('.panel'));
+        if (i < 0 && !id && stage.dataset.start) i = panels.findIndex((p) => p.id === stage.dataset.start);
+        i = Math.max(0, i);
         if (i > 0) stage.scrollTop = panels[i].offsetTop;
         panels[i]?.setAttribute('data-active', '');
         panels[i]?.setAttribute('data-seen', '');

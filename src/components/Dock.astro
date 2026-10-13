@@ -31,9 +31,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
     {
       panels.map((p, i) => (
         <li>
-          <a href={`#${p.id}`} data-tab={p.id} aria-current={i === 0 ? 'true' : undefined}>
+          <a href={`#${p.id}`} data-tab={p.id} aria-current={i === 0 ? 'true' : undefined} aria-label={p.short ? p.label : undefined}>
             <Icon name={p.icon} />
-            <span>{p.label}</span>
+            <span>{p.short ?? p.label}</span>
           </a>
         </li>
       ))

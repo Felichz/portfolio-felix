@@ -1,0 +1,13 @@
+---
+// The write-up's own address: the portfolio's case study, opened on its Write-up panel, with the
+// article's title and description, so a shared link reads as the post it is.
+import CaseStudy from '../../../components/CaseStudy.astro';
+import { byId } from '../../../data/projects';
+---
+
+<CaseStudy
+  project={byId('portfolio')!}
+  title="The previews are the apps · Felix Andersson"
+  description="How this portfolio records its products as DOM instead of video, hands each recording over to the running app in the same state, and keeps the page fluid while it does: the architecture, the measurements, and what didn't make it."
+  start="writeup"
+/>

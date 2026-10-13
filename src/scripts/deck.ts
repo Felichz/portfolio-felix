@@ -8,6 +8,8 @@
  * Events on document:
  * - `deck:change` { id, index } when a section becomes the active one.
  * - `deck:sub` { id, sub } when a link asks for something inside a section (`#work/katarch`).
+ * A hash can also name an element inside a section (`#w-measuring`, a heading of the write-up): the
+ * deck moves to its section and scrolls it into view, and the address keeps that hash.
  * - `deck:refresh` (listened for) re-reads the active section's glow color.
  */
 export function initDeck() {
@@ -50,6 +52,22 @@ export function initDeck() {
     strip.style.setProperty('--pill-w', `${tab.offsetWidth}px`);
   };
 
+  /** The section an element is in, if it's inside one (not a section itself). */
+  const inside = (id: string) => {
+    const el = id ? document.getElementById(id) : null;
+    const panel = el?.closest<HTMLElement>('.panel');
+    return el && panel && el !== panel ? { el, i: panels.indexOf(panel) } : undefined;
+  };
+  /** Brings an element inside a section to the top of the view: in the section, when it scrolls on
+      its own (desktop), or in the deck (phones). */
+  const reveal = (el: HTMLElement, smooth: boolean) => {
+    const panel = el.closest<HTMLElement>('.panel')!;
+    const own = panel.scrollHeight > panel.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(panel).overflowY);
+    const scroller = own ? panel : stage;
+    const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top - (own ? 24 : 88);
+    scroller.scrollBy({ top, behavior: smooth && !reduce.matches ? 'smooth' : 'instant' });
+  };
+
   const setActive = (i: number) => {
     if (i === index) return;
     index = i;
@@ -60,7 +78,9 @@ export function initDeck() {
     pill();
     // Keep the address in step, without adding a history entry per section.
     const current = decodeURIComponent(location.hash.slice(1)).split('/')[0];
-    if (current !== panel.id && !(i === 0 && !current)) {
+    // (A page that opens on one of its panels, with no hash, keeps its own address there.)
+    const home = i === 0 || panel.id === stage.dataset.start;
+    if (current !== panel.id && !(home && !current) && inside(current)?.i !== i) {
       history.replaceState(history.state, '', i === 0 ? location.pathname + location.search : `#${panel.id}`);
     }
     glow();
@@ -191,13 +211,32 @@ export function initDeck() {
     const url = new URL(a.href, location.href);
     if (url.pathname !== location.pathname || !url.hash) return;
     const { i, id, sub } = resolve(url.hash);
+    const at = i < 0 ? inside(id) : undefined;
+    if (at) {
+      // Something inside a section: its section, then the element, and the address names it.
+      e.preventDefault();
+      history.replaceState(history.state, '', `#${id}`);
+      if (at.i !== index) go(at.i, { smooth: false });
+      reveal(at.el, true);
+      return;
+    }
     if (i < 0) return;
     e.preventDefault();
-    go(i, { focus: a.closest('.bar, .dock') !== null });
+    const nav = a.closest('.bar, .dock') !== null;
+    go(i, { focus: nav });
+    // A link in the page's own text to a long section opens it at its start, wherever it was left.
+    if (!nav && !sub) panels[i]!.scrollTo({ top: 0, behavior: 'instant' });
+    // (The same section: the address still drops whatever it named inside it.)
+    if (i === index && location.hash !== url.hash) history.replaceState(history.state, '', i === 0 ? location.pathname + location.search : url.hash);
     if (sub) document.dispatchEvent(new CustomEvent('deck:sub', { detail: { id, sub } }));
   });
   addEventListener('hashchange', () => {
     const { i, id, sub } = resolve(location.hash);
+    const at = i < 0 ? inside(id) : undefined;
+    if (at) {
+      if (at.i !== index) go(at.i, { smooth: false });
+      return reveal(at.el, true);
+    }
     if (i >= 0) go(i);
     if (sub) document.dispatchEvent(new CustomEvent('deck:sub', { detail: { id, sub } }));
   });
@@ -218,6 +257,10 @@ export function initDeck() {
   new MutationObserver(glow).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
   setActive(nearest());
+  // A deep link into a section (the pre-paint script opened its section): once the fonts have laid
+  // the section out, the element it names comes to the top.
+  const linked = inside(decodeURIComponent(location.hash.slice(1)).split('/')[0]);
+  if (linked) (document.fonts?.ready ?? Promise.resolve()).then(() => requestAnimationFrame(() => reveal(linked.el, false)));
   requestAnimationFrame(() => strip?.setAttribute('data-ready', ''));
   document.fonts?.ready.then(pill);
   root.setAttribute('data-deck-ready', '');

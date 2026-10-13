@@ -154,8 +154,8 @@ const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpo
       </p>
       <p>
         Getting it to work was the first half of the job. Keeping the page fluid while it works, on an ordinary laptop and not only on
-        mine, was the second, and most of what I learned is in the second half of this post: where the frames went, how I measured
-        them, one measurement I got wrong, and the ideas that didn’t survive the numbers.
+        mine, was the other half, and it’s where most of what I learned is: where the frames went, how I measured them, one
+        measurement I got wrong, and the ideas that didn’t survive the numbers.
       </p>
 
       <figure class="post-fig">
@@ -217,9 +217,9 @@ const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpo
         setting their time from the tape’s clock, so they pause and seek with everything else.
       </p>
       <p>
-        Every tape is recorded at 1152 by 720 (why that size comes up with the window), and each product’s still, the picture a
+        Every tape is recorded at 1152 by 720 (more on that size with the window), and each product’s still, the picture a
         preview shows before and after its recording, is now that recording’s last frame, rendered at 2x by a script. Making the still
-        from the tape surfaced two bugs nobody had seen. PlaySync’s chat box kept the text of a message after sending it, because the
+        from the tape surfaced two bugs. PlaySync’s chat box kept the text of a message after sending it, because the
         app empties the field from code and the recorder only listened for typing; it now compares the fields it has seen on every DOM
         change. And the filmed clip showed the browser’s own media controls once paused at the end: a document that can’t run scripts
         gets them forced on its videos, so the tape’s stylesheet hides them.
@@ -373,7 +373,7 @@ const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpo
       <p>
         The first rule I set myself was that nothing would stay because it looked faster. Every change had to win an A/B on the same
         machine: the two variants alternated, run for run, and the medians compared. The tools are small Puppeteer scripts in
-        <code>scripts/perf</code>, each one driving a real Chrome with the frames counted from inside the page.
+        <code>scripts/perf</code>, each one driving a real Chrome, most of them counting frames from inside the page.
       </p>
       <ul>
         <li>
@@ -528,7 +528,8 @@ const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpo
         product in the opposite edition from the site, like a screenshot printed in the other theme, so every app switches with it.
       </p>
       <p>
-        The hard part was timing. A stage paints in its own process, and its picture reaches the page’s transition asynchronously. If
+        The hard part was timing. A stage on its own domain paints in its own process, and its picture reaches the page’s transition
+        asynchronously. If
         the stages switched when the circle started, a preview could flash to the new edition over the frozen page, go back to the old
         one, and meet the new one again when the circle reached it. So each preview is told to switch when the circle’s edge arrives at
         it. The circle’s radius grows on an easing curve, so the page inverts the curve, by bisection, to find the moment the edge
@@ -743,6 +744,7 @@ const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpo
   .post-table :is(th, td) { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
   .post-table thead th { color: var(--ink-3); font-weight: 600; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em; }
   .post-table td.t-num { white-space: nowrap; }
+  .post-table tbody th { font-weight: 500; }
   .post-note { display: block; color: var(--ink-3); font-size: 0.8125rem; }
   .post-end { margin-top: 2.4em !important; padding-top: 1.4em; border-top: 1px solid var(--line); }
 </style>
