@@ -283,13 +283,15 @@ async function zoom(plate: HTMLElement) {
   const name = nameOf(plate);
   const full = !caseStudy; // on a case study the window takes the screen
 
-  // ---- Geometry. The window takes the room the screen has, and the app runs in it at its own size
-  // (1:1, scaled down only below 1100px wide), laid out for that size like any browser window.
+  // ---- Geometry. The window is the preview, larger: the largest box of the preview's proportions
+  // (the app's recorded 1440x900) the screen has room for, centered. The app keeps the layout it had
+  // in the preview, only scaled, so the morph between them is a zoom of one picture: nothing reflows,
+  // nothing is stretched or cropped on the way, and opening costs the app no layout.
   const BAR = 34;
-  const [mx, top, bottom] = full ? [12, 12, 62] : [24, 18, 66];
-  const availW = innerWidth - 2 * mx;
-  const availH = innerHeight - top - bottom - BAR;
-  const k = Math.min(1, availW / 1100);
+  const [margin, top, bottom] = full ? [12, 12, 62] : [24, 18, 66];
+  const availH = Math.min(innerHeight - top - bottom - BAR, ((innerWidth - 2 * margin) * 900) / 1440);
+  const availW = (availH * 1440) / 900;
+  const mx = (innerWidth - availW) / 2;
 
   // ---- The window, at its landed size; hidden until the morph swaps it in.
   const overlay = document.createElement('div');
@@ -314,7 +316,7 @@ async function zoom(plate: HTMLElement) {
   const screen = overlay.querySelector<HTMLElement>('.thaw-screen')!;
   win.style.cssText = `transform:translate(${mx}px, ${top}px);width:${availW}px;height:${BAR + availH}px`;
   overlay.querySelector<HTMLElement>('.thaw-bar')!.style.height = `${BAR}px`;
-  screen.style.cssText = `top:${BAR}px;width:${availW / k}px;height:${availH / k}px;transform:scale(${k})`;
+  screen.style.cssText = `top:${BAR}px;width:${availW}px;height:${availH}px`;
   overlay.querySelector<HTMLElement>('.thaw-actions')!.style.top = `${top + BAR + availH + 14}px`;
   overlay.style.visibility = 'hidden';
   document.body.append(overlay);
@@ -416,8 +418,8 @@ async function zoom(plate: HTMLElement) {
     player.frame?.focus();
     player.send({ k: 'focus' });
   });
-  // In the window the app is laid out at the window's size, and the wheel is its own (the stage applies
-  // this with the resize the move brings, on that frame).
+  // In the window the wheel is the app's own (the stage applies this with the resize the move brings,
+  // on that frame); its layout stays the preview's, scaled.
   player.send({ k: 'mode', window: true });
   app.inWindow = true;
   // The overlay settles into its first layout on a frame of its own, so the one the morph captures
