@@ -3,7 +3,7 @@
 export default {
   base: '/apps/katarch/',
   start: 'domain/#step-3',
-  viewport: [1440, 900],
+  viewport: [1152, 720],
   clock: [15, 24],
   themeAttr: 'data-theme',
   readySelector: '#step-title',
@@ -30,7 +30,7 @@ export default {
     await s.click('.bottombar .btn--primary', { rest: 200 });
     await s.wait(3200);
     await s.checkpoint('step-5');
-    await s.moveTo(1180, 560, 1000);
+    await s.moveTo(944, 448, 1000);
     await s.wait(900);
   },
 };

@@ -4,7 +4,7 @@
 export default {
   root: 'dist',
   base: '/',
-  viewport: [1440, 900],
+  viewport: [1152, 720],
   clock: null,
   themeAttr: 'data-theme',
   readySelector: '#intro-name',
@@ -26,19 +26,19 @@ export default {
     await s.checkpoint('start');
     await s.wait(500);
     // Across the name, slowly, like reading it.
-    await s.moveTo(150, 175, 900);
-    await s.moveTo(560, 160, 1500);
-    await s.moveTo(780, 300, 900);
-    await s.moveTo(300, 330, 1300);
+    await s.moveTo(120, 140, 900);
+    await s.moveTo(448, 128, 1500);
+    await s.moveTo(624, 240, 900);
+    await s.moveTo(240, 264, 1300);
     await s.wait(300);
     // Over to the work button, which leans toward the pointer.
     await s.point('.intro-actions .btn--solid');
     await s.wait(900);
     // The portrait tilts toward it.
-    await s.moveTo(1010, 330, 900);
-    await s.moveTo(1120, 520, 1000);
+    await s.moveTo(808, 264, 900);
+    await s.moveTo(896, 416, 1000);
     await s.wait(700);
-    await s.moveTo(1330, 820, 900);
+    await s.moveTo(1064, 656, 900);
     await s.wait(1200);
     await s.checkpoint('rest');
     await s.wait(400);

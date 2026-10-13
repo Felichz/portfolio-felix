@@ -32,7 +32,7 @@ const clickText = (page, re) =>
 export default {
   base: '/apps/playsync/',
   spa: true,
-  viewport: [1440, 900],
+  viewport: [1152, 720],
   clock: [15, 24],
   themeAttr: 'data-theme',
   readySelector: '.composer input',
@@ -80,7 +80,7 @@ export default {
       const z = await probe();
       if (a && z && z[0] > 8 && z[0] - a[0] > 1.6 && z[1] >= 3) break;
     }
-    await page.mouse.move(1200, 520);
+    await page.mouse.move(960, 416);
   },
 
   async run(s) {
@@ -95,7 +95,7 @@ export default {
     await s.page.keyboard.type('pause at 2:10 if you need snacks', { delay: 55 });
     await s.page.keyboard.press('Enter');
     await s.wait(600);
-    await s.moveTo(1180, 560, 700);
+    await s.moveTo(944, 448, 700);
     await s.wait(500);
     sofi.say('🍿🙌');
     await s.wait(3400);

@@ -263,10 +263,14 @@ export class Session {
     frame.src = tape.app.spa ? tape.app.entry : tape.app.entry.replace(/\/$/, '') + cp.route;
     this.frame = frame;
     this.opts.box.append(frame);
-    // The app runs at the recorded 1440x900 and is scaled to the stage, like the tape.
+    // The app runs at the tape's recorded size and is scaled to the stage, like the tape: in a preview
+    // and in a window alike, so opening one changes nothing in its layout.
+    const [vw, vh] = tape.viewport;
+    this.opts.box.style.setProperty('--live-w', `${vw}px`);
+    this.opts.box.style.setProperty('--live-h', `${vh}px`);
     this.#fit = new ResizeObserver(() => {
       const box = this.opts.box;
-      box.style.setProperty('--live-k', String(Math.max(box.clientWidth / 1440, box.clientHeight / 900)));
+      box.style.setProperty('--live-k', String(Math.max(box.clientWidth / vw, box.clientHeight / vh)));
     });
     this.#fit.observe(this.opts.box);
     // Apps without the bridge (this site, opened in itself) are watched from here.

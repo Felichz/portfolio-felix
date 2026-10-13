@@ -15,7 +15,7 @@ export default {
   base: '/apps/knowgraph/',
   start: 'react',
   spa: true,
-  viewport: [1440, 900],
+  viewport: [1152, 720],
   clock: [15, 24],
   themeAttr: 'data-theme',
   readySelector: 'main',
@@ -56,7 +56,7 @@ export default {
     await s.wait(1700);
     await s.clickText(/^All\s*\d/, { rest: 160 });
     await s.wait(700);
-    await s.moveTo(1180, 860, 900);
+    await s.moveTo(944, 688, 900);
     await s.wait(1300);
   },
 };

@@ -104,7 +104,7 @@ const replay = `async #replay(a: Action) {
           <p>
             So every product on this site is shown by the product. The preview you watch in the showcase is the app’s own DOM, replayed.
             Once you start using the page, the real app boots underneath it and follows along; put your pointer on the preview and you’re
-            holding the app, in the state you were watching. Its green light opens it in a window at its own size. Five products work this
+            holding the app, in the state you were watching. Its green light opens it, larger, in a window. Five products work this
             way, plus this site, which can open a copy of itself inside itself.
           </p>
           <p>This is how it’s built, what broke along the way, and what it costs.</p>
@@ -258,7 +258,7 @@ const replay = `async #replay(a: Action) {
 
           <h2 id="window">A window around the app</h2>
           <p>
-            The green light opens the app in a window over the page, at its own size, laid out for that size like any browser window.
+            The green light opens the app in a window over the page: the preview, larger, with the same layout.
             <code>moveBefore</code> makes it cheap: unlike a regular DOM move, it keeps an iframe’s document alive, so the app you were
             using is the one that opens, mid-dialog if that’s where you were. The window’s lights stay on the side your pointer is on, and
             red and yellow close it, as on a Mac.
@@ -289,6 +289,12 @@ const replay = `async #replay(a: Action) {
             The fixes: a gentler curve, the pictures clipped to the window’s box, and one picture at a time, crossing over in 48 ms while
             the window is small. One more. On the way back, the window now lands where the preview will be once the page has stepped
             forward again, not where it is while the page is still stepped back. That last frame used to jump.
+          </p>
+          <p>
+            Two layouts crossing over still showed, and on a laptop the app read small in a window built at 1440 by 900. So every tape is
+            now recorded at 1152 by 720, and the app runs at that size in the preview and in the window alike, only scaled: the window has
+            the preview’s proportions, and the morph is a zoom of one picture, with nothing to reflow. In the window the app shows the
+            site’s own edition, so the page behind it matches; back in its preview, it takes the opposite one again, as it crosses over.
           </p>
 
           <h2 id="themes">Themes, in both directions</h2>

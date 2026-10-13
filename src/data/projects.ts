@@ -137,9 +137,9 @@ export const projects: Project[] = [
       tape: 'katarch',
     },
     callouts: [
-      { x: 51.6, y: 36.4, text: 'The anti-corruption layer: third-party formats are translated at the border, so the domain only sees its own model.' },
-      { x: 66.4, y: 48.6, text: 'One legend across every diagram: commands in blue, events in green, the domain in orange.' },
-      { x: 88.4, y: 10.4, text: 'Every diagram has a text version, for screen readers and for quick reading.' },
+      { x: 56.2, y: 40.4, text: 'The anti-corruption layer: third-party formats are translated at the border, so the domain only sees its own model.' },
+      { x: 69, y: 50.9, text: 'One legend across every diagram: commands in blue, events in green, the domain in orange.' },
+      { x: 88.4, y: 11.4, text: 'Every diagram has a text version, for screen readers and for quick reading.' },
     ],
     gallery: [
       themed('katarch-composition', 'KatArch system composition diagram: subsystems grouped by quality budget, with ordering and the menu catalog as centers of gravity.', { caption: 'System composition' }),
@@ -195,9 +195,9 @@ export const projects: Project[] = [
       tape: 'knowgraph',
     },
     callouts: [
-      { x: 18.4, y: 22.4, text: 'The suggested route: the next concept you’re ready for, and what it unlocks.' },
-      { x: 26.6, y: 64.4, text: 'Scores above 100 land in the gold excellence tier.' },
-      { x: 17.2, y: 29, text: 'Focus areas with mastered counts, one color per category.' },
+      { x: 23, y: 30.8, text: 'The suggested route: the next concept you’re ready for, and what it unlocks.' },
+      { x: 33.2, y: 83.3, text: 'Scores above 100 land in the gold excellence tier.' },
+      { x: 21.5, y: 36.3, text: 'Focus areas with mastered counts, one color per category.' },
     ],
     gallery: [
       themed('knowgraph-card', 'KnowGraph study card in its reading stage, set in a serif reading face with a code sample.', { caption: 'Study card, reading stage' }),
@@ -252,9 +252,9 @@ export const projects: Project[] = [
       tape: 'playsync',
     },
     callouts: [
-      { x: 74.8, y: 3.2, text: 'Live presence: who is here, and whether the room is watching together.' },
-      { x: 25.8, y: 3.2, text: 'The room code. No accounts, just share it.' },
-      { x: 71.6, y: 11, text: 'Chat, queue and people share one panel; on phones they become a bottom tab bar.' },
+      { x: 68.5, y: 4, text: 'Live presence: who is here, and whether the room is watching together.' },
+      { x: 31.4, y: 4, text: 'The room code. No accounts, just share it.' },
+      { x: 64.5, y: 13.8, text: 'Chat, queue and people share one panel; on phones they become a bottom tab bar.' },
     ],
     gallery: [
       themed('playsync-mobile', 'A PlaySync room on a phone, as a guest: the video, a view-only notice with a button to ask for control, and the chat.', { phone: true, caption: 'The guest, on a phone' }),
@@ -305,9 +305,9 @@ export const projects: Project[] = [
       tape: 'lifeui',
     },
     callouts: [
-      { x: 19, y: 12, text: 'Only one activity runs at a time, with its progress against its estimate or timebox.' },
-      { x: 73.6, y: 12.4, text: 'Tempos today, shown as a share of your reference: an anchor, never a debt.' },
-      { x: 26.2, y: 44, text: 'Quick start for pinned activities. Everything has a shortcut and a command palette.' },
+      { x: 23.6, y: 31.2, text: 'Only one activity runs at a time, with its progress against its estimate or timebox.' },
+      { x: 22.4, y: 17.4, text: 'Tempos today, shown as a share of your reference: an anchor, never a debt.' },
+      { x: 32.8, y: 70.8, text: 'Quick start for pinned activities. Everything has a shortcut and a command palette.' },
     ],
     gallery: [
       themed('lifeui-closing', 'LifeUI closing ritual: rate the activity from 0 to 10 and see the reward preview of +60 tempos.', { caption: 'Closing ritual' }),
@@ -361,9 +361,9 @@ export const projects: Project[] = [
       tape: 'lolimpact',
     },
     callouts: [
-      { x: 30.2, y: 46.5, text: 'Every probability is shown with its likely range, never alone.' },
-      { x: 93.6, y: 34, text: 'Hand-built SVG column: 50% and 95% bands around each minute, keyboard navigable.' },
-      { x: 80.5, y: 53, text: 'Lanes pulling the game at the selected minute. Unconfirmed pulls stay ash and dashed.' },
+      { x: 31.8, y: 63.8, text: 'Every probability is shown with its likely range, never alone.' },
+      { x: 94.7, y: 46.5, text: 'Hand-built SVG column: 50% and 95% bands around each minute, keyboard navigable.' },
+      { x: 85.5, y: 67.9, text: 'Lanes pulling the game at the selected minute. Unconfirmed pulls stay ash and dashed.' },
     ],
     gallery: [
       themed('lol-draft', 'LoLImpact draft tool with ten champion slots split between your team and the rival team.', { caption: 'Draft tool' }),
@@ -450,9 +450,9 @@ export const projects: Project[] = [
       tape: 'portfolio',
     },
     callouts: [
-      { x: 31, y: 22, text: 'The name is set one letter at a time, and widens toward the pointer along Archivo’s width axis.' },
-      { x: 2.4, y: 43, text: 'One gesture moves one section. These dots are the only navigation chrome.' },
-      { x: 76, y: 30, text: 'Two portraits, one per edition; only the visible one is downloaded.' },
+      { x: 32.5, y: 20.7, text: 'The name is set one letter at a time, and widens toward the pointer along Archivo’s width axis.' },
+      { x: 3, y: 42.3, text: 'One gesture moves one section. These dots are the only navigation chrome.' },
+      { x: 75.2, y: 31.6, text: 'Two portraits, one per edition; only the visible one is downloaded.' },
     ],
     gallery: [
       themed('portfolio-work', 'The work showcase with LifeUI selected: its preview, a tape of the app’s own DOM, is in the middle of the closing ritual.', { caption: 'A tape in the showcase' }),

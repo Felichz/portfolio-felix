@@ -53,17 +53,17 @@
       .tape-cursor svg { display: block; transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1); transform-origin: 4.6px 2.3px; }
       .tape-cursor.down svg { transform: scale(0.84); }
 
-      /* The live app runs under the tape at the recorded 1440x900, scaled like the tape: drawn, but
+      /* The live app runs under the tape at the tape's recorded size, scaled like the tape: drawn, but
          covered. So it's rasterized while it boots and follows, and the compositor skips what the
          opaque tape covers; going live only hides the tape, with nothing left to paint for the first
          time. (At opacity 0 the app was never rasterized until the swap, which then paid for it.)
-         In a window it's laid out at the stage's own size, 1:1. */
+         In a window too: the window has the tape's proportions, and the app only scales. */
       .live-app {
         position: absolute;
         top: 0;
         left: 0;
-        width: 1440px;
-        height: 900px;
+        width: var(--live-w, 1152px);
+        height: var(--live-h, 720px);
         border: 0;
         transform-origin: 0 0;
         transform: scale(var(--live-k, 1));
@@ -72,7 +72,6 @@
       tape-core { z-index: 1; }
       .live-app.shown { pointer-events: auto; }
       html:has(.live-app.shown) tape-core { visibility: hidden; }
-      html[data-window] .live-app { width: 100%; height: 100%; transform: none; }
     </style>
   </head>
   <body>

@@ -87,7 +87,7 @@ function seed() {
 export default {
   base: '/apps/lifeui/',
   spa: true,
-  viewport: [1440, 900],
+  viewport: [1152, 720],
   clock: [15, 24],
   themeAttr: 'data-theme',
   readySelector: 'main h1',
@@ -130,7 +130,7 @@ export default {
     await s.page.mouse.up();
     await s.wait(5200);
     await s.checkpoint('reading');
-    await s.moveTo(1010, 640, 1100);
+    await s.moveTo(808, 512, 1100);
     await s.wait(900);
   },
 };

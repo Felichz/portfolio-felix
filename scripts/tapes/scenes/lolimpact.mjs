@@ -11,7 +11,7 @@ export default {
   base: '/apps/lolimpact/',
   start: '?rid=LP%20Felix%23LAS&region=LAS#/partidas/LA2_1626772172',
   spa: true,
-  viewport: [1440, 900],
+  viewport: [1152, 720],
   clock: [15, 24],
   themeAttr: 'data-theme',
   readySelector: 'article.detail',
@@ -46,7 +46,7 @@ export default {
       await s.clickText(new RegExp(`^${dir} min$`), { rest: i && steps[i - 1] === dir ? 60 : 200 });
       await s.wait(760);
     }
-    await s.moveTo(1150, 640, 900);
+    await s.moveTo(920, 512, 900);
     await s.wait(1000);
   },
 };
