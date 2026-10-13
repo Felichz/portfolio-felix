@@ -189,10 +189,11 @@ const { panels, home } = Astro.props;
 
   /**
    * Switches the site's theme: the new edition fades in over the whole page. A live app on the page
-   * (src/scripts/live.ts) passes on a theme it switched itself through this too.
+   * (src/scripts/live.ts) passes on a theme it switched itself through this too. `instant` flips it with
+   * no motion of its own, for a caller that animates the change itself (a window's morph).
    */
   let busy = false;
-  const switchTheme = () => {
+  const switchTheme = ({ instant = false } = {}) => {
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     // Recordings hand off to the other edition's video on the same frame (src/scripts/handoff.ts);
     // the new edition shows once they're on it, or after a short cap.
@@ -217,7 +218,7 @@ const { panels, home } = Astro.props;
     const reveal = () => document.dispatchEvent(new CustomEvent('theme:reveal'));
     if (busy) return;
     const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-theme-switching')));
-    if (reduce) {
+    if (reduce || instant) {
       root.setAttribute('data-theme-switching', '');
       void apply();
       reveal();

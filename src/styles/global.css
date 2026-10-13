@@ -134,6 +134,11 @@
    opacity: compositor work only. */
 :root.live-vt, :root.live-vt :is(.bar, .plate, .slide-name, .ov-name) { view-transition-name: none !important; }
 :root.live-vt .live-vt-shape { view-transition-name: live-window !important; }
+/* The site switches theme with the morph (live.ts): the page is captured too, and its two editions
+   cross-fade on the morph's curve. */
+:root.live-vt.live-vt-theme { view-transition-name: root !important; }
+:root.live-vt-theme::view-transition-old(root),
+:root.live-vt-theme::view-transition-new(root) { animation-duration: var(--live-d); animation-timing-function: var(--live-ease); }
 :root.live-vt::view-transition-group(live-window) {
   animation-duration: var(--live-d);
   animation-timing-function: var(--live-ease);

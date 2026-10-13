@@ -39,7 +39,7 @@ const canMove = 'moveBefore' in Element.prototype;
 declare global {
   interface Window {
     /** The site's theme switch (Bar.astro): the new edition fades in over the whole page. */
-    __faTheme?: () => void;
+    __faTheme?: (opts?: { instant?: boolean }) => void;
   }
   interface Element {
     moveBefore(node: Node, child: Node | null): void;
@@ -358,22 +358,30 @@ async function zoom(plate: HTMLElement) {
    * cropped by the window, never snapping into place, all of it compositor work. On the way back the
    * window lands where the plate will be once the page is forward again, not where it is when the
    * transition starts (still stepped back), so nothing moves when it ends.
+   *
+   * The site's theme switches with it, both ways: a preview shows the app in the other edition from
+   * the site, but a window takes the screen, so there the app shows the edition the visitor was reading
+   * in, and back in its preview the site takes the edition the app had in its window. The switch is
+   * part of the same transition: the page is captured too, and its two editions cross-fade on the
+   * morph's curve while the window's two pictures do.
    */
   const morph = async (open: boolean, duration: number, page: Animation[], land?: DOMRect) => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
     if (!doc.startViewTransition || reduce.matches) {
       swap(open);
+      window.__faTheme?.({ instant: true });
       page.forEach((a) => a.play());
       return;
     }
     root.style.setProperty('--live-d', `${duration}ms`);
     root.style.setProperty('--live-ease', CURVE);
-    root.classList.add('live-vt', open ? 'live-vt-in' : 'live-vt-out');
+    root.classList.add('live-vt', 'live-vt-theme', open ? 'live-vt-in' : 'live-vt-out');
     (open ? plate : win).classList.add('live-vt-shape');
     const vt = doc.startViewTransition(() => {
       swap(open);
       plate.classList.toggle('live-vt-shape', !open);
       win.classList.toggle('live-vt-shape', open);
+      window.__faTheme?.({ instant: true });
     });
     await vt.ready.catch(() => {});
     page.forEach((a) => a.play());
@@ -389,7 +397,7 @@ async function zoom(plate: HTMLElement) {
       }
     }
     await vt.finished.catch(() => {});
-    root.classList.remove('live-vt', 'live-vt-in', 'live-vt-out');
+    root.classList.remove('live-vt', 'live-vt-theme', 'live-vt-in', 'live-vt-out');
     plate.classList.remove('live-vt-shape');
     win.classList.remove('live-vt-shape');
   };
@@ -413,10 +421,6 @@ async function zoom(plate: HTMLElement) {
   const steps = stepping(true, FLIGHT);
   await morph(true, FLIGHT, steps);
   overlay.classList.add('landed');
-  // The window takes the screen, so the app takes the site's edition: previews show the other one,
-  // and once landed the site switches, which turns the app to the edition the visitor was reading in.
-  // Closing switches back (see close): the site takes the edition the app had in its window.
-  window.__faTheme?.();
 
   // ---- Leaving
   let closing = false;
@@ -442,7 +446,6 @@ async function zoom(plate: HTMLElement) {
     returns.forEach((a) => a.cancel());
     layers.forEach((el) => (el.style.transformOrigin = ''));
     overlay.remove();
-    window.__faTheme?.();
     removeEventListener('wheel', onWheel, true);
     removeEventListener('keydown', onScrollKey, true);
     document.removeEventListener('focusin', onFocus);
