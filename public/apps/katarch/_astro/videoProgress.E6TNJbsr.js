@@ -1,0 +1,1 @@
+var e=`katarch:video:progress`;function t(){try{return JSON.parse(localStorage.getItem(e)||`{}`)}catch{return{}}}function n(n,r,i){try{let a=t(),o=(a[n]?.done??!1)||i>0&&r>=i*.95;a[n]={t:o&&r>=i-1?0:r,d:i,done:o},localStorage.setItem(e,JSON.stringify(a))}catch{}}export{n,t};

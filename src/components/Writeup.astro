@@ -11,9 +11,9 @@ const self = byId('portfolio')!;
 const host = (url: string) => new URL(url).host;
 
 const sizes = [
-  { name: 'KatArch', video: '1.9 MB', tape: '59 KB' },
-  { name: 'KnowGraph', video: '2.3 MB', tape: '55 KB' },
-  { name: 'PlaySync', video: '6.6 MB', tape: '20 KB', note: '+ a 174 KB clip of its YouTube player' },
+  { name: 'KatArch', video: '1.9 MB', tape: '68 KB' },
+  { name: 'KnowGraph', video: '2.3 MB', tape: '72 KB' },
+  { name: 'PlaySync', video: '6.6 MB', tape: '22 KB', note: '+ a 333 KB clip of its YouTube player' },
   { name: 'LifeUI', video: '2.5 MB', tape: '46 KB' },
   { name: 'LoLImpact', video: '4.4 MB', tape: '41 KB', note: '+ 59 KB of API answers, fetched when the app boots' },
 ];
@@ -583,8 +583,8 @@ const cp = [...tape.checkpoints].reverse().find((c) => c.t <= t) ?? tape.checkpo
         0 ms, no layout shift. Best practices lost only the two HTTPS checks, which a local server can’t pass and the deployment does.
       </p>
       <p>
-        The five products’ previews went from 17.7 MB of video to 221 KB of tapes, gzipped, plus PlaySync’s clip. The copied builds add
-        12.9 MB to the deployment; an app’s code is fetched only once you’ve started using the page and its preview is on screen. Before that, a showcase in view
+        The five products’ previews went from 17.7 MB of video to 248 KB of tapes, gzipped, plus PlaySync’s clip. The copied builds add
+        15 MB to the deployment; an app’s code is fetched only once you’ve started using the page and its preview is on screen. Before that, a showcase in view
         loads its stage, the tapes on screen and the fonts their stylesheets ask for.
       </p>
 

@@ -101,15 +101,16 @@ export const projects: Project[] = [
     year: '2026',
     tagline:
       'An interactive course that replays, decision by decision, how the winning team of O’Reilly’s Fall 2020 Architecture Kata designed their system.',
-    proof: '6 chapters, ~80 steps, 49 animated diagram scenes, 39 source documents',
-    live: 'https://katarch.vercel.app/',
+    proof: '11 chapters, 151 steps, 87 animated diagram scenes, 39 source documents',
+    // The written course, which this case study shows; the site's default is now its video edition.
+    live: 'https://texto.katarch.workers.dev/',
     source: 'https://github.com/Felichz/katarch',
     role: 'Solo: research, writing, design and frontend',
-    stack: ['Astro', 'React islands', 'TypeScript', 'Motion', 'Hand-written CSS', 'Vercel'],
-    scale: ['66 commits', '6 chapters, ~80 steps', '49 diagram scenes', 'Light and dark'],
+    stack: ['Astro', 'React islands', 'TypeScript', 'Motion', 'Hand-written CSS', 'Cloudflare Workers'],
+    scale: ['117 commits', '11 chapters, 151 steps', '87 diagram scenes', 'Light and dark'],
     story: [
       'I wanted to learn software architecture from a real case instead of a textbook, so I turned the winning solution of O’Reilly’s Fall 2020 Architecture Kata into a course. One idea per screen, in the order the team actually made each decision, with every claim linked to their original repository.',
-      'One rule shaped everything: no concept, diagram or ADR appears before the problem that motivated it. The diagrams assemble step by step, and some of them are small working simulations you can poke at, like a 30-second undo window or an offline PIN pickup.',
+      'One rule shaped everything: no concept, diagram or ADR appears before the problem that motivated it. The diagrams assemble step by step, and some of them are small working simulations you can poke at, like a 30-second undo window or an offline PIN pickup. The same research now also runs as a narrated video course, the site’s default edition; the written course has its own address.',
     ],
     highlights: [
       {
@@ -137,9 +138,9 @@ export const projects: Project[] = [
       tape: 'katarch',
     },
     callouts: [
-      { x: 56.2, y: 40.4, text: 'The anti-corruption layer: third-party formats are translated at the border, so the domain only sees its own model.' },
-      { x: 69, y: 50.9, text: 'One legend across every diagram: commands in blue, events in green, the domain in orange.' },
-      { x: 88.4, y: 11.4, text: 'Every diagram has a text version, for screen readers and for quick reading.' },
+      { x: 57, y: 26.5, text: 'The anti-corruption layer: third-party formats are translated at the border, so the domain only sees its own model.' },
+      { x: 69.5, y: 13.9, text: 'One legend across every diagram: commands in blue, events in green, the domain in orange.' },
+      { x: 91.8, y: 16.8, text: 'Every diagram has a text version, for screen readers and for quick reading, and links to the team’s original document.' },
     ],
     gallery: [
       themed('katarch-composition', 'KatArch system composition diagram: subsystems grouped by quality budget, with ordering and the menu catalog as centers of gravity.', { caption: 'System composition' }),
@@ -383,7 +384,7 @@ export const projects: Project[] = [
     source: 'https://github.com/Felichz/portfolio-felix',
     role: 'Solo: design, frontend and the recording pipeline',
     stack: ['Astro', 'TypeScript', 'Hand-written CSS', 'Custom elements', 'Web Animations API', 'View Transitions', 'Puppeteer and the Chrome DevTools Protocol', 'Vercel'],
-    scale: ['~7,900 lines of TypeScript, Astro, CSS and scripts', '9 components', '6 tapes, 221 KB gzipped for the five products', 'Light and dark'],
+    scale: ['~7,900 lines of TypeScript, Astro, CSS and scripts', '9 components', '6 tapes, 248 KB gzipped for the five products', 'Light and dark'],
     story: [
       'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one fixed window, sections that move one at a time, and an ambient light that takes the color of whatever you’re looking at.',
       'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. Every preview is now a tape instead, the product’s own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Once you’re using the page, the real app runs under the preview and keeps up with it. Put your pointer on it and it’s the app, in the state you were watching; its green light opens it in a window, still live.',
@@ -435,7 +436,7 @@ export const projects: Project[] = [
         },
       ],
       numbers: [
-        { value: '221 KB', label: 'the five products’ tapes, gzipped, in place of 17.7 MB of video' },
+        { value: '248 KB', label: 'the five products’ tapes, gzipped, in place of 17.7 MB of video' },
         { value: '224 → 32 ms', label: 'of style work over three product changes at 4x CPU, after one computed-style read went' },
         { value: '100', label: 'Lighthouse accessibility, best practices and SEO, in every run with live apps in place' },
         { value: '235 fps', label: 'with the cursor light on, after moving it off a full-window canvas (82 before)' },

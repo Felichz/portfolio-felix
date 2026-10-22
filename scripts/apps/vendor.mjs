@@ -19,8 +19,10 @@ export const APPS = {
     build: (out) => ['npx', ['vite', 'build', '--base', '/apps/lifeui/', '--outDir', out, '--emptyOutDir']],
   },
   katarch: {
-    // github.com/Felichz/katarch: the course is the Astro site in v2/, already base-aware.
-    repo: resolve(root, '../katarch/v2'),
+    // github.com/Felichz/katarch: the written course, the site's PUBLIC_EDITION=texto build (the default
+    // build is the video course), already base-aware.
+    repo: resolve(root, '../katarch'),
+    env: { PUBLIC_EDITION: 'texto' },
     build: (out) => ['npx', ['astro', 'build', '--base', '/apps/katarch/', '--outDir', out]],
     // A few content strings point at /img/ on the site root.
     rewrite: [[/(["'(=]|\\")\/img\//g, '$1/apps/katarch/img/']],
