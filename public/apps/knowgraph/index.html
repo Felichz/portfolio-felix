@@ -211,19 +211,27 @@
 </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#100E0C" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nAgG2qaMj2XnOa3PlVQtkNpsKC0fR6RgfoDloObDbiI=' 'sha256-XEYkRQBG76W6GOEmCV+Q+iplhMws5h1uZpvrV38fcDE='; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <meta name="theme-color" content="#0E1117" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-kkWPNMdv3Q3Uk2RalS4XJYVpSn3uHvfduLvjrQ1GytA=' 'sha256-XEYkRQBG76W6GOEmCV+Q+iplhMws5h1uZpvrV38fcDE='; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
     <!-- Theme before first paint: saved choice (localStorage "knowgraph:theme") or the system setting. The CSP allows this exact script by hash; tests/logic/theme.mjs checks it. -->
-    <script>(function(){var t;try{t=localStorage.getItem("knowgraph:theme")}catch(e){}if(t!=="light"&&t!=="dark")t=window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#F7F4EF":"#100E0C"})()</script>
-    <style>html{background:#100E0C;color-scheme:dark}html[data-theme="light"]{background:#F7F4EF;color-scheme:light}</style>
+    <script>(function(){var t;try{t=localStorage.getItem("knowgraph:theme")}catch(e){}if(t!=="light"&&t!=="dark")t=window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#F6F7F9":"#0E1117"})()</script>
+    <style>html{background:#0E1117;color-scheme:dark}html[data-theme="light"]{background:#F6F7F9;color-scheme:light}</style>
     <link rel="manifest" href="/apps/knowgraph/manifest.json" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><circle cx=%2232%22 cy=%2232%22 r=%2228%22 fill=%22%230b0d13%22 stroke=%22%2361dafb%22 stroke-width=%224%22/><circle cx=%2232%22 cy=%2232%22 r=%226%22 fill=%22%2361dafb%22/></svg>" />
     <meta name="description" content="Study workspace for senior React and Rails interviews: a concept dependency graph, study cards and an AI mentor that grades your explanations." />
     <title>Learning Workspace: React and Rails interview maps</title>
-    <script type="module" crossorigin src="/apps/knowgraph/assets/index-BHFdpvl5.js"></script>
-    <link rel="stylesheet" crossorigin href="/apps/knowgraph/assets/index-STLaw7IX.css">
+    <script type="module" crossorigin src="/apps/knowgraph/assets/index-CJZnutg3.js"></script>
+    <link rel="stylesheet" crossorigin href="/apps/knowgraph/assets/index-BnhFPFRa.css">
   </head>
   <body>
+    <!--
+    THESIS: The curriculum is a heat grid of concept cells that light up in their area's colour as you master them; it refuses the dark-graphite-plus-one-accent productivity look.
+    OWN-WORLD: Cool ink/paper neutrals; eleven owned area hues used as fields (cells, swatches, tinted cards), never only dots; interaction in pure ink/paper contrast with no brand accent; square cells, 4-8px radii; Bricolage Grotesque display, Figtree UI and reading, JetBrains Mono figures.
+    STORY: At a glance the learner sees which areas are lit and which are dark, finds the NOW cell and continues; more colour means more mastered.
+    FIRST VIEWPORT: Map: full-width "Your map" grid (one row per area: swatch, name, mastered count, a row of cells) with the NOW cell ringed; Continue tiles below, primary action in the best-next tile. Mobile exception (cited in DESIGN.md): Continue comes first, the grid right after, because the product's core job is "where do I continue".
+    FORM: Heat grid, 3rd of 7 (transit map, periodic table, heat grid, index-card catalogue, Swiss colour fields, whiteboard, skill tree); seed c2b6d70f.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
     <div id="root"></div>
   </body>
 </html>
