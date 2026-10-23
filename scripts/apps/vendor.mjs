@@ -19,13 +19,17 @@ export const APPS = {
     build: (out) => ['npx', ['vite', 'build', '--base', '/apps/lifeui/', '--outDir', out, '--emptyOutDir']],
   },
   katarch: {
-    // github.com/Felichz/katarch: the written course, the site's PUBLIC_EDITION=texto build (the default
-    // build is the video course), already base-aware.
+    // github.com/Felichz/katarch: the video course (its videos stream from R2).
     repo: resolve(root, '../katarch'),
-    env: { PUBLIC_EDITION: 'texto' },
     build: (out) => ['npx', ['astro', 'build', '--base', '/apps/katarch/', '--outDir', out]],
-    // A few content strings point at /img/ on the site root.
-    rewrite: [[/(["'(=]|\\")\/img\//g, '$1/apps/katarch/img/']],
+    // Its links and posters point at the site root (/curso/..., the brand at /, old routes redirect
+    // to /): here they live under /apps/katarch/. In an island's props the quotes are &quot;.
+    rewrite: [
+      [/(["'`(=]|\\"|&quot;)\/curso\//g, '$1/apps/katarch/curso/'],
+      [/href="\/"/g, 'href="/apps/katarch/"'],
+      [/location\.replace\('\/'\)/g, "location.replace('/apps/katarch/')"],
+      [/url=\/"/g, 'url=/apps/katarch/"'],
+    ],
   },
   knowgraph: {
     // A worktree of github.com/Felichz/KnowGraph on the portfolio-embed branch, which makes its routes

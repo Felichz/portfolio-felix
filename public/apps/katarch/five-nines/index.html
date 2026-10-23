@@ -1,0 +1,210 @@
+<!DOCTYPE html><html lang="es"><head>
+    <script data-app="katarch">/*
+ * Portfolio bridge, inlined at the top of each vendored app's index.html (scripts/apps/vendor.mjs).
+ * Inert unless the app runs inside the portfolio (src/scripts/live.ts), which leaves a handoff for it in
+ * `window.__live[<app>]` before creating its frame. Then, before any of the app's code runs, the
+ * app's time belongs to the portfolio:
+ * - Date reads a clock the portfolio sets: frozen at the checkpoint's recorded moment while the app
+ *   boots, moved to each recorded click's moment while the scene's clicks are replayed, and released at
+ *   the frame the preview froze on as the app appears, running from there.
+ * - setTimeout and setInterval run on that clock. Moving it forward fires what fell due, the way the
+ *   recording lived through it (a toast that had time to leave leaves); while it's frozen, nothing
+ *   timed fires early.
+ * - Its backend answers as it did while the scene was recorded: fetches the scene made get the
+ *   recorded responses (anything else goes to the network as usual).
+ * - Once the app has painted its first screen, the portfolio is told.
+ * The app's own state (localStorage) was already seeded by the portfolio, same origin.
+ */
+(function () {
+  var handoff;
+  try {
+    handoff = window.parent !== window && window.parent.__live && window.parent.__live[document.currentScript.dataset.app];
+  } catch (e) {}
+  if (!handoff) return;
+
+  // ---- The route, for a single-page app loaded from its index.html: set once, before its code runs.
+  if (handoff.route) {
+    history.replaceState(history.state, '', handoff.route);
+    handoff.route = undefined;
+  }
+
+  // ---- The clock
+  var RealDate = Date;
+  var base = handoff.clock;
+  var realBase = RealDate.now();
+  var frozen = true;
+  // A later page of an app of several pages picks up the clock where the last one left it, running.
+  if (handoff.running) {
+    base = realBase + handoff.offset;
+    frozen = false;
+  }
+  var now = function () {
+    return frozen ? base : base + (RealDate.now() - realBase);
+  };
+  class ShiftedDate extends RealDate {
+    constructor() {
+      if (arguments.length === 0) super(now());
+      else super(...arguments);
+    }
+    static now() {
+      return now();
+    }
+  }
+  // `Date()` called without `new` returns a string.
+  window.Date = new Proxy(ShiftedDate, {
+    apply: function () {
+      return new ShiftedDate().toString();
+    },
+  });
+
+  // ---- Timers on that clock
+  var realSetTimeout = window.setTimeout.bind(window);
+  var realClearTimeout = window.clearTimeout.bind(window);
+  var timers = new Map();
+  var seq = 1e6;
+  var schedule = function (t) {
+    if (t.real !== null) realClearTimeout(t.real);
+    var wait = t.due - now();
+    // Frozen time doesn't bring anything due; it waits for the clock to move.
+    t.real = frozen && wait > 0 ? null : realSetTimeout(fire, Math.max(0, wait), t);
+  };
+  var fire = function (t) {
+    if (!timers.has(t.id)) return;
+    if (t.every) {
+      t.due += t.every;
+      if (t.due < now()) t.due = now() + t.every;
+      schedule(t);
+    } else timers.delete(t.id);
+    if (typeof t.fn === 'function') t.fn.apply(window, t.args);
+  };
+  var add = function (fn, delay, args, every) {
+    var t = { id: ++seq, fn: fn, args: args, every: every, due: now() + Math.max(0, Number(delay) || 0), real: null };
+    timers.set(t.id, t);
+    schedule(t);
+    return t.id;
+  };
+  var drop = function (id) {
+    var t = timers.get(id);
+    if (!t) return;
+    if (t.real !== null) realClearTimeout(t.real);
+    timers.delete(id);
+  };
+  window.setTimeout = function (fn, delay) {
+    return add(fn, delay, Array.prototype.slice.call(arguments, 2), 0);
+  };
+  window.setInterval = function (fn, delay) {
+    return add(fn, delay, Array.prototype.slice.call(arguments, 2), Math.max(1, Number(delay) || 0));
+  };
+  window.clearTimeout = window.clearInterval = drop;
+
+  /**
+   * Sets the clock to `ms`, frozen or running; moving forward fires whatever fell due on the way. With
+   * `tick`, every interval runs once now, so anything that shows the time redraws at the new time.
+   */
+  handoff.setClock = function (ms, freeze, tick) {
+    base = ms;
+    realBase = RealDate.now();
+    frozen = !!freeze;
+    handoff.running = !freeze;
+    handoff.offset = ms - realBase;
+    timers.forEach(schedule);
+    if (tick)
+      timers.forEach(function (t) {
+        if (t.every && typeof t.fn === 'function') t.fn.apply(window, t.args);
+      });
+  };
+
+  // ---- Frames. While nobody can see the app (held), requestAnimationFrame callbacks wait instead of
+  // running: an unseen app paints nothing. Otherwise they run on the browser's own frames, with the
+  // browser's own timestamp, untouched: an app animates at the display's rate, as it would anywhere.
+  var realRaf = window.requestAnimationFrame.bind(window);
+  var realCaf = window.cancelAnimationFrame.bind(window);
+  var held = false;
+  var waiting = new Map();
+  var rafSeq = 1e6;
+  window.requestAnimationFrame = function (cb) {
+    if (!held) return realRaf(cb);
+    var id = ++rafSeq;
+    waiting.set(id, cb);
+    return id;
+  };
+  window.cancelAnimationFrame = function (id) {
+    if (waiting.delete(id)) return;
+    realCaf(id);
+  };
+  var release = function () {
+    var cbs = Array.from(waiting.values());
+    waiting.clear();
+    cbs.forEach(function (cb) {
+      realRaf(cb);
+    });
+  };
+
+  /**
+   * Holds the clock where it is (nothing timed fires) while nobody can see the app, or lets it run on
+   * from there; a clock that was frozen stays frozen.
+   */
+  var heldFrozen = null;
+  handoff.hold = function (on) {
+    if (on) {
+      if (heldFrozen !== null) return;
+      heldFrozen = frozen;
+      base = now();
+      realBase = RealDate.now();
+      frozen = true;
+    } else {
+      if (heldFrozen === null) return;
+      realBase = RealDate.now();
+      frozen = heldFrozen;
+      heldFrozen = null;
+    }
+    held = !!on;
+    timers.forEach(schedule);
+    if (!held) release();
+  };
+
+  // ---- The backend, as the scene got it
+  if (handoff.network && handoff.network.length) {
+    var answers = {};
+    handoff.network.forEach(function (x) {
+      answers[x.m + ' ' + x.u] = x;
+    });
+    var keyOf = function (method, url) {
+      var u = new URL(url, location.href);
+      return method.toUpperCase() + ' ' + (u.origin === location.origin ? u.pathname + u.search : u.href);
+    };
+    var realFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      var req = typeof Request !== 'undefined' && input instanceof Request ? input : null;
+      var method = (init && init.method) || (req && req.method) || 'GET';
+      var x = answers[keyOf(method, req ? req.url : String(input))];
+      if (!x) return realFetch(input, init);
+      return Promise.resolve(new Response(x.b, { status: x.s, headers: { 'content-type': x.h } }));
+    };
+  }
+
+  // ---- Ready: the first screen is in the DOM, its fonts are loaded, and it has been painted.
+  var report = function () {
+    document.fonts.ready.then(function () {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          handoff.ready();
+        });
+      });
+    });
+  };
+  var check = function () {
+    if (!document.querySelector(handoff.readySelector)) return false;
+    report();
+    return true;
+  };
+  document.addEventListener('DOMContentLoaded', function () {
+    if (check()) return;
+    var watch = new MutationObserver(function () {
+      if (check()) watch.disconnect();
+    });
+    watch.observe(document.body, { childList: true, subtree: true });
+  });
+})();
+</script><meta charset="utf-8"><title>KatArch</title><meta name="robots" content="noindex"><link rel="canonical" href="https://katarch.vercel.app/"><script>(function(){const to = "/";
+location.replace(to + location.hash);})();</script><meta http-equiv="refresh" content="0; url=/apps/katarch/"><link rel="stylesheet" href="/apps/katarch/_astro/videoProgress.CtJtB4Bw.css"></head><body><p>Esta página se mudó a <a href="/apps/katarch/">/</a></p></body></html>

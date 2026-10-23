@@ -669,13 +669,15 @@ export class TapeCore extends HTMLElement {
 /**
  * Added to every tape's stylesheet: no text caret, nothing shows a pointer cursor, and no media
  * controls (a document without scripts gets them forced on its videos: a filmed clip showed them
- * once paused at its end). The frame itself
+ * once paused at its end), and no scrollbar on the page itself (scenes are recorded without one). The
+ * frame itself
  * never receives real pointer events (it's aria-hidden and its element takes none), but the document
  * stays hit-testable for the ghost (hover()).
  */
 const TAPE_CSS = `
 * { caret-color: transparent !important; cursor: default !important; }
 video::-webkit-media-controls { display: none !important; }
+html { scrollbar-width: none; }
 `;
 
 if (!customElements.get('tape-core')) customElements.define('tape-core', TapeCore);

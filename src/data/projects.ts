@@ -95,61 +95,57 @@ export interface Project {
 export const projects: Project[] = [
   {
     id: 'katarch',
-    short: 'An architecture course, replayed decision by decision',
+    short: 'An architecture course, narrated over animated diagrams',
     name: 'KatArch',
     face: 'face-inter',
     year: '2026',
     tagline:
-      'An interactive course that replays, decision by decision, how the winning team of O’Reilly’s Fall 2020 Architecture Kata designed their system.',
-    proof: '11 chapters, 151 steps, 87 animated diagram scenes, 39 source documents',
-    // The written course, which this case study shows; the site's default is now its video edition.
-    live: 'https://texto.katarch.workers.dev/',
+      'A narrated video course on software architecture, built from what the twelve winning teams of the Architecture Katas left in writing.',
+    proof: '17 blocks, 73 minutes, Spanish and English, 102 animated scenes',
+    live: 'https://katarch.vercel.app/',
     source: 'https://github.com/Felichz/katarch',
-    role: 'Solo: research, writing, design and frontend',
-    stack: ['Astro', 'React islands', 'TypeScript', 'Motion', 'Hand-written CSS', 'Cloudflare Workers'],
-    scale: ['117 commits', '11 chapters, 151 steps', '87 diagram scenes', 'Light and dark'],
+    role: 'Solo: research, scripts, animation and frontend',
+    stack: ['Astro', 'React islands', 'TypeScript', 'HyperFrames', 'GSAP', 'ElevenLabs', 'Cloudflare R2'],
+    scale: ['120 commits', '17 blocks, 73 minutes', '102 animated scenes', 'Spanish and English'],
     story: [
-      'I wanted to learn software architecture from a real case instead of a textbook, so I turned the winning solution of O’Reilly’s Fall 2020 Architecture Kata into a course. One idea per screen, in the order the team actually made each decision, with every claim linked to their original repository.',
-      'One rule shaped everything: no concept, diagram or ADR appears before the problem that motivated it. The diagrams assemble step by step, and some of them are small working simulations you can poke at, like a 30-second undo window or an offline PIN pickup. The same research now also runs as a narrated video course, the site’s default edition; the written course has its own address.',
+      'I wanted to learn software architecture from real cases instead of a textbook. The Architecture Katas, presented by Neal Ford and Mark Richards, are a contest where teams design a system from a real request and a jury picks the winner. The course is built from what the twelve winning teams left in writing, and every case in it comes from one of them.',
+      'It runs in two acts. The first is how a decision is made: what makes it architectural, which qualities matter, how a trade-off gets written down. The second walks the territory, one region per block, with the families of solutions that exist there and two winners who chose differently. One rule holds throughout: no concept appears before the case that needs it.',
     ],
     highlights: [
       {
-        title: 'Diagrams that morph instead of reloading',
-        body: 'Chapters are typed lists of steps. When consecutive steps share a scene, the same React component stays mounted and only its state changes, so the diagram builds up in place.',
+        title: 'Scenes timed to the voice',
+        body: 'Each block is a HyperFrames composition, HTML animated with GSAP. Animations are anchored to words of the narration instead of fixed seconds, so when a take is regenerated the scene follows the new timing.',
       },
       {
-        title: 'A small SVG animation kit',
-        body: 'Spring-animated nodes, edges that draw themselves, message packets that travel along paths, and one color legend for commands, events, stateful components and failures.',
+        title: 'Captions drawn by the player',
+        body: 'Subtitles are not burned into the video. The player draws them from word timings, marking each word as it is spoken, in the size and style the viewer picks and keeps.',
       },
       {
-        title: 'Readable without the visuals',
-        body: 'Keyboard and swipe navigation, a deep link per step, an aria-live announcer, reduced-motion fallbacks and a text version of every diagram. Each page ships only the concepts its chapter uses.',
+        title: 'One player, two languages',
+        body: 'Sections on the progress bar, a transcript that follows the narration and seeks on click, keyboard controls and saved progress. Switching the language swaps the video and picks up at the same point of the block.',
       },
     ],
     typefaces: ['Inter', 'JetBrains Mono'],
-    palette: ['#0B0E13', '#FF7A45', '#6EA2FF', '#3FD694', '#B69BFF'],
+    palette: ['#0B0E13', '#F6F5F1', '#FF7A45', '#D9480F', '#E8ECF2'],
     language: 'English and Spanish',
     accent: { light: '#C2410C', dark: '#FF7A45', onLight: '#FFFFFF', onDark: '#1A0D06' },
     main: {
       ...themed(
         'katarch-main',
-        'KatArch, chapter 5, step 5: the Menu Catalog service diagram. Kitchen, loyalty and point-of-sale systems enter through an anti-corruption layer that translates their formats; the domain emits a stock-updated event to cart, recommendations, reviews and filtering.',
+        'KatArch, block 1, What Makes a Decision Architectural, in English: the player paused on the ClearView diagram with its four services, the transcript open beside it, and the block’s title and summary below.',
       ),
       tape: 'katarch',
     },
     callouts: [
-      { x: 57, y: 26.5, text: 'The anti-corruption layer: third-party formats are translated at the border, so the domain only sees its own model.' },
-      { x: 69.5, y: 13.9, text: 'One legend across every diagram: commands in blue, events in green, the domain in orange.' },
-      { x: 91.8, y: 16.8, text: 'Every diagram has a text version, for screen readers and for quick reading, and links to the team’s original document.' },
+      { x: 48.3, y: 62.6, text: 'Captions are drawn by the player from word timings, so they can be turned off, resized or restyled.' },
+      { x: 70, y: 22.4, text: 'The transcript follows the narration; any line jumps the video to it.' },
+      { x: 90, y: 4.1, text: 'Spanish or English: switching keeps your place in the block.' },
     ],
     gallery: [
-      themed('katarch-composition', 'KatArch system composition diagram: subsystems grouped by quality budget, with ordering and the menu catalog as centers of gravity.', { caption: 'System composition' }),
-      moving(
-        themed('katarch-undo', 'KatArch simulator of a 30-second undo window: an order held in memory at 10 of 30 seconds before reaching the payment gateway.', { caption: 'A working simulation' }),
-        'katarch-undo',
-      ),
-      themed('katarch-valuemap', 'KatArch value map from ADR 002: four architecture styles scored against ten quality attributes.', { caption: 'ADR value map' }),
-      themed('katarch-mobile', 'KatArch on a phone: the same diagram stacked above the explanation.', { phone: true, caption: 'On a phone' }),
+      themed('katarch-map', 'KatArch course index: The Architecture Map, 17 blocks in Spanish and English, with the opening block and a progress summary.', { caption: 'The course map' }),
+      themed('katarch-playing', 'KatArch block 1 playing in English: a caption over the diagram of the shared database, and the list of sections with the current one marked.', { caption: 'A block playing' }),
+      themed('katarch-transcript', 'KatArch block 1 playing with its transcript open, the current paragraph marked as it is spoken.', { caption: 'The transcript follows' }),
+      themed('katarch-mobile', 'KatArch on a phone: the player on top with its caption, then the block’s title, summary and what you take away.', { phone: true, caption: 'On a phone' }),
     ],
   },
   {
@@ -384,7 +380,7 @@ export const projects: Project[] = [
     source: 'https://github.com/Felichz/portfolio-felix',
     role: 'Solo: design, frontend and the recording pipeline',
     stack: ['Astro', 'TypeScript', 'Hand-written CSS', 'Custom elements', 'Web Animations API', 'View Transitions', 'Puppeteer and the Chrome DevTools Protocol', 'Vercel'],
-    scale: ['~7,900 lines of TypeScript, Astro, CSS and scripts', '9 components', '6 tapes, 248 KB gzipped for the five products', 'Light and dark'],
+    scale: ['~7,900 lines of TypeScript, Astro, CSS and scripts', '9 components', '6 tapes, 216 KB gzipped for the five products', 'Light and dark'],
     story: [
       'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one fixed window, sections that move one at a time, and an ambient light that takes the color of whatever you’re looking at.',
       'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. Every preview is now a tape instead, the product’s own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Once you’re using the page, the real app runs under the preview and keeps up with it. Put your pointer on it and it’s the app, in the state you were watching; its green light opens it in a window, still live.',
@@ -436,7 +432,7 @@ export const projects: Project[] = [
         },
       ],
       numbers: [
-        { value: '248 KB', label: 'the five products’ tapes, gzipped, in place of 17.7 MB of video' },
+        { value: '216 KB', label: 'the five products’ tapes, gzipped, in place of 17.7 MB of video' },
         { value: '224 → 32 ms', label: 'of style work over three product changes at 4x CPU, after one computed-style read went' },
         { value: '100', label: 'Lighthouse accessibility, best practices and SEO, in every run with live apps in place' },
         { value: '235 fps', label: 'with the cursor light on, after moving it off a full-window canvas (82 before)' },

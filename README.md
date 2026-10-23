@@ -88,7 +88,7 @@ node scripts/tapes/record.mjs portfolio  # this site's Intro, from dist/ (build 
 
 | Product | Built from | Recording needs |
 | --- | --- | --- |
-| KatArch | `../katarch/v2` | nothing |
+| KatArch | `../katarch` (the video course; its videos stream from R2) | nothing |
 | KnowGraph | `../learning-embed` (branch `portfolio-embed`: base-aware routes, no service worker in a frame) | nothing; its study history is restored from the repo's fixture and kept as IndexedDB |
 | PlaySync | `../rave2-embed` (branch `portfolio-embed`: no service worker, video muted in a frame) | the real server, clock pinned: `PIN=15:24 PORT=3099 npx tsx --import ../portfolio/scripts/tapes/pin-clock.mjs server/index.ts` |
 | LifeUI | `../life-ui-embed` (branch `portfolio-embed`: router basename) | nothing |
@@ -164,7 +164,7 @@ Design context: [`PRODUCT.md`](PRODUCT.md) (audience, voice, evidence) and [`DES
 
 | | |
 | --- | --- |
-| [KatArch](https://github.com/Felichz/katarch) | An interactive course that replays how the winning team of O'Reilly's Fall 2020 Architecture Kata made each decision. |
+| [KatArch](https://github.com/Felichz/katarch) | A narrated video course on software architecture, built from what the twelve winning teams of the Architecture Katas left in writing. |
 | [KnowGraph](https://github.com/Felichz/KnowGraph) | Senior React and Rails interview prep as a map of 142 concepts, with an AI mentor that grades your explanations. |
 | [PlaySync](https://github.com/Felichz/PlaySync) | Synced YouTube watch parties with no accounts and a server-owned clock. |
 | [LifeUI](https://github.com/Felichz/life-ui) | A HUD for real life: time blocks, one running activity, and an honest closing ritual. |
