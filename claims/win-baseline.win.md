@@ -1,7 +1,7 @@
 ---
 area: win-baseline
 from: win
-at: 2026-10-27T03:57:05.899Z
-files: scripts/perf/scroll.mjs,scripts/perf/bytes.mjs,scripts/perf/residency.mjs
+at: 2026-10-27T04:09:58.271Z
+files: scripts/perf/scroll.mjs,scripts/perf/bytes.mjs,scripts/perf/residency.mjs,scripts/perf/check.mjs
 ---
-Baseline instruments on win: bytes.mjs (wire cost per phase) and residency.mjs (what stays mounted at rest). scroll.mjs: the Chrome flag was misspelled.
+Baseline instruments on win. scroll.mjs flag fixed; check.mjs steady budget now follows DISPLAY_HZ (a 60 Hz panel failed every steady phase at 16.7ms); bytes.mjs and residency.mjs are new.
