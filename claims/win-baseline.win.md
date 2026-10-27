@@ -1,7 +1,7 @@
 ---
 area: win-baseline
 from: win
-at: 2026-10-27T04:09:58.271Z
-files: scripts/perf/scroll.mjs,scripts/perf/bytes.mjs,scripts/perf/residency.mjs,scripts/perf/check.mjs
+at: 2026-10-27T06:19:17.815Z
+files: scripts/perf/scroll.mjs,scripts/perf/bytes.mjs,scripts/perf/residency.mjs,scripts/perf/check.mjs,scripts/perf/ab.mjs,scripts/perf/pointerlab.mjs
 ---
-Baseline instruments on win. scroll.mjs flag fixed; check.mjs steady budget now follows DISPLAY_HZ (a 60 Hz panel failed every steady phase at 16.7ms); bytes.mjs and residency.mjs are new.
+Baseline instruments on win. Steady budget follows DISPLAY_HZ; bytes.mjs, residency.mjs and pointerlab.mjs are new. Only reading and measuring here: no src file outside win-perf-fixes is being edited.
