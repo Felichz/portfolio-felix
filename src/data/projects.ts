@@ -312,6 +312,58 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: 'bondiuy',
+    short: 'Bus trips across Montevideo, step by step',
+    name: 'BondiUY',
+    face: 'face-inter',
+    year: '2026',
+    tagline:
+      'A bus companion for Montevideo: it plans the trip, follows the bus you are waiting for, and walks you through each step until you get off.',
+    proof: '52 tests, five recorded demo trips, Android and web, Spanish and English',
+    live: 'https://portfolio-felix-teal.vercel.app/apps/bondiuy/',
+    liveNote: 'The demo replays five trips recorded from the trip planner, so it needs no GPS and no server. Time can be sped up to 30x.',
+    source: 'https://github.com/Felichz/bondi-uy',
+    role: 'Solo: product, trip logic, map rendering and app',
+    stack: ['Flutter', 'Dart', 'Riverpod', 'OpenTripPlanner', 'Montevideo bus API', 'OpenFreeMap vector tiles'],
+    scale: ['32 commits', '52 tests', 'Android and web', 'Spanish and English'],
+    story: [
+      'In Montevideo the bus is called a bondi, and a trip on one is several steps: walk to a stop, wait, ride, get off at the right corner, walk again. The city publishes where every bus is. BondiUY plans the trip with OpenTripPlanner over the city’s schedules and streets, then follows it as it happens, one step on screen at a time.',
+      'Most of the work is in the handover between steps. Your GPS and the bus reports arrive at their own pace, sometimes late or not at all, and from those samples the app has to decide when you reached the stop, when you boarded and when to get off. The trip logic lives in plain Dart with no Flutter imports, and the interface reads it through one state contract, so the same logic runs on a phone, in the tests and in this demo.',
+    ],
+    highlights: [
+      {
+        title: 'A map drawn by the app',
+        body: 'The map is rendered by the app itself from OpenFreeMap vector tiles, with its own decoder and painter. The camera frames what the current step needs: you and the stop while you walk, the stop and the coming bus while you wait.',
+      },
+      {
+        title: 'A bus that stops at your stop',
+        body: 'Between position reports the bus keeps moving along its route by prediction. The prediction is never allowed past your stop: only a real position can say the bus went by.',
+      },
+      {
+        title: 'A demo with no server',
+        body: 'Five trips were planned against the real network and recorded. The demo replays them with a simulated walker and simulated buses, at 1x, 5x, 15x or 30x, and returns you home after each trip.',
+      },
+    ],
+    typefaces: ['Roboto'],
+    palette: ['#FFFFFF', '#111318', '#E0412F', '#2563EB', '#1E2128'],
+    language: 'English and Spanish',
+    accent: { light: '#C7361F', dark: '#FF6B57', onLight: '#FFFFFF', onDark: '#1A0705' },
+    main: themed(
+      'bondiuy-main',
+      'BondiUY web demo in English: a phone shows the step Wait for the D1, the bus arriving in 1 minute a short distance away on the map, and a banner asking you to get ready to board. Beside it, the app name and a note that the demo trips are real and recorded.',
+    ),
+    callouts: [
+      { x: 55, y: 25, text: 'The wait counts down from the bus’s live position and its distance to your stop.' },
+      { x: 73, y: 61, text: 'Between reports the bus keeps moving along its route, but never past your stop.' },
+      { x: 55, y: 90, text: 'When the bus is close, the app tells you to get ready to board.' },
+    ],
+    gallery: [
+      themed('bondiuy-options', 'BondiUY trip options to Plaza Independencia: 32 minutes with a walk, the D1 bus and a walk, the route on the map and the D1 due in 6 minutes.', { phone: true, caption: 'Choosing a trip' }),
+      themed('bondiuy-ride', 'BondiUY riding the D1: 8 stops to go, the next stop named, and the bus moving along the red route on the map.', { phone: true, caption: 'On the bus' }),
+      themed('bondiuy-mobile', 'BondiUY on a phone: the map around home with a demo card offering trips to Plaza Independencia and Terminal Tres Cruces.', { phone: true, caption: 'Home, with the demo trips' }),
+    ],
+  },
+  {
     id: 'lolimpact',
     short: 'League win probability, minute by minute',
     name: 'LoLImpact',

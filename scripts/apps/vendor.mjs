@@ -5,7 +5,7 @@
 // Usage: node scripts/apps/vendor.mjs [id]   (each app's repo must be checked out next to this one)
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -45,6 +45,17 @@ export const APPS = {
     env: { PLAYSYNC_EMBED: '1' },
     build: (out) => ['npx', ['vite', 'build', '--base', '/apps/playsync/', '--outDir', out, '--emptyOutDir']],
     inject: ['playsync-room.js'],
+  },
+  bondiuy: {
+    // github.com/Felichz/bondi-uy: the Flutter web build in demo mode, which needs no server (five
+    // trips recorded from the OTP planner ship in assets/demo). The checkout is the sibling repo.
+    repo: resolve(root, '../bondi-uy'),
+    build: (out) => [
+      'flutter',
+      ['build', 'web', '--release', '--pwa-strategy=none', '--base-href', '/apps/bondiuy/', '--dart-define=BONDI_MODO=demo', '--output', out],
+    ],
+    // The engine loads CanvasKit from gstatic.com, so the local copies (24 MB) are never fetched.
+    drop: ['canvaskit'],
   },
   lolimpact: {
     // github.com/Felichz/LoL-Impact: the Svelte frontend. Its API answers come with the tape
@@ -97,6 +108,7 @@ for (const [id, app] of Object.entries(APPS)) {
   const [cmd, args] = app.build(out);
   console.log(`building ${id} from ${app.repo}`);
   execFileSync(cmd, args, { cwd: app.repo, stdio: 'inherit', shell: process.platform === 'win32', env: { ...process.env, ...app.env } });
+  for (const dir of app.drop ?? []) rmSync(resolve(out, dir), { recursive: true, force: true });
 
   const bridge = readFileSync(resolve(here, 'bridge.js'), 'utf8');
   // App-specific stand-ins (a room server, for PlaySync) go right after it, before the app's code.
