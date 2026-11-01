@@ -69,6 +69,8 @@ class Live {
   used = 0;
   #booted?: Promise<void>;
   #going?: Promise<void>;
+  /** Cancels the wait for the stage's word, so a dropped preview can't come back live on its own. */
+  #abort?: AbortController;
 
   constructor(public plate: HTMLElement) {}
 
@@ -95,15 +97,30 @@ class Live {
   /** The app takes the tape's place, booting first if it hasn't. However often it's asked, once —
      and an ask that ends without the app live forgets itself, so the next move asks again (a session
      can die under an ask — its tape looping it away — and a cached dead ask never retried left a
-     preview whose window opened over its tape, every input dead but the ghost's hover). */
+     preview whose window opened over its tape, every input dead but the ghost's hover).
+     Only the stage's own word makes it live: a wait running out isn't an app answering, and marking
+     one on a timeout leaves a preview whose inputs go to a session the stage has already dropped. */
   goLive() {
     return (this.#going ??= (async () => {
       const player = this.player;
-      const shown = once(player, 'stage:live');
+      // A newer ask takes over this one, and whoever waited on this one waits on it instead.
+      this.#abort?.abort('superseded');
+      const ac = (this.#abort = new AbortController());
+      const shown = new Promise<void>((r) => {
+        player.addEventListener('stage:live', () => r(), { once: true, signal: ac.signal });
+        ac.signal.addEventListener('abort', () => r(), { once: true });
+      });
       void this.boot();
       player.send({ k: 'live' });
-      await Promise.race([shown, sleep(2500)]);
-      if (this.state !== 'live') this.#going = undefined;
+      // Unsticks the ask after a while — the memoised promise would never be asked again — while this
+      // same listener keeps waiting, so a word that arrives late still takes the preview over.
+      void sleep(2500).then(() => {
+        if (this.#abort === ac && this.state !== 'live') this.#going = undefined;
+      });
+      await shown;
+      if (ac.signal.aborted) return ac.signal.reason === 'superseded' ? this.#going : undefined;
+      if (this.state === 'live') return;
+      this.#abort = undefined;
       this.state = 'live';
       this.used = performance.now();
       this.player?.ghost(-1, -1);
@@ -130,6 +147,10 @@ class Live {
     const wasLive = this.state === 'live';
     this.state = 'none';
     this.held = false;
+    // An ask still in flight belongs to the session the stage just dropped: it stops here, or it
+    // would take over a preview nobody asked for.
+    this.#abort?.abort('dropped');
+    this.#abort = undefined;
     this.#booted = this.#going = undefined;
     const player = this.player;
     player.send({ k: 'drop' });
@@ -157,10 +178,12 @@ const trim = () =>
     .slice(KEEP)
     .forEach((l) => l.held && l.drop());
 
-/** Boots one app at a time (each waits for the one before, for a while at most). */
+/** Boots one app at a time (each waits for the one before, for a while at most). A boot that was
+   queued while its preview was on screen is asked again when its turn comes: the visitor may have
+   scrolled past in the meantime, and its drop already told the stage to let that app go. */
 let booting: Promise<unknown> = Promise.resolve();
-const queueBoot = (l: Live) => {
-  booting = booting.then(() => Promise.race([l.boot(), new Promise((r) => setTimeout(r, 8000))]));
+const queueBoot = (l: Live, go: () => boolean) => {
+  booting = booting.then(() => (go() ? Promise.race([l.boot(), sleep(8000)]) : undefined));
 };
 
 // ---------------------------------------------------------------------------------------------------
@@ -629,16 +652,27 @@ export function initLive() {
   let lastChange = 0;
   const quiet = () =>
     !zooming && !document.hidden && !document.documentElement.classList.contains('deck-fast') && !document.querySelector('.thaw') && !document.documentElement.hasAttribute('data-theme-switching') && performance.now() - lastChange > 900 &&
-    // ...and not while the visitor's hand is on a preview: hovering, or the app live under it.
-    ![...lives.values()].some((l) => l.state !== 'none' && (l.plate.matches(':hover') || l.plate.hasAttribute('data-hover') || l.state === 'live'));
+    // ...and not while the visitor's hand is on a preview: hovering, or the app live under it. An app
+    // held off screen doesn't count: its clock is stopped and nothing is rastering, and waiting for
+    // one of the two the visitor last used would leave the queue empty for as long as they stayed.
+    ![...lives.values()].some((l) => l.state !== 'none' && !l.held && (l.plate.matches(':hover') || l.plate.hasAttribute('data-hover') || l.state === 'live'));
   const warmStep = () => {
-    const p = warmQueue.shift();
-    if (!p || !p.isConnected) return void (warmBusy = false);
+    while (warmQueue[0] && !warmQueue[0].isConnected) warmQueue.shift();
+    const p = warmQueue[0];
+    if (!p) return void (warmBusy = false);
+    // The head stays in the queue until it has actually been handled. Taking it out first spent the
+    // previews at the front of the line on every moment the page wasn't quiet — and the two events
+    // that queue work (a product turned over, a window closed) set that clock as they queue, so the
+    // ones they just handed over were always the ones burned.
     if (!quiet()) return void setTimeout(warmStep, 400);
     idle(() => {
-      if (p.isConnected && quiet()) {
-        warmed.add(p);
-        p.preload = 'auto';
+      warmQueue.shift();
+      // A player that left the page meanwhile isn't warmed: queued again if it comes back.
+      if (p.isConnected) {
+        if (quiet()) {
+          warmed.add(p);
+          p.preload = 'auto';
+        } else warmQueue.unshift(p);
       }
       setTimeout(warmStep, 400);
     });
@@ -672,7 +706,16 @@ export function initLive() {
     if (!started || !ok()) return;
     dwell.set(
       plate,
-      window.setTimeout(() => idle(() => visible.has(plate) && !zooming && liveFor(plate).state === 'none' && queueBoot(liveFor(plate))), DWELL),
+      window.setTimeout(
+        () =>
+          idle(() => {
+            // Asked again at its turn without the zoom: a window opening then is a moment, and a boot
+            // skipped for it would never be queued again while the preview stayed on screen.
+            const stillWorth = () => visible.has(plate) && liveFor(plate).state === 'none';
+            !zooming && stillWorth() && queueBoot(liveFor(plate), stillWorth);
+          }),
+        DWELL,
+      ),
     );
   };
   const start = () => {

@@ -516,6 +516,12 @@ export class Session {
       this.#held?.forEach((a) => a.play());
       this.#held = null;
     }
+    // The pace loop watches frames no one is seeing while the app is held, and a judgement taken there
+    // wakes the animations this just stopped. The hold ends its chain, a batch in flight included; the
+    // release starts a new one.
+    this.#paceChain++;
+    clearTimeout(this.#paceTimer);
+    if (!on) this.#tunePace();
   }
 
   // ---- The app's decorative motion. A small loop watches this document's own frame intervals — the
@@ -526,14 +532,20 @@ export class Session {
   #pace = 1;
   #vsync = 8.33;
   #paceTimer = 0;
+  /** The loop's current chain: a hold moves it on, and a batch or timer from an older one stops. */
+  #paceChain = 0;
   #decorative: Animation[] = [];
 
   #vsyncUnset = true;
   #tunePace = () => {
-    if (this.#disposed || !this.live) return;
+    // Held means no one is looking: there is nothing to judge, and a judgement here would run the
+    // animations the hold stopped. The release starts the loop again.
+    if (this.#disposed || !this.live || this.#held) return;
+    const chain = this.#paceChain;
     if (document.hidden || !this.frame.isConnected) return void (this.#paceTimer = window.setTimeout(this.#tunePace, 1500));
     const ts: number[] = [];
     const tick = (t: number) => {
+      if (chain !== this.#paceChain) return;
       ts.push(t);
       if (ts.length < 40) requestAnimationFrame(tick);
       else {
@@ -553,7 +565,7 @@ export class Session {
     requestAnimationFrame(tick);
   };
   #judge(ts: number[]) {
-    if (this.#disposed || !this.live) return;
+    if (this.#disposed || !this.live || this.#held) return;
     const iv = ts
       .slice(1)
       .map((t, i) => t - ts[i]!)

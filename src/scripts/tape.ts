@@ -99,7 +99,7 @@ export interface Tape {
   /** The app's clock at tape time 0. */
   clock0: number;
   /** A frame the DOM can't carry (PlaySync's YouTube player), filmed: it plays where the frame was, from tape time t. */
-  clip?: { src: string; t: number };
+  clip?: { src: string; t: number; delay?: number };
   css: string;
   duration: number;
 }
@@ -522,14 +522,19 @@ export class TapeCore extends HTMLElement {
     else a.pause();
   }
 
-  /** Clips hold their frame while paused, play otherwise, and are corrected if they drift. */
+  /**
+   * Clips hold their frame while paused, play otherwise, and are corrected if they drift. A clip with a
+   * delay holds its first frame until the tape reaches it: playing one while a slide arrives is what
+   * costs the arrival its frames, and holding still is what buys them back.
+   */
   #syncClips(to: number) {
     const clip = this.tape!.clip;
     for (const v of this.#clips) {
       if (!clip || !v.isConnected) continue;
-      const at = Math.max(0, (to - clip.t) / 1000);
+      const start = clip.t + (clip.delay ?? 0);
+      const at = Math.max(0, (to - start) / 1000);
       const drift = Math.abs(v.currentTime - at);
-      if (!this.#running || to < clip.t) {
+      if (!this.#running || to < start) {
         if (!v.paused) v.pause();
         if (drift > 0.04 && v.readyState >= 1) v.currentTime = at;
       } else {
