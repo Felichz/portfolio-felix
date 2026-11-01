@@ -82,7 +82,8 @@ if (scene.network) {
     if (!res) return;
     const u = new URL(r.url());
     try {
-      exchanges.push({ m: r.method(), u: u.origin === origin ? u.pathname + u.search : u.href, s: res.status(), h: res.headers()['content-type'] ?? '', b: await res.text() });
+      const q = r.method() === 'GET' ? undefined : r.postData();
+      exchanges.push({ m: r.method(), u: u.origin === origin ? u.pathname + u.search : u.href, ...(q ? { q } : {}), s: res.status(), h: res.headers()['content-type'] ?? '', b: await res.text() });
     } catch {}
   });
 }
@@ -231,7 +232,7 @@ for (const [line, href] of [...tape.css.matchAll(/@import url\("([^"]+)"\);\n?/g
 // One answer per request (the last one: the state the scene ended in).
 function dedupe(list) {
   const seen = new Map();
-  for (const x of list) seen.set(`${x.m} ${x.u}`, x);
+  for (const x of list) seen.set(`${x.m} ${x.u} ${x.q ?? ''}`, x);
   return [...seen.values()];
 }
 

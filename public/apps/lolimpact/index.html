@@ -169,7 +169,7 @@
   if (handoff.network && handoff.network.length) {
     var answers = {};
     handoff.network.forEach(function (x) {
-      answers[x.m + ' ' + x.u] = x;
+      answers[x.m + ' ' + x.u + (x.q ? ' ' + x.q : '')] = x;
     });
     var keyOf = function (method, url) {
       var u = new URL(url, location.href);
@@ -179,7 +179,10 @@
     window.fetch = function (input, init) {
       var req = typeof Request !== 'undefined' && input instanceof Request ? input : null;
       var method = (init && init.method) || (req && req.method) || 'GET';
-      var x = answers[keyOf(method, req ? req.url : String(input))];
+      var key = keyOf(method, req ? req.url : String(input));
+      // A POST is told apart by its body (LoLImpact's draft call), when the body is text.
+      var body = init && typeof init.body === 'string' ? init.body : '';
+      var x = (body && answers[key + ' ' + body]) || answers[key];
       if (!x) return realFetch(input, init);
       return Promise.resolve(new Response(x.b, { status: x.s, headers: { 'content-type': x.h } }));
     };
@@ -223,8 +226,8 @@
         if (l === "en" || l === "es") document.documentElement.lang = l;
       } catch (e) {}
     </script>
-    <script type="module" crossorigin src="/apps/lolimpact/assets/index-DzUKcHpQ.js"></script>
-    <link rel="stylesheet" crossorigin href="/apps/lolimpact/assets/index-CmQP06OD.css">
+    <script type="module" crossorigin src="/apps/lolimpact/assets/index-PQP4Q2aU.js"></script>
+    <link rel="stylesheet" crossorigin href="/apps/lolimpact/assets/index-B7P5Qovc.css">
   </head>
   <body>
     <!--

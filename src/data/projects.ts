@@ -318,7 +318,7 @@ export const projects: Project[] = [
     face: 'face-martian',
     wordmark: ['LOL', 'IMPACT'],
     year: '2026',
-    tagline: 'Which lane moved your League game, minute by minute, and how sure the model can be about it.',
+    tagline: 'Which lane decided your League game, and which enemy to watch before the next one starts.',
     proof: 'Six per-minute models, intervals on every number, no ML runtime in production',
     live: 'https://lol-impact.vercel.app/',
     liveNote: 'The public deploy is running without a Riot API key right now, so the match screens here come from a local run.',
@@ -327,8 +327,8 @@ export const projects: Project[] = [
     stack: ['Svelte 5', 'TypeScript', 'Vite', 'Python', 'FastAPI', 'numpy', 'scikit-learn', 'Riot API', 'Vercel'],
     scale: ['6 per-minute models', '~4,200 lines', '21 Svelte components', 'Light and dark'],
     story: [
-      'A win-probability model for League of Legends, trained on recent Emerald+ LAS solo queue games. You load your Riot ID and see how your team’s chances moved through each game, which lane pulled hardest, and whether that pull is real or noise. Held-out accuracy climbs from 62.8% at minute 8 to 74.9% at minute 20.',
-      'The hard part was honesty. A model with one slope per champion turned out to be unidentifiable, so slopes are grouped by role and champion class instead. Every number ships with its interval, and anything the data can’t confirm is drawn in ash and sags on the chart instead of pretending to be a finding.',
+      'A win-probability model for League of Legends, trained on recent Emerald+ LAS solo queue games. You load your Riot ID and each game opens with its conclusion: which lane decided it, how your team’s chances moved minute by minute, and which enemy was the biggest threat at each minute. Held-out accuracy climbs from 62.8% at minute 8 to 74.9% at minute 20.',
+      'The hard part was honesty. A model with one slope per champion turned out to be unidentifiable, so slopes are grouped by role and champion class, and one finding survived the audit: an enemy marksman turns gold into wins faster than anyone else in their role. The draft tool and every game name that marksman as the win condition before the first minute. Everything else comes with its range, and a plain “not sure” where the data can’t tell.',
     ],
     highlights: [
       {
@@ -351,18 +351,18 @@ export const projects: Project[] = [
     main: {
       ...themed(
         'lol-main',
-        'LoLImpact match view: recent games on the left, a readout for minute 12 showing 64% win probability with a 55% to 72% likely range, and a column chart of win probability by minute with uncertainty bands.',
+        'LoLImpact match view: recent games on the left, each with a one-word story such as Lead lost; the open game says “You lost mainly through mid lane.” above a chart of the team’s win chance by minute, with its margin of error as a grey band.',
       ),
       tape: 'lolimpact',
     },
     callouts: [
-      { x: 31.8, y: 63.8, text: 'Every probability is shown with its likely range, never alone.' },
-      { x: 94.7, y: 46.5, text: 'Hand-built SVG column: 50% and 95% bands around each minute, keyboard navigable.' },
-      { x: 85.5, y: 67.9, text: 'Lanes pulling the game at the selected minute. Unconfirmed pulls stay ash and dashed.' },
+      { x: 25.9, y: 29.7, text: 'Every game gets a one-word story, read from how its win chance moved.' },
+      { x: 33.7, y: 43.6, text: 'The conclusion comes first: which lane decided the game, in plain words.' },
+      { x: 66.0, y: 88.3, text: 'Hand-built SVG timeline: 50% and 95% bands around each minute, keyboard navigable.' },
     ],
     gallery: [
-      themed('lol-draft', 'LoLImpact draft tool with ten champion slots split between your team and the rival team.', { caption: 'Draft tool' }),
-      themed('lol-mobile', 'LoLImpact on a phone: the minute 12 readout above the probability column.', { phone: true, caption: 'On a phone' }),
+      themed('lol-draft', 'LoLImpact draft tool: ten champions with what 1,000 gold on each is worth, and below them the rival win condition, their marksman Jinx.', { caption: 'Draft and win condition' }),
+      themed('lol-mobile', 'LoLImpact on a phone: a lost game opens with “You lost mainly through mid lane.” above the win chance by minute.', { phone: true, caption: 'On a phone' }),
     ],
   },
   {
