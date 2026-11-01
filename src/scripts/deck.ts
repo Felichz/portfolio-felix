@@ -8,7 +8,7 @@
  * Events on document:
  * - `deck:change` { id, index } when a section becomes the active one.
  * - `deck:sub` { id, sub } when a link asks for something inside a section (`#work/katarch`).
- * A hash can also name an element inside a section (`#w-measuring`, a heading of the write-up): the
+ * A hash can also name an element inside a section (its id): the
  * deck moves to its section and scrolls it into view, and the address keeps that hash.
  * - `deck:refresh` (listened for) re-reads the active section's glow color.
  */

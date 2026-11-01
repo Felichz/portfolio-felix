@@ -1,11 +1,8 @@
 ---
-// A product's case study: one page per product (src/pages/work/[id].astro), and the portfolio's own
-// write-up page (src/pages/work/portfolio/how-its-built.astro), which is this case study opened on its
-// Write-up panel, with the article's own title and description for sharing.
+// A product's case study: one page per product (src/pages/work/[id].astro).
 import Base from '../layouts/Base.astro';
 import Plate from './Plate.astro';
 import Icon from './Icon.astro';
-import Writeup from './Writeup.astro';
 import type { PanelLink } from './Bar.astro';
 import { projects, type Project } from '../data/projects';
 
@@ -39,8 +36,6 @@ const panels: PanelLink[] = [
   ...(dive ? [{ id: 'how', label: 'How it works', short: 'How', icon: 'layers' } as PanelLink] : []),
   { id: 'screens', label: 'Screens', icon: 'image' },
   { id: 'specs', label: 'Specs', icon: 'list' },
-  // The long version of How it works, read in place, last: the screens and specs come first.
-  ...(dive?.writeup ? [{ id: 'writeup', label: 'Write-up', icon: 'text' } as PanelLink] : []),
 ];
 ---
 
@@ -165,13 +160,6 @@ const panels: PanelLink[] = [
             <p class="t-label">How it works</p>
             <h2 id="how-title" class="t-section">{dive.title}</h2>
             <p class="how-intro muted">{dive.intro}</p>
-            {
-              dive.writeup && (
-                <a class="arrow-link how-writeup" href={dive.writeup}>
-                  The whole story, in the write-up <Icon name="arrow-right" class="icon-right" />
-                </a>
-              )
-            }
           </header>
           <ol class="how-steps">
             {dive.steps.map((s, i) => (
@@ -287,13 +275,6 @@ const panels: PanelLink[] = [
     </div>
   </section>
 
-  {
-    dive?.writeup && (
-      <section id="writeup" class="panel" data-label="Write-up" tabindex="-1" data-accent style={accent} aria-labelledby="writeup-title">
-        <Writeup />
-      </section>
-    )
-  }
 </Base>
 
 <style>

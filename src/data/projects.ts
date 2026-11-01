@@ -76,8 +76,6 @@ export interface Project {
    */
   deepDive?: {
     title: string;
-    /** A long-form write-up of the same story, read in its own panel of the case study (the link to it). */
-    writeup?: string;
     intro: string;
     steps: { title: string; body: string }[];
     numbers: { value: string; label: string }[];
@@ -374,66 +372,63 @@ export const projects: Project[] = [
     face: 'face-archivo',
     year: '2026',
     tagline:
-      'A portfolio that shows its products by running them: each preview is the app’s own DOM, replayed, and under your pointer it becomes the app, in the same state.',
-    proof: '17.7 MB of preview videos replaced by 230 KB of tapes, and every product live in its preview',
+      'A portfolio that shows its products by running them: every preview is a recording of the real app, and under your pointer it becomes the app itself, in the same state.',
+    proof: '17.7 MB of preview videos replaced by 216 KB of recordings, and every product live in its preview',
     live: 'https://portfolio-felix-teal.vercel.app/',
     source: 'https://github.com/Felichz/portfolio-felix',
     role: 'Solo: design, frontend and the recording pipeline',
     stack: ['Astro', 'TypeScript', 'Hand-written CSS', 'Custom elements', 'Web Animations API', 'View Transitions', 'Puppeteer and the Chrome DevTools Protocol', 'Vercel'],
     scale: ['~7,900 lines of TypeScript, Astro, CSS and scripts', '9 components', '6 tapes, 216 KB gzipped for the five products', 'Light and dark'],
     story: [
-      'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one fixed window, sections that move one at a time, and an ambient light that takes the color of whatever you’re looking at.',
-      'The part I find most interesting is how the products show up. A video is the easy answer, and it’s what this site started with: two MP4s per product, one for each theme. Every preview is now a tape instead, the product’s own DOM recorded while a scripted scene drives it, replayed with its real stylesheet and none of its JavaScript. Once you’re using the page, the real app runs under the preview and keeps up with it. Put your pointer on it and it’s the app, in the state you were watching; its green light opens it in a window, still live.',
-      'Each product needed a scene and a way to seed its state, and three needed their backend on the tape: LoLImpact’s API answers, KnowGraph’s IndexedDB, and for PlaySync a stand-in room server and its YouTube player, filmed as a clip. The write-up tells the whole story, including what broke.',
+      'I wanted the portfolio to be one of the projects, not only the frame around them. It behaves like a desktop app: one window, sections that move one at a time, and a soft light that takes the color of whatever you’re looking at.',
+      'The products are the point. A video can only show what an app looked like, so every preview here is a recording of the app itself, light enough to load in a moment and sharp at any size. Move your pointer onto one and the real app takes over where the recording was, ready to click. Its green light opens it in a window, still running, and the theme toggle switches the site and every app in it together.',
+      'Getting there meant teaching each product to be recorded and to start from a saved moment, including the three that need a server behind them. Every change stayed only if it measured better than what it replaced, on the same machine.',
     ],
     highlights: [
       {
         title: 'One window, one gesture',
-        body: 'The document never scrolls; a deck of full-height sections does, one per gesture. Anything that can still scroll under the pointer scrolls first, and the wheel has to rest before the deck moves again, so the two never fight.',
+        body: 'The page never scrolls as a whole: each turn of the wheel moves one full section. Anything inside a section that can still scroll goes first, and the page waits for the wheel to rest before it moves again.',
       },
       {
-        title: 'Theme switches that restart nothing',
-        body: 'The new edition spreads in a circle from the toggle, in one view-transition snapshot. Recordings keep their place across it, the showcase countdown doesn’t notice, and a tape switches on the same frame.',
+        title: 'A theme switch that spreads',
+        body: 'The new theme spreads in a circle from the toggle, over the page and the running apps alike, without restarting anything that was playing.',
       },
       {
         title: 'Measured, not assumed',
-        body: 'Effects stayed only after a Chrome trace. The cursor light moved off a full-window canvas (82 to 235 fps), recordings got a keyframe every second (seeks from about 220 to 85 ms), and the résumé PDF went from 27 soft-masked images to one.',
+        body: 'Effects stayed only after a Chrome trace said they could. Moving the cursor light off a full-window canvas took the page from 82 to 235 fps, and the résumé PDF went from 27 soft-masked images to one.',
       },
     ],
     deepDive: {
       title: 'From a video of the app to the app',
-      writeup: '#writeup',
-      intro:
-        'Every product preview here used to be a pair of videos. The question was whether it could be the product itself, without paying for it in page weight or frames.',
+      intro: 'Every product preview here used to be a pair of videos. The question was whether it could be the product itself, without making the page heavier or slower.',
       steps: [
         {
           title: 'Record',
-          body: 'A scene drives the app in headless Chrome, written like an end-to-end test. A recorder inside the page writes down the DOM and every change to it, with child lists stored whole so moves never need tracking, plus the pointer, hover and focus, and checkpoints at rest points with the app’s storage and clock.',
+          body: 'A script uses each app the way a person would, and a recorder writes down what the screen shows at every moment.',
         },
         {
           title: 'Replay',
-          body: 'A custom element rebuilds that DOM in an iframe that can’t run scripts, with the app’s own stylesheet, and applies each change at its time. Hover and focus come back as attributes the stylesheet was rewritten to match, Web Animations are recreated on the tape’s clock, and the app’s theme is one attribute, so a single tape plays in both editions. It speaks enough of the video element’s API that the showcase didn’t have to change.',
+          body: 'The preview plays that recording back with the app’s own styles, so it looks exactly like the app, in either theme, at a fraction of a video’s size.',
         },
         {
           title: 'Go live',
-          body: 'After your first input, never during page load, the app’s build (vendored on this origin) boots under the preview from the last checkpoint: its route, storage and clock. It keeps up with the tape: each recorded click, key and typed text is replayed in it as the tape reaches it, with the app’s clock and timers set to that recorded moment. Hovering swaps the tape for the app on the same frame; from there, hovers and clicks are the app’s own.',
+          body: 'Once you start using the page, the real app loads quietly behind its preview and follows along. When your pointer arrives, the app takes over on the same frame, in the same state.',
         },
         {
           title: 'Bring the backend',
-          body: 'Three products needed more than a browser. LoLImpact’s API answers are recorded with its scene and served to its fetches; KnowGraph’s IndexedDB is dumped at checkpoints and written back before it boots; PlaySync gets a stand-in room server, rebuilt from the scene’s socket, and its YouTube player is filmed as a clip for the tape.',
+          body: 'Three products need more than a browser: a game stats API, a study history and a shared watch room. What they need from a server is recorded too, so they work here without one.',
         },
         {
           title: 'Open in a window',
-          body: 'The green light moves the preview’s contents into a window over the page with moveBefore, which keeps an iframe’s state where a regular move would reload it. The window has the preview’s proportions and the app keeps its layout, recorded and run at 1152 by 720, so it grows out of the preview in a view transition that is a zoom of one picture, the app taking the site’s own edition on the way. Red or yellow moves it back, still live.',
+          body: 'The green light grows the preview into a window over the page, with the app still running and nothing reloaded. Closing it puts the app back in its preview.',
         },
         {
           title: 'Measure',
-          body: 'Each step won an A/B on the same machine before it stayed: alternated builds, at least three runs, frames counted from inside the page, at full speed and with the CPU slowed four times. Each preview runs in a stage of its own document, which a second domain moves to its own process. Booting after the first input keeps page-load audits from paying for any of it. The write-up has the measurements, and the ideas that didn’t survive them.',
+          body: 'Each step had to win a side-by-side measurement on the same machine before it stayed, and the apps load only after your first move on the page, so the first visit stays light.',
         },
       ],
       numbers: [
-        { value: '216 KB', label: 'the five products’ tapes, gzipped, in place of 17.7 MB of video' },
-        { value: '224 → 32 ms', label: 'of style work over three product changes at 4x CPU, after one computed-style read went' },
+        { value: '216 KB', label: 'the five products’ recordings, gzipped, in place of 17.7 MB of video' },
         { value: '100', label: 'Lighthouse accessibility, best practices and SEO, in every run with live apps in place' },
         { value: '235 fps', label: 'with the cursor light on, after moving it off a full-window canvas (82 before)' },
       ],
@@ -449,7 +444,7 @@ export const projects: Project[] = [
     callouts: [
       { x: 32.5, y: 20.7, text: 'The name is set one letter at a time, and widens toward the pointer along Archivo’s width axis.' },
       { x: 3, y: 42.3, text: 'One gesture moves one section. These dots are the only navigation chrome.' },
-      { x: 75.2, y: 31.6, text: 'Two portraits, one per edition; only the visible one is downloaded.' },
+      { x: 75.2, y: 31.6, text: 'Two portraits, one per edition; the other one loads only after your first move on the page, ready for a theme switch.' },
     ],
     gallery: [
       themed('portfolio-work', 'The work showcase with LifeUI selected: its preview, a tape of the app’s own DOM, is in the middle of the closing ritual.', { caption: 'A tape in the showcase' }),

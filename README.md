@@ -78,7 +78,7 @@ Astro 7, TypeScript, hand-written CSS with custom properties. Deployed as a stat
 
 ## Tapes and live apps
 
-The full story is in the write-up, [The previews are the apps](https://portfolio-felix-teal.vercel.app/work/portfolio/#writeup).
+How it works, in short, is on the [portfolio case study](https://portfolio-felix-teal.vercel.app/work/portfolio/#how).
 
 ```bash
 node scripts/apps/vendor.mjs <id>        # build a product for /apps/<id>/ (its repo checked out next to this one)
