@@ -213,17 +213,11 @@ const { panels, home } = Astro.props;
     // Transitions stay suspended meanwhile, so the page is snapshotted once instead of animating piece by piece.
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } };
-    // Previews run in frames of their own process (src/scripts/player.ts): they take the new edition
-    // when this event says so, never earlier. A frame that switched while the page waits for its new
-    // snapshot would show the new edition over the frozen page, then the old one again under it.
-    // The reveal's shape, for the previews: they take the new edition as the circle's edge reaches
-    // each of them (src/scripts/player.ts times it from this), never all at once at the start.
-    const reveal = (fromSwitch = true) =>
-      document.dispatchEvent(
-        new CustomEvent('theme:reveal', {
-          detail: fromSwitch && !reduce ? { x: parseFloat(root.style.getPropertyValue('--vt-x')) || innerWidth, y: parseFloat(root.style.getPropertyValue('--vt-y')) || 0, duration: 600 } : undefined,
-        }),
-      );
+    // Previews run in frames of their own (src/scripts/player.ts): they take the new edition when this
+    // event says so, once the reveal has started, so the circle sweeps them with the rest of the page.
+    // A frame that switched while the page waits for its new snapshot would show the new edition over
+    // the frozen page, then the old one again under it.
+    const reveal = () => document.dispatchEvent(new CustomEvent('theme:reveal'));
     root.setAttribute('data-theme-switching', '');
     const done = () => requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-theme-switching')));
     if (!doc.startViewTransition || reduce) {
@@ -242,11 +236,9 @@ const { panels, home } = Astro.props;
       root.dataset.vt = 'theme';
     }
     const vt = doc.startViewTransition(apply);
-    // From the first frame of the reveal: the old page is a still, the new one shows only inside the circle.
-    // The circle times the previews' switch to its sweep over them; the rectangle (an app's own
-    // switch, opening from its window) begins at the app that switched, which is already new —
-    // everything takes the edition at once there.
-    vt.ready.then(() => reveal(!from || !('rect' in from)), () => reveal(false));
+    // From the first frame of the reveal: the old page is a still, the new one shows only inside the circle
+    // (or the rectangle, opening from an app that switched its own theme).
+    vt.ready.then(reveal, reveal);
     vt.finished.finally(() => {
       delete root.dataset.vt;
       done();
