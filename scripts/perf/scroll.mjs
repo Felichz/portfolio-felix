@@ -9,7 +9,7 @@ const browser = await puppeteer.launch({
   headless: !!process.env.HEADLESS, defaultViewport: null,
   args: ['--window-size=1600,1047', `--window-position=${windowPosition()}`, '--lang=en-US', '--no-first-run',
     '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling',
-    '--disable-features=CalculateNativeWinocclusion'],
+    '--disable-features=CalculateNativeWinOcclusion'],
   ignoreDefaultArgs: ['--enable-automation'],
 });
 const [page] = await browser.pages();

@@ -106,7 +106,10 @@ async function run(variant) {
     const span = t1 - t0;
     return {
       fps: f.length / (span / 1000),
-      janky: iv.filter((d) => d > 1000 / 60).reduce((a, d) => a + d, 0) / span,
+      // The hitch share the harness settled on (fd620e9): the time each late frame runs over a 60 Hz
+      // frame, as a share of the window. Counting whole late frames reads about five times too high, and
+      // on a 60 Hz panel it saturates: there every frame is a hair over the threshold.
+      janky: iv.reduce((a, d) => a + Math.max(0, d - 1000 / 60), 0) / span,
       max: Math.max(0, ...iv),
       main: (m1.TaskDuration - m0.TaskDuration) / wall,
       renderer: ((c1.renderer ?? 0) - (c0.renderer ?? 0)) / wall,

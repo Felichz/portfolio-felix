@@ -170,7 +170,11 @@ for (const ph of phases) {
   const janky = +((iv.reduce((a, d) => a + Math.max(0, d - 1000 / 60), 0) / span) * 100).toFixed(1);
   const dropped = iv.reduce((a, d) => a + Math.max(0, Math.round(d / VSYNC) - 1), 0);
   const transient = /:(arrive|hover|open)$/.test(ph.name);
-  const [p99Max, maxMax] = transient ? [100, 500] : [16.7, 100];
+  // The steady budget is a 60 fps frame on every panel, with 5% room: on a 60 Hz screen a perfect frame
+  // measures a hair over 16.7 ms, and a budget of exactly 16.7 failed every phase there. On 100 and
+  // 120 Hz panels frames come in vsync steps (10/20, 8.3/16.7/25 ms), so this passes and fails the same
+  // frames 16.7 did.
+  const [p99Max, maxMax] = transient ? [100, 500] : [17.5, 100];
   const ok = p99 <= p99Max && max <= maxMax;
   if (gate && !ok) bad++;
   console.log(ph.name.padEnd(18), String(Math.round(f.length / (span / 1000))).padStart(4), String(p99).padStart(6), String(max).padStart(6), (janky + '%').padStart(6), String(dropped).padStart(7), gate ? '  ' + (ok ? 'ok' : 'BREACH') : '');
