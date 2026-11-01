@@ -356,9 +356,9 @@ export const projects: Project[] = [
       tape: 'lolimpact',
     },
     callouts: [
-      { x: 25.9, y: 29.7, text: 'Every game gets a one-word story, read from how its win chance moved.' },
-      { x: 33.7, y: 43.6, text: 'The conclusion comes first: which lane decided the game, in plain words.' },
-      { x: 66.0, y: 88.3, text: 'Hand-built SVG timeline: 50% and 95% bands around each minute, keyboard navigable.' },
+      { x: 25.9, y: 30.6, text: 'Every game gets a one-word story, read from how its win chance moved.' },
+      { x: 33.7, y: 44.4, text: 'The conclusion comes first: which lane decided the game, in plain words.' },
+      { x: 66.0, y: 90.4, text: 'Hand-built SVG timeline: 50% and 95% bands around each minute, keyboard navigable.' },
     ],
     gallery: [
       themed('lol-draft', 'LoLImpact draft tool: ten champions with what 1,000 gold on each is worth, and below them the rival win condition, their marksman Jinx.', { caption: 'Draft and win condition' }),

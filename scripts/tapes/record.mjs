@@ -198,6 +198,8 @@ const pageT0 = await page.evaluate(() => window.__tapeT0);
 // through (which is most of the time), so it never replays the scene to catch up.
 await helpers.checkpoint('end');
 const tape = await page.evaluate(() => window.__tapeStop());
+// Declarations the stylesheet couldn't hand back (see recorder.js): the replay goes without them.
+if (tape.lost.length) console.warn(`${id}: ${tape.lost.length} declarations lost in the recording:\n  ${tape.lost.join('\n  ')}`);
 await browser.close();
 await scene.teardown?.();
 server.close();
