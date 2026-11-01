@@ -330,12 +330,34 @@ export class Session {
       },
       { passive: true },
     );
-    // In a preview the app takes the pointer and clicks, but not the wheel: that still moves the page.
-    // In its window, the app scrolls itself.
+    // In its window, the app scrolls itself. In a preview it scrolls first too, the way a scrolling box
+    // inside a section of the page does (deck.ts): what the app can't scroll moves the page, once the
+    // wheel has rested a moment after the app's own scroll, so reaching the app's end never also turns
+    // the page in the same gesture.
+    const scrolls = (el: Element, dy: number) => {
+      if (el.scrollHeight <= el.clientHeight + 1) return false;
+      const root = el === doc.scrollingElement;
+      const oy = win.getComputedStyle(root ? doc.body : el).overflowY;
+      if (root ? oy === 'hidden' || oy === 'clip' || win.getComputedStyle(el).overflowY === 'hidden' : oy !== 'auto' && oy !== 'scroll') return false;
+      return dy > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0;
+    };
+    // The app's scroll never runs on into the page: what overflows its end in the same gesture would
+    // otherwise scroll the page natively, past the deck's one-section rule.
+    doc.documentElement.style.overscrollBehavior = 'contain';
+    let innerAt = -Infinity;
     win.addEventListener(
       'wheel',
       (e) => {
         if (this.opts.inWindow()) return;
+        if (!e.ctrlKey && Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
+          const now = performance.now();
+          for (let el = (e.target as Node | null)?.nodeType === 1 ? (e.target as Element) : null; el; el = el.parentElement)
+            if (scrolls(el, e.deltaY)) return void (innerAt = now);
+          if (now - innerAt < 900) {
+            innerAt = now;
+            return e.preventDefault();
+          }
+        }
         e.preventDefault();
         const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? win.innerHeight : 1;
         hooks.wheel(e.deltaX * k, e.deltaY * k);
