@@ -565,6 +565,10 @@ export class Session {
     if (this.#disposed || !this.live || this.#held) return;
     const chain = this.#paceChain;
     if (document.hidden || !this.frame.isConnected) return void (this.#paceTimer = window.setTimeout(this.#tunePace, 1500));
+    // Nothing endless to rest or wake: no batch. Its 40 frames in a row, every 1.5 s, kept the stage
+    // drawing for as long as the app was live, whatever it showed. Looked at again in a while, for an
+    // endless animation that starts later (a spinner).
+    if (!this.#decorative.length && !this.#endless()) return void (this.#paceTimer = window.setTimeout(this.#tunePace, 3000));
     const ts: number[] = [];
     const tick = (t: number) => {
       if (chain !== this.#paceChain) return;
@@ -586,6 +590,11 @@ export class Session {
     };
     requestAnimationFrame(tick);
   };
+  /** Whether the app runs an endless animation now (what #restDecorative would pause). */
+  #endless() {
+    const doc = this.frame?.contentDocument;
+    return !!doc?.getAnimations().some((a) => a.playState === 'running' && Number(a.effect?.getComputedTiming().endTime) === Infinity);
+  }
   #judge(ts: number[]) {
     if (this.#disposed || !this.live || this.#held) return;
     const iv = ts
