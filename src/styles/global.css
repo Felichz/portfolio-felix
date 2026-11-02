@@ -372,6 +372,16 @@ html.app, html.app body { overflow: hidden; overscroll-behavior: none; }
   container: panel / size;
   padding: clamp(14px, 2.4vh, 28px) calc(var(--gutter) + var(--rail-w)) clamp(14px, 2.4vh, 28px) var(--gutter);
 }
+/* While a preview's window is open, or the theme switches, the deck's other sections skip their style
+   and layout: on a desktop the deck shows one section at a time, and both moments restyle the whole
+   page at once (startViewTransition does it to capture the page, a theme change because every color
+   changes). The sections out of sight are a third of the page's elements; they catch up once the
+   window has closed or the reveal is over, with nothing moving. (Opening the window 12.5 to 9.0 late
+   frames at 4x CPU, the theme switch 18.1 to 14.2; scripts/perf/MEASURING.md.) Never while the deck
+   moves (data-moving, deck.ts): a section on its way in would show empty until it became the active one. */
+@media (min-width: 761px) {
+  :root:is(:has(.thaw), [data-theme-switching]) [data-deck]:not([data-moving]) > .panel:not([data-active]) { content-visibility: hidden; }
+}
 .panel-inner {
   position: relative;
   height: 100%;

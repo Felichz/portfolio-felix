@@ -130,12 +130,23 @@ export function initDeck() {
       fast = window.setTimeout(() => root.classList.remove('deck-fast'), 160);
     }
   };
+  // `data-moving` while it scrolls: the sections out of sight that skip their rendering for a moment
+  // (global.css) render again before any of them comes in.
+  let moving = false;
   stage.addEventListener(
     'scroll',
     () => {
       raf ||= requestAnimationFrame(onFrame);
+      if (!moving) {
+        moving = true;
+        stage.setAttribute('data-moving', '');
+      }
       clearTimeout(settle);
-      settle = window.setTimeout(() => (target = nearest()), 140);
+      settle = window.setTimeout(() => {
+        target = nearest();
+        moving = false;
+        stage.removeAttribute('data-moving');
+      }, 140);
     },
     { passive: true },
   );
