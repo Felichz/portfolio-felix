@@ -75,6 +75,16 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
       </div>
     )
   }
+  {
+    device && (
+      <span class="device-body" aria-hidden="true">
+        {/* The phone's thickness: the same outline stacked back in depth, seen as an edge once it turns. */}
+        {[1, 2, 3, 4, 5, 6, 7].map((k) => (
+          <span class="device-edge" style={`--k:${k}`} />
+        ))}
+      </span>
+    )
+  }
   <div class="plate-screen">
     {
       device && (

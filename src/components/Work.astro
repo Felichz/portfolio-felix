@@ -80,7 +80,7 @@ const glowCSS = projects
               href={`/work/${p.id}/`}
               tabindex="-1"
               aria-hidden="true"
-              data-tilt={p.main.device ? '16' : '5'}
+              data-tilt={p.main.device ? '20' : '5'}
             >
               <Plate
                 shot={p.main}
@@ -395,7 +395,8 @@ const glowCSS = projects
   .slide-media--device :global(.plate--device) {
     height: 100%;
     width: auto;
-    transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    /* At rest it stands turned three-quarters, so its edge shows; the pointer leans it from there. */
+    transform: rotateX(calc(4deg + var(--rx, 0deg))) rotateY(calc(-17deg + var(--ry, 0deg)));
     transition: transform 1.1s var(--ease-out), translate 0.7s var(--ease-out);
   }
   .slide-media--device[data-tilting] :global(.plate--device) { transition-duration: 0.25s, 0.7s; }
@@ -406,8 +407,9 @@ const glowCSS = projects
     left: -110%;
     width: 160%;
     height: 220%;
-    background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.15) 47%, rgb(255 255 255 / 0.05) 52%, transparent 60%);
-    transform: translateX(calc(var(--sx, 0px) * 1.2));
+    background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.24) 46%, rgb(255 255 255 / 0.08) 52%, transparent 60%);
+    /* --sx is the pointer across the whole media box, which is wider than the phone. */
+    transform: translateX(calc(var(--sx, 0px) * 0.55));
   }
 
   .slide-info {
@@ -477,6 +479,8 @@ const glowCSS = projects
     }
     .slide-info { grid-template-columns: minmax(0, 1fr); gap: 22px; }
     .slide-name { font-size: clamp(2rem, min(3.4cqw, 8cqh), 3.75rem); }
+    /* With the text beside it, the phone takes the stage's whole height instead of a window's box. */
+    .slide-media--device { aspect-ratio: auto; height: calc(100cqh - 56px); }
   }
 
   /* Phones: product chips on top, one product at a time below, scrolling inside the panel. */
