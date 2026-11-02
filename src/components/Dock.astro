@@ -12,7 +12,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 <!-- The section rail: dots on a line down the left edge (desktop), a tab bar at the bottom (phones). -->
 <nav class="dock" aria-label="Sections" data-dock>
-  <ol class="rail-dots">
+  <ol class="rail-dots" data-glow>
     {
       panels.map((p, i) => (
         <li>

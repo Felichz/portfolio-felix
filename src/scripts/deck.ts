@@ -11,6 +11,7 @@
  * A hash can also name an element inside a section (its id): the
  * deck moves to its section and scrolls it into view, and the address keeps that hash.
  * - `deck:refresh` (listened for) re-reads the active section's glow color.
+ * - `deck:glow` { detail: color } once the glow is set on the elements that draw with it.
  */
 export function initDeck() {
   const stage = document.querySelector<HTMLElement>('[data-deck]');
@@ -34,14 +35,22 @@ export function initDeck() {
   let index = -1;
   let target = nearest();
 
+  // The room's light, the active section's two glow colors, is set on the elements that draw with it
+  // ([data-glow]: the ambient light, the cursor's pool, the section rail, the contact card), not on the
+  // root: a custom property changed on the root restyles the whole page, and did so on every theme
+  // switch and product change, in a frame that had just restyled it all once. `deck:glow` follows.
+  const lit = [...document.querySelectorAll<HTMLElement>('[data-glow]')];
   const glow = () => {
     const panel = panels[index];
     if (!panel) return;
     const cs = getComputedStyle(panel);
     const a = cs.getPropertyValue('--panel-glow').trim();
     const b = cs.getPropertyValue('--panel-glow-2').trim();
-    if (a) root.style.setProperty('--glow', a);
-    if (b) root.style.setProperty('--glow-2', b);
+    for (const el of lit) {
+      if (a) el.style.setProperty('--glow', a);
+      if (b) el.style.setProperty('--glow-2', b);
+    }
+    document.dispatchEvent(new CustomEvent('deck:glow', { detail: a }));
   };
 
   const pill = () => {
