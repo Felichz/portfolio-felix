@@ -23,6 +23,8 @@ interface Handoff {
   network?: Exchange[];
   /** A recorded real-time room, which the bridge plays to the app's WebSocket. */
   socket?: Tape['app']['socket'];
+  /** Set as the app starts to go live: the bridge hides frames from other sites until then. */
+  live?: boolean;
   /** Installed by the bridge: sets the app's clock, frozen or running; its timers follow it. */
   setClock?: (ms: number, freeze?: boolean, tick?: boolean) => void;
   /** Installed by the bridge: holds the app's clock where it is (nothing timed fires), or lets it run on. */
@@ -479,6 +481,10 @@ export class Session {
     for (const e of this.tape.events) if (e[0] === 't' && e[1] <= at && e[1] > shown) shown = e[1];
     const win = this.frame.contentWindow!;
     const doc = this.frame.contentDocument!;
+    // Frames from other sites, held unseen by the bridge while the app booted, are shown now, still
+    // under the tape: their first frame comes while the app settles, not as it appears.
+    this.handoff.live = true;
+    doc.getElementById('portfolio-held-frames')?.remove();
     mark(this.id, 'caught-up');
     this.handoff.setClock?.(this.#clockAt(at), true);
     // Let it settle: async work after the last action, and animations it started (both bounded).

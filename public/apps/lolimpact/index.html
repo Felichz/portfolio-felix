@@ -8,13 +8,17 @@
  * app's time belongs to the portfolio:
  * - Date reads a clock the portfolio sets: frozen at the checkpoint's recorded moment while the app
  *   boots, moved to each recorded click's moment while the scene's clicks are replayed, and released at
- *   the frame the preview froze on as the app appears, running from there.
+ *   the frame the preview froze on as the app appears, running from there. Each time the portfolio
+ *   sets it or holds it, a `portfolio:clock` event goes to the window (`handoff.frozen()` says whether
+ *   it stands), for a page that follows the clock without timers (KnowGraph's video).
  * - setTimeout and setInterval run on that clock. Moving it forward fires what fell due, the way the
  *   recording lived through it (a toast that had time to leave leaves); while it's frozen, nothing
  *   timed fires early.
  * - Its backend answers as it did while the scene was recorded: fetches the scene made get the
  *   recorded responses (anything else goes to the network as usual).
  * - Once the app has painted its first screen, the portfolio is told.
+ * - Frames from other sites (PlaySync's YouTube player) load and boot unseen while the app is under its
+ *   tape; the portfolio shows them as the app goes live.
  * The app's own state (localStorage) was already seeded by the portfolio, same origin.
  */
 (function () {
@@ -23,6 +27,18 @@
     handoff = window.parent !== window && window.parent.__live && window.parent.__live[document.currentScript.dataset.app];
   } catch (e) {}
   if (!handoff) return;
+
+  // ---- Frames from other sites, unseen until the app goes live. Shown, a frame from another process
+  // holds every frame of the page until its own first one arrives, and it boots in the very second the
+  // visitor arrives at the product (PlaySync's YouTube player: 6 late frames of the page, 1 without).
+  // Hidden, it still loads and boots; the tape covers the app meanwhile, and the portfolio shows the
+  // frames once the app is about to go live (a later page of a live app never hides them).
+  if (!handoff.live) {
+    var hold = document.createElement('style');
+    hold.id = 'portfolio-held-frames';
+    hold.textContent = 'iframe[src^="http"] { display: none !important; }';
+    document.documentElement.appendChild(hold);
+  }
 
   // ---- The route, for a single-page app loaded from its index.html: set once, before its code runs.
   if (handoff.route) {
@@ -42,6 +58,9 @@
   }
   var now = function () {
     return frozen ? base : base + (RealDate.now() - realBase);
+  };
+  handoff.frozen = function () {
+    return frozen;
   };
   class ShiftedDate extends RealDate {
     constructor() {
@@ -114,6 +133,7 @@
       timers.forEach(function (t) {
         if (t.every && typeof t.fn === 'function') t.fn.apply(window, t.args);
       });
+    window.dispatchEvent(new Event('portfolio:clock'));
   };
 
   // ---- Frames. While nobody can see the app (held), requestAnimationFrame callbacks wait instead of
@@ -163,6 +183,7 @@
     held = !!on;
     timers.forEach(schedule);
     if (!held) release();
+    window.dispatchEvent(new Event('portfolio:clock'));
   };
 
   // ---- The backend, as the scene got it
