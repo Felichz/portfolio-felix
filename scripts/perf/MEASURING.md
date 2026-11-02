@@ -72,6 +72,12 @@ Found with it, 2026-11-02:
 
 - **Theme switch and product change: `deck.ts` `glow()`.** It read the section's glow colors right after the theme or the product changed (a forced restyle of the whole page, about 650 elements) and wrote them as custom properties on the root, which restyled the whole page again: four full restyles in the theme switch's first frames. Written instead on the elements that draw with them (`[data-glow]`): the theme switch at 4x CPU, the way back 18.5 to 11.4 late frames (p = 0.003), and no freeze of 30 ms or more left in 4 theme cycles (6 before). Colors checked identical on the four elements, at load, product change, theme switch and on About.
 - **Tried and dropped:** reading the toggle's position first in `switchTheme`, before its writes: no better, the way back a little worse (0.9 to 2.2 late frames, p = 0.04).
+- **Its own artifact, removed.** Starting the trace starts V8's sampling profiler, a 25 ms task (`CpuProfiler::StartProfiling`) that showed as a freeze on the step's first frames. Each step now waits 300 ms after the trace starts and leaves a `perf:act` mark; frames before it don't count.
+
+What is left, 2026-11-02, warm, 4 repetitions a step:
+
+- **Normal speed:** 2 freezes in 36 steps, both 1 in 4: PlaySync's own code booting (50 ms) and a paint (30 ms). Scroll, theme, closing the window and going live have none.
+- **4x CPU, freezes of 50 ms or more:** opening the window (3 of 3, 90 to 190 ms) is one restyle of the whole page, about 700 elements: `startViewTransition` itself restyles the whole document (653 elements with nothing named and nothing else changed, measured alone), so it stays while the window opens as a view transition. Its cost is not the selectors: Chrome's selector stats (`disabled-by-default-blink.debug`) put matching at 0.8 ms of a 20 ms restyle; the rest is computing ~650 styles. The theme switch restyles the whole page by nature (every color changes). Product changes: PlaySync's own code, and `glow()` reading the colors after the product changed (`deck:refresh`).
 
 ## The work ledger: where the work goes
 

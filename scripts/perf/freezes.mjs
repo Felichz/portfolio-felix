@@ -140,6 +140,9 @@ function analyze(events, mainFrame, placeTrace, vsync) {
       return { ts: s.ts, end: s.end, state: fr.state, bad, stage: bad ? (fr.state === 'STATE_DROPPED' ? (worst ? STAGE[worst.name] : 'unknown') : "main thread (its update missed the frame; the compositor drew without it)") : null };
     })
     .sort((a, b) => a.ts - b.ts);
+  // The step's own frames: from the mark it left as it acted.
+  const act = events.find((e) => e.name === 'perf:act' && e.pid === pagePid)?.ts ?? -Infinity;
+  frames.splice(0, frames.length, ...frames.filter((f) => f.ts >= act));
   if (!frames.length) return { freezes: [], frames: 0 };
   const t0 = frames[0].ts;
 
@@ -373,6 +376,10 @@ try {
       for (const step of cycle.steps) {
         await sleep(400);
         await page.tracing.start({ categories: CATEGORIES });
+        // Starting the trace starts V8's sampling profiler on the page's main thread, a task of its own
+        // (25 ms seen): the step acts once it's over, and a mark says where the step begins.
+        await sleep(300);
+        await page.evaluate(() => performance.mark('perf:act'));
         await step.act();
         if (kind === 'freeze') await page.evaluate(() => window.__freeze());
         await sleep(1500);
