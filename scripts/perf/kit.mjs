@@ -125,7 +125,8 @@ export function placer(dist, base) {
     try {
       const path = new URL(url).pathname;
       const file = join(dist, path + '.map');
-      if (path.startsWith('/_astro/') && existsSync(file)) c = new sourceMap.SourceMapConsumer(JSON.parse(readFileSync(file, 'utf8')));
+      // The site's own scripts, and an app's when its map was put next to it (a build with maps).
+      if ((path.startsWith('/_astro/') || path.startsWith('/apps/')) && existsSync(file)) c = new sourceMap.SourceMapConsumer(JSON.parse(readFileSync(file, 'utf8')));
     } catch {}
     maps.set(url, c);
     return c;
@@ -133,10 +134,14 @@ export function placer(dist, base) {
   const place = (url, line, col, name) => {
     if (!url) return { file: '(native)', where: name || '(native)' };
     const app = url.match(/\/apps\/([^/]+)\//);
-    if (app) return { file: `app:${app[1]}`, where: `app:${app[1]}` };
     const c = line >= 0 ? consumerFor(url) : null;
+    if (app && !c) return { file: `app:${app[1]}`, where: `app:${app[1]}` };
     if (c) {
       const o = c.originalPositionFor({ line: line + 1, column: col ?? 0 });
+      if (o.source && app) {
+        const file = `app:${app[1]} ${o.source.replace(/^.*?\/(src\/|node_modules\/)/, '$1')}`;
+        return { file, where: `${file}:${o.line}${o.name || name ? ' ' + (o.name || name) : ''}` };
+      }
       if (o.source) {
         const file = o.source.replace(/^.*?\/(src\/|node_modules\/)/, '$1').replace(/\?.*$/, '');
         return { file, where: `${file}:${o.line}${o.name || name ? ' ' + (o.name || name) : ''}` };
