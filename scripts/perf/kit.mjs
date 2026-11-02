@@ -202,11 +202,27 @@ export const cycles = (id) => ({
   }),
   product: (h, page) => {
     let from;
-    const go = (d) => page.evaluate((d) => {
-      const go = [...document.querySelectorAll('[data-go]')];
-      const i = go.findIndex((b) => b.getAttribute('aria-current') === 'true' || b.closest('[aria-current="true"]'));
-      go[(i + d + go.length) % go.length]?.click();
-    }, d);
+    // As a hand does it: the pointer onto the product's item in the rail (which prepares its slide, see
+    // preraster in Work.astro), a moment there, then a real click. (A click made from script skipped
+    // that, and measured a change no pointer makes.)
+    const go = async (d) => {
+      const target = await page.evaluate((d) => {
+        const go = [...document.querySelectorAll('[data-go]')];
+        const i = go.findIndex((b) => b.getAttribute('aria-current') === 'true' || b.closest('[aria-current="true"]'));
+        return (i + d + go.length) % go.length;
+      }, d);
+      const aim = () => page.evaluate((k) => {
+        const r = document.querySelectorAll('[data-go]')[k].getBoundingClientRect();
+        const at = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        return { ...at, on: document.elementFromPoint(at.x, at.y)?.closest('[data-go]') === document.querySelectorAll('[data-go]')[k] };
+      }, target);
+      let at = await aim();
+      await page.mouse.move(at.x, at.y, { steps: 6 });
+      await sleep(300);
+      for (let i = 0; i < 10 && !(at = await aim()).on; i++) await page.mouse.move(at.x, at.y);
+      await page.mouse.click(at.x, at.y);
+      await sleep(50);
+    };
     return {
       ready: async () => {
         await page.mouse.move(1530, 770, { steps: 3 });
