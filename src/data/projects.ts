@@ -186,14 +186,14 @@ export const projects: Project[] = [
     main: {
       ...themed(
         'knowgraph-main',
-        'KnowGraph product video: a local model is connected through Ollama and the local gateway; a concept picked on the heat-grid map is explained in your own words, coached to 71 out of 120, discussed with the mentor, revised to 89 and 105, and evaluated at 118 against a four-part rubric; then the progress is exported to a backup file and restored. This frame shows the Explain stage: the draft on the left, and on the right the coach’s next focus, an estimate of 71 out of 120 and the checklist of ideas to cover.',
+        'KnowGraph product video: a concept picked on the heat-grid map is explained in your own words, coached to 71 out of 120, discussed with the mentor, revised to 105, and evaluated at 118 against a four-part rubric, and its cell on the map fills in. This frame shows the Explain stage: the draft on the left, and on the right the coach’s next focus, an estimate of 71 out of 120 and the checklist of ideas to cover.',
       ),
       tape: 'knowgraph',
     },
     callouts: [
-      { x: 31.3, y: 51.7, text: 'You explain the concept in your own words, typed or dictated.' },
-      { x: 75.5, y: 35.8, text: 'When you pause, a coach estimates the score and points at the next gap.' },
-      { x: 75.5, y: 68.3, text: 'The card’s essential ideas, marked as you cover them.' },
+      { x: 31.7, y: 48, text: 'You explain the concept in your own words, typed or dictated.' },
+      { x: 79.9, y: 28, text: 'When you pause, a coach estimates the score and points at the next gap.' },
+      { x: 79.9, y: 56, text: 'The card’s essential ideas, marked as you cover them.' },
     ],
     gallery: [
       themed('knowgraph-card', 'KnowGraph study session on the Read stage for Controlled and uncontrolled forms: the concept’s heat cell and score sit in the header beside an Ask the mentor button, the three steps run across the top, and a side rail lists what the concept needs and unlocks.', { caption: 'Study session, Read stage' }),

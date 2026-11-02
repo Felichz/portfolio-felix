@@ -89,7 +89,7 @@ node scripts/tapes/record.mjs portfolio  # this site's Intro, from dist/ (build 
 | Product | Built from | Recording needs |
 | --- | --- | --- |
 | KatArch | `../katarch` (the video course; its videos stream from R2) | nothing |
-| KnowGraph | none: `scripts/apps/knowgraph-video/` in this repo, a page that plays the product video on the bridge's clock (the app needs the visitor's own LLM and ships as a desktop download) | nothing; its tape is the video itself, written by `node scripts/tapes/make-video-tape.mjs knowgraph <video.mp4>` |
+| KnowGraph | none: `scripts/apps/knowgraph-video/` in this repo, a page that plays the product video on the bridge's clock (the app needs the visitor's own LLM and ships as a desktop download) | nothing; its tape is the video itself, written by `node scripts/tapes/make-video-tape.mjs knowgraph <dark.mp4> <light.mp4> 34` (a clip per edition, cut to the study loop) |
 | PlaySync | `../rave2-embed` (branch `portfolio-embed`: no service worker, video muted in a frame) | the real server, clock pinned: `PIN=15:24 PORT=3099 npx tsx --import ../portfolio/scripts/tapes/pin-clock.mjs server/index.ts` |
 | LifeUI | `../life-ui-embed` (branch `portfolio-embed`: router basename) | nothing |
 | LoLImpact | `../LoLImpact/frontend` | its backend: `python -m uvicorn app.main:app --port 8010` in `backend/` |

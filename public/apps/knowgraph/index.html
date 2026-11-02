@@ -216,8 +216,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>KnowGraph</title>
     <style>
-      html, body { margin: 0; height: 100%; background: #07090D; overflow: hidden; }
-      video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #07090D; }
+      html, body { margin: 0; height: 100%; background: #0E1117; overflow: hidden; }
+      html[data-theme='light'], html[data-theme='light'] body { background: #F6F7F9; }
+      video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+      /* One video per edition; the portfolio sets the theme attribute (src/scripts/session.ts). */
+      html[data-theme='light'] video[data-edition='dark'], html:not([data-theme='light']) video[data-edition='light'] { display: none; }
     </style>
   </head>
   <body>
@@ -227,20 +230,25 @@
       (scripts/tapes/make-video-tape.mjs); this page is the "live app" under it, and plays the same
       video on the clock the portfolio's bridge gives it, so the switch from the tape is seamless.
     -->
-    <video src="/tapes/knowgraph.clip.mp4" muted playsinline loop preload="auto" disablepictureinpicture></video>
+    <video data-edition="dark" src="/tapes/knowgraph.clip.mp4" muted playsinline loop preload="auto" disablepictureinpicture></video>
+    <video data-edition="light" src="/tapes/knowgraph.light.clip.mp4" muted playsinline loop preload="auto" disablepictureinpicture></video>
     <script>
       (function () {
         // Must match the tape (public/tapes/knowgraph.json): clock0 is the app clock at tape time 0.
         var CLOCK0 = 1793000000000;
-        var v = document.querySelector('video');
+        var videos = document.querySelectorAll('video');
         var last = null;
         function tick() {
+          var now = Date.now();
+          var running = last !== null && now !== last;
+          last = now;
+          for (var i = 0; i < videos.length; i++) sync(videos[i], now, running);
+          requestAnimationFrame(tick);
+        }
+        function sync(v, now, running) {
           var dur = v.duration;
           if (dur > 0) {
-            var now = Date.now();
             var want = (((now - CLOCK0) / 1000) % dur + dur) % dur;
-            var running = last !== null && now !== last;
-            last = now;
             // The clock frozen (the app booting, or held off screen): hold the frame. Running: play,
             // and correct only real drift, so playback stays smooth.
             if (!running) {
@@ -252,7 +260,6 @@
               if (d > 0.3 && d < dur - 0.3) v.currentTime = want;
             }
           }
-          requestAnimationFrame(tick);
         }
         requestAnimationFrame(tick);
       })();
