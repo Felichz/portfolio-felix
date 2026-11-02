@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KnowGraph</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #07090D; overflow: hidden; }
+      video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #07090D; }
+    </style>
+  </head>
+  <body>
+    <!--
+      KnowGraph's preview is its product video, not the app: the app needs the visitor's own LLM, so it
+      ships as a desktop download (know-graph.vercel.app). The tape carries this video as a clip
+      (scripts/tapes/make-video-tape.mjs); this page is the "live app" under it, and plays the same
+      video on the clock the portfolio's bridge gives it, so the switch from the tape is seamless.
+    -->
+    <video src="/tapes/knowgraph.clip.mp4" muted playsinline loop preload="auto" disablepictureinpicture></video>
+    <script>
+      (function () {
+        // Must match the tape (public/tapes/knowgraph.json): clock0 is the app clock at tape time 0.
+        var CLOCK0 = 1793000000000;
+        var v = document.querySelector('video');
+        var last = null;
+        function tick() {
+          var dur = v.duration;
+          if (dur > 0) {
+            var now = Date.now();
+            var want = (((now - CLOCK0) / 1000) % dur + dur) % dur;
+            var running = last !== null && now !== last;
+            last = now;
+            // The clock frozen (the app booting, or held off screen): hold the frame. Running: play,
+            // and correct only real drift, so playback stays smooth.
+            if (!running) {
+              if (!v.paused) v.pause();
+              if (Math.abs(v.currentTime - want) > 0.05) v.currentTime = want;
+            } else {
+              if (v.paused) v.play().catch(function () {});
+              var d = Math.abs(v.currentTime - want);
+              if (d > 0.3 && d < dur - 0.3) v.currentTime = want;
+            }
+          }
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      })();
+    </script>
+  </body>
+</html>

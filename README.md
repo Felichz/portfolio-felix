@@ -89,7 +89,7 @@ node scripts/tapes/record.mjs portfolio  # this site's Intro, from dist/ (build 
 | Product | Built from | Recording needs |
 | --- | --- | --- |
 | KatArch | `../katarch` (the video course; its videos stream from R2) | nothing |
-| KnowGraph | `../learning-embed` (branch `portfolio-embed`: base-aware routes, no service worker in a frame) | nothing; its study history is restored from the repo's fixture and kept as IndexedDB |
+| KnowGraph | none: `scripts/apps/knowgraph-video/` in this repo, a page that plays the product video on the bridge's clock (the app needs the visitor's own LLM and ships as a desktop download) | nothing; its tape is the video itself, written by `node scripts/tapes/make-video-tape.mjs knowgraph <video.mp4>` |
 | PlaySync | `../rave2-embed` (branch `portfolio-embed`: no service worker, video muted in a frame) | the real server, clock pinned: `PIN=15:24 PORT=3099 npx tsx --import ../portfolio/scripts/tapes/pin-clock.mjs server/index.ts` |
 | LifeUI | `../life-ui-embed` (branch `portfolio-embed`: router basename) | nothing |
 | LoLImpact | `../LoLImpact/frontend` | its backend: `python -m uvicorn app.main:app --port 8010` in `backend/` |
@@ -165,7 +165,7 @@ Design context: [`PRODUCT.md`](PRODUCT.md) (audience, voice, evidence) and [`DES
 | | |
 | --- | --- |
 | [KatArch](https://github.com/Felichz/katarch) | A narrated video course on software architecture, built from what the twelve winning teams of the Architecture Katas left in writing. |
-| [KnowGraph](https://github.com/Felichz/KnowGraph) | Senior React and Rails interview prep as a map of 142 concepts, with an AI mentor that grades your explanations. |
+| [KnowGraph](https://github.com/Felichz/KnowGraph) | Senior React and Rails interview prep as a map of 142 concepts: you explain each one and an LLM you bring grades it. Desktop app; the preview here is its product video. |
 | [PlaySync](https://github.com/Felichz/PlaySync) | Synced YouTube watch parties with no accounts and a server-owned clock. |
 | [LifeUI](https://github.com/Felichz/life-ui) | A HUD for real life: time blocks, one running activity, and an honest closing ritual. |
 | [LoL-Impact](https://github.com/Felichz/LoL-Impact) | League of Legends win probability, minute by minute, with the uncertainty shown. |
