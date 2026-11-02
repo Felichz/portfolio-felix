@@ -15,7 +15,7 @@ How to measure the frames of this site, and the numbers to compare against. The 
 
 ## The work ledger: counts instead of frames
 
-Frame rates move with the machine's load, so they need a free machine, alternations and medians. The work behind them doesn't: styles recalculated and on how many elements, layout objects walked, paints, script time, style and layout forced from script, and the frames and timers the page asks for. `ledger.mjs` counts that per scene (load, to-work, idle-work, hover-live, use, next-product, theme, open-window, close-window, scroll, idle-live) from Chrome's own trace, takes a CPU profile, and maps the script back to `src/` through a build with source maps. Eleven scenes run in about half a minute, and a busy machine changes the milliseconds, not the counts.
+Frame rates move with the machine's load, so they need a free machine, alternations and medians. The work behind them doesn't: styles recalculated and on how many elements, layout objects walked, paints, script time, style and layout forced from script, and the frames and timers the page asks for. `ledger.mjs` counts that per scene (load, to-work, idle-work, hover-live, use, next-product, theme, open-window, close-window, scroll, idle-live) from Chrome's own trace, takes a CPU profile, and maps the script back to `src/` through a build with source maps. Eleven scenes run in about half a minute, and a busy machine changes the milliseconds, not the counts (except the frames an animation asks for: see Invariants).
 
 ```bash
 SOURCEMAP=1 npx astro build --outDir scripts/perf/out/dist-maps     # a build whose scripts map to src/
@@ -41,6 +41,8 @@ node scripts/perf/ledger.mjs --check scripts/perf/out/ledger-x.json   # the rule
 ```
 
 Checked on win, 2026-11-02: three runs in a row hold at HEAD; with the pace loop's fix (5b45945) undone, 11 rules break. When a change lowers a count for good, lower its rule in the same commit.
+
+What doesn't hold apart from the load: while something animates, the frames asked for follow the frames the machine draws (the same deck scroll asked 29 frames on the loaded laptop and 94 on the free one), and so does anything done once a frame. Rules on an animation count per frame asked, or who asks; only rules at rest count frames.
 
 ## Two machines
 
