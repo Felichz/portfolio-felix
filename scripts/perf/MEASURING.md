@@ -13,6 +13,21 @@ How to measure the frames of this site, and the numbers to compare against. The 
 - **Attribute before you change.** switchtrace.mjs (CLICK, FLING, THEME, LABEL, JS, COUNTS) splits the renderers, names the JavaScript, and counts the style work. Remove a cost by injected CSS first, measure, and only then change the code.
 - **Close what competes.** League, Riot clients or any game left running make the numbers about the game. If the gate says the machine is busy, close it and run again.
 
+## The work ledger: counts instead of frames
+
+Frame rates move with the machine's load, so they need a free machine, alternations and medians. The work behind them doesn't: styles recalculated and on how many elements, layout objects walked, paints, script time, style and layout forced from script, and the frames and timers the page asks for. `ledger.mjs` counts that per scene (load, to-work, idle-work, hover-live, use, next-product, theme, open-window, close-window, scroll, idle-live) from Chrome's own trace, takes a CPU profile, and maps the script back to `src/` through a build with source maps. Eleven scenes run in about half a minute, and a busy machine changes the milliseconds, not the counts.
+
+```bash
+SOURCEMAP=1 npx astro build --outDir scripts/perf/out/dist-maps     # a build whose scripts map to src/
+node scripts/perf/ledger.mjs --tag before --repeat 3                 # table per scene + where the work goes
+node scripts/perf/ledger.mjs --compare scripts/perf/out/ledger-before.json scripts/perf/out/ledger-after.json
+```
+
+- **What it prints.** Per scene: busy, script, style, layout and paint ms (this machine's), then the counts. Then the hottest functions and files over all scenes (native calls charged to the script that made them), the forced style and layout with the function that forced them, who asks for frames and timers, and the totals by document (the page, each stage, each app).
+- **What repeats.** Scenes at rest or under a steady hand (idle-live, scroll, hover-live, use, close-window) give the same counts run after run. Scenes that load something (to-work, next-product) move with when a tape or an app finishes arriving: three runs, and the comparison takes each count's least, the work the scene can't do without. Read those two as a range, not a verdict.
+- **A/B.** Build each variant into its own folder (`DIST=` picks it), run each with `--repeat 3`, compare. A change of 10% or more is marked.
+- **Then the frames.** The ledger finds and ranks the work; the gate still confirms the frames on a free machine before anything is integrated.
+
 ## Two machines
 
 Two Claude instances measure here, one per machine (see CLAUDE.md). The numbers of one machine are never compared with the other's: the displays, GPUs and loads differ. Each keeps its own baseline, `scripts/perf/baseline-<agent>.md`, written with the commands below, and every A/B runs on one machine. `node scripts/perf/ceiling.mjs` shows what a blank page holds on a screen: set `DISPLAY_HZ` to it. The table under Baseline is `win`'s.
