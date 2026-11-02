@@ -555,8 +555,14 @@ const glowCSS = projects
     // (still aria-hidden and inert), timed from the countdown — which always runs out the same way —
     // and from a rail hover, whose click follows within a beat. The switch then composes textures
     // that exist instead of building them.
+    // When the deck last moved. A slide's preparation can mount its recording (a new document's first
+    // layout, 22 ms), and while the deck scrolls it must wait: the rail's items pass under a resting
+    // pointer and each one entered asked for its slide, in the first frames of a scroll (freezes.mjs).
+    let moved = -Infinity;
+    document.querySelector('[data-deck]')?.addEventListener('scroll', () => (moved = performance.now()), { passive: true });
     const prerastered = new Set<HTMLElement>();
     const preraster = (j: number) => {
+      if (performance.now() - moved < 300) return;
       const s = slides[((j % slides.length) + slides.length) % slides.length];
       if (!s || s.dataset.state === 'active' || prerastered.has(s)) return;
       prerastered.add(s);
@@ -665,7 +671,8 @@ const glowCSS = projects
         setTimeout(() => {
           let k = 0;
           const iv = setInterval(() => {
-            if (document.hidden) return;
+            // (While the deck moves, the next turn: preraster would skip this slide for good.)
+            if (document.hidden || performance.now() - moved < 300) return;
             if (k >= slides.length || !active) return clearInterval(iv);
             preraster(k++);
           }, 400);
