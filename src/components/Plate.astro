@@ -27,7 +27,8 @@ interface Props {
 const { shot, sizes, widths = [480, 800, 1200, 1600, 2000], chrome, zoom = true, eager = false, vt, motion, class: className, style } = Astro.props;
 const single = shot.light === shot.dark;
 const phone = !!shot.phone;
-const w = phone ? [280, 420, 640] : widths;
+const device = !!shot.device;
+const w = device ? [400, 640, 900, 1170] : phone ? [280, 420, 640] : widths;
 const clip = motion && shot.motion && !shot.tape ? shot.motion : undefined;
 const tape = motion && shot.tape ? shot.tape : undefined;
 
@@ -40,7 +41,8 @@ const common = {
   formats: ['avif', 'webp'] as ('avif' | 'webp')[],
   fallbackFormat: 'webp' as const,
   widths: w,
-  sizes,
+  // A phone is drawn far narrower than the window its slot was sized for.
+  sizes: device ? '(min-width: 761px) 360px, 70vw' : sizes,
   decoding: 'async' as const,
   // Both variants stay lazy: the hidden one is display:none, so the browser never fetches it.
   loading: (eager && single ? 'eager' : 'lazy') as 'eager' | 'lazy',
@@ -51,13 +53,13 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
 ---
 
 <div
-  class:list={['plate', phone && 'plate--phone', chrome && !phone && 'plate--chrome', className]}
+  class:list={['plate', phone && 'plate--phone', device && 'plate--device', chrome && !phone && !device && 'plate--chrome', className]}
   style={styles}
   data-motion={clip || tape ? motion : undefined}
   data-app={tape}
 >
   {
-    chrome && !phone && (
+    chrome && !phone && !device && (
       <div class="plate-chrome">
         <span class="plate-dots" aria-hidden="true"><i /><i /><i /></span>
         <span class="plate-tools">
@@ -74,6 +76,24 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
     )
   }
   <div class="plate-screen">
+    {
+      device && (
+        <span class="device-status" aria-hidden="true">
+          <span class="device-time">9:41</span>
+          <span class="device-island" />
+          <svg class="device-icons" viewBox="0 0 68 12" fill="currentColor">
+            <rect x="0" y="8" width="3" height="4" rx="0.8" />
+            <rect x="4.5" y="6" width="3" height="6" rx="0.8" />
+            <rect x="9" y="3.5" width="3" height="8.5" rx="0.8" />
+            <rect x="13.5" y="1" width="3" height="11" rx="0.8" />
+            <path d="M30 3.2a10 10 0 0 1 7.6 3.1l1.3-1.4a12 12 0 0 0-17.8 0l1.3 1.4A10 10 0 0 1 30 3.2Zm0 3.6a6 6 0 0 1 4.3 1.8l1.3-1.4a8 8 0 0 0-11.2 0l1.3 1.4A6 6 0 0 1 30 6.8Zm0 3.6a2.4 2.4 0 0 1 1.6.6L30 12.6 28.4 11a2.4 2.4 0 0 1 1.6-.6Z" />
+            <rect x="44" y="1" width="20.5" height="10" rx="3" fill="none" stroke="currentColor" stroke-opacity="0.45" />
+            <rect x="46" y="3" width="13.5" height="6" rx="1.6" />
+            <path d="M66 4.3v3.4a1.8 1.8 0 0 0 0-3.4Z" fill-opacity="0.45" />
+          </svg>
+        </span>
+      )
+    }
     <Tag
       class:list={['plate-frame', zoom && 'zoom']}
       type={zoom ? 'button' : undefined}
@@ -112,6 +132,7 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
         )
       }
     </Tag>
+    {device && <span class="device-gloss" aria-hidden="true" />}
     <slot />
   </div>
 </div>

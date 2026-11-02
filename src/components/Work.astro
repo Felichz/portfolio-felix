@@ -75,7 +75,13 @@ const glowCSS = projects
             aria-hidden={i === 0 ? undefined : 'true'}
             inert={i === 0 ? undefined : true}
           >
-            <a class="slide-media" href={`/work/${p.id}/`} tabindex="-1" aria-hidden="true" data-tilt="5">
+            <a
+              class:list={['slide-media', p.main.device && 'slide-media--device']}
+              href={`/work/${p.id}/`}
+              tabindex="-1"
+              aria-hidden="true"
+              data-tilt={p.main.device ? '16' : '5'}
+            >
               <Plate
                 shot={p.main}
                 chrome={host(p.live)}
@@ -167,17 +173,25 @@ const glowCSS = projects
   .rail-head { display: grid; gap: 8px; padding: 4px 6px clamp(10px, 1.8cqh, 18px); border-bottom: 1px solid var(--line); }
   .rail-title { font-size: clamp(1.5rem, 1.1rem + 1vw, 2.125rem); line-height: 1; letter-spacing: -0.035em; font-weight: 790; font-stretch: 96%; }
   .rail-sub { font-size: 0.8125rem; line-height: 1.45; }
+  /* The list keeps each item at its own size and scrolls when they don't all fit. The edge with more
+     items beyond it fades out (--fade-top / --fade-bottom, set by the script), and resting the
+     pointer near that edge scrolls toward it. */
   .rail-list {
+    --fade-top: 0px;
+    --fade-bottom: 0px;
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-height: 0;
     padding-block: 10px;
     overflow-y: auto;
+    overscroll-behavior: contain;
     scrollbar-width: none;
     contain: layout style;
+    mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
+    transition: --fade-top 0.35s var(--ease-out), --fade-bottom 0.35s var(--ease-out);
   }
-  .rail-list > li { flex: 1 1 0; max-height: 104px; min-height: 0; display: flex; }
+  .rail-list > li { flex: none; min-height: clamp(68px, 10.5cqh, 92px); display: flex; }
   .rail-item {
     --spot: var(--accent);
     position: relative;
@@ -358,6 +372,44 @@ const glowCSS = projects
   }
   .slide-media[data-tilting] :global(.tilt-sheen) { opacity: 1; }
 
+  /* A phone app stands on its own, without a window: the phone, centered in the window's space,
+     leans toward the pointer in 3D with a band of light crossing its glass. It holds a still, not a
+     live app, so a new angle only moves a texture the GPU already has. */
+  .slide-media--device { display: grid; place-items: center; aspect-ratio: 16 / 10; perspective: 1400px; }
+  .slide-media--device::before { inset: 14% 28% 0; opacity: 0.9; }
+  /* The floor: a soft shadow under the phone that narrows as it lifts. */
+  .slide-media--device::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -3.5%;
+    z-index: -1;
+    width: 26%;
+    height: 5%;
+    translate: -50% 0;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(0 0 0 / 0.35), transparent);
+    transition: scale 0.7s var(--ease-out), opacity 0.7s var(--ease-out);
+  }
+  .slide-media--device:hover::after { scale: 0.85; opacity: 0.7; }
+  .slide-media--device :global(.plate--device) {
+    height: 100%;
+    width: auto;
+    transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 1.1s var(--ease-out), translate 0.7s var(--ease-out);
+  }
+  .slide-media--device[data-tilting] :global(.plate--device) { transition-duration: 0.25s, 0.7s; }
+  .slide-media--device:is(:hover, :has(:global(.plate[data-hover]))) :global(.plate) { translate: 0 -8px; }
+  .slide-media--device :global(.tilt-sheen) { inset: 1.6% 3.4%; border-radius: 13.7% / 6.35%; }
+  .slide-media--device :global(.tilt-sheen)::before {
+    top: -60%;
+    left: -110%;
+    width: 160%;
+    height: 220%;
+    background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.15) 47%, rgb(255 255 255 / 0.05) 52%, transparent 60%);
+    transform: translateX(calc(var(--sx, 0px) * 1.2));
+  }
+
   .slide-info {
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
@@ -442,8 +494,10 @@ const glowCSS = projects
       margin-inline: calc(var(--gutter) * -1);
       padding-inline: var(--gutter);
       scroll-padding-inline: var(--gutter);
+      mask-image: none;
     }
-    .rail-list > li { flex: none; max-height: none; }
+    .rail-list > li { flex: none; min-height: 0; }
+    .slide-media--device { aspect-ratio: 1; }
     .rail-item {
       grid-template-columns: auto;
       grid-template-areas: 'name';
@@ -609,6 +663,14 @@ const glowCSS = projects
         if (li && strip && strip.scrollWidth > strip.clientWidth) {
           strip.scrollTo({ left: li.offsetLeft - strip.clientWidth / 2 + li.offsetWidth / 2, behavior: reduce.matches ? 'instant' : 'smooth' });
         }
+        // On a desktop rail that scrolls, the same for the item, unless the pointer is driving the list.
+        else if (li && strip && strip.scrollHeight > strip.clientHeight && !strip.matches(':hover')) {
+          const top = li.offsetTop - strip.offsetTop;
+          const room = 56; // clear of the faded edge
+          if (top < strip.scrollTop + room || top + li.offsetHeight > strip.scrollTop + strip.clientHeight - room) {
+            strip.scrollTo({ top: top - strip.clientHeight / 2 + li.offsetHeight / 2, behavior: reduce.matches ? 'instant' : 'smooth' });
+          }
+        }
       }, reduce.matches ? 0 : SETTLE);
     };
 
@@ -706,5 +768,53 @@ const glowCSS = projects
     setAuto(auto);
     index = -1;
     select(Number(root.dataset.start ?? 0));
+  }
+</script>
+
+<script>
+  // The rail's list, when its items don't all fit: each edge fades while there's more beyond it,
+  // and resting a mouse near that edge scrolls toward it, faster the closer it is. Touch and
+  // keyboard scroll it as any list.
+  const list = document.querySelector<HTMLElement>('.rail-list');
+  const fine = matchMedia('(hover: hover) and (pointer: fine)');
+  if (list) {
+    const FADE = 44; // px of fade on an edge with more beyond it
+    const ZONE = 0.24; // share of the list's height, at each end, that scrolls
+    const SPEED = 560; // px per second at the very edge
+    const edges = () => {
+      const vertical = list.scrollHeight > list.clientHeight + 1;
+      const top = vertical && list.scrollTop > 1;
+      const bottom = vertical && list.scrollTop + list.clientHeight < list.scrollHeight - 1;
+      list.style.setProperty('--fade-top', top ? `${FADE}px` : '0px');
+      list.style.setProperty('--fade-bottom', bottom ? `${FADE}px` : '0px');
+    };
+    list.addEventListener('scroll', edges, { passive: true });
+    new ResizeObserver(edges).observe(list);
+    edges();
+
+    let pull = 0; // -1..1: the direction and strength of the scroll the pointer asks for
+    let raf = 0;
+    let last = 0;
+    const step = (t: number) => {
+      const dt = last ? Math.min(t - last, 50) / 1000 : 0;
+      last = t;
+      const before = list.scrollTop;
+      list.scrollTop += pull * Math.abs(pull) * SPEED * dt;
+      // Stop at either end, or once the pointer has left the zone.
+      if (pull === 0 || (dt > 0 && list.scrollTop === before)) {
+        raf = 0;
+        last = 0;
+        return;
+      }
+      raf = requestAnimationFrame(step);
+    };
+    list.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse' || !fine.matches || list.scrollHeight <= list.clientHeight + 1) return;
+      const r = list.getBoundingClientRect();
+      const y = (e.clientY - r.top) / r.height;
+      pull = y < ZONE ? -(1 - y / ZONE) : y > 1 - ZONE ? (y - (1 - ZONE)) / ZONE : 0;
+      if (pull !== 0 && !raf) raf = requestAnimationFrame(step);
+    });
+    list.addEventListener('pointerleave', () => (pull = 0));
   }
 </script>

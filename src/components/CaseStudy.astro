@@ -319,6 +319,8 @@ const panels: PanelLink[] = [
     background: radial-gradient(closest-side, color-mix(in oklab, var(--accent) 30%, transparent), transparent);
   }
   .ov-stage :global(.ov-plate) { width: min(100cqw, calc((100cqh - 34px) * 1.6)); }
+  /* A phone app's lead stands as a phone, fitted by height. */
+  .ov-stage :global(.ov-plate.plate--device) { width: auto; height: min(calc(100cqh - 34px), 780px); }
 
   /* ---- Story ---- */
   .st {
@@ -343,6 +345,7 @@ const panels: PanelLink[] = [
   }
   .st-look { display: grid; gap: 14px; padding: clamp(16px, 2cqw, 24px); max-height: 100%; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
   .st-look :global(.st-thumb) { box-shadow: 0 0 0 1px var(--line-2), var(--shadow); }
+  .st-look :global(.st-thumb.plate--device) { width: min(100%, 230px); justify-self: center; box-shadow: 0 18px 36px -16px rgb(0 0 0 / 0.45); }
   .st-callouts { display: grid; gap: 12px; }
   .st-callouts li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.9375rem; line-height: 1.45; color: var(--ink-2); }
 
@@ -454,6 +457,7 @@ const panels: PanelLink[] = [
   .next-short { font-size: 0.9375rem; color: var(--ink-2); }
   .next-card :global(.next-thumb) { margin-top: 14px; margin-bottom: calc(-1 * clamp(18px, 2.2cqw, 28px) - 30%); transform: rotate(-2deg) translateX(4%); transition: transform 0.7s var(--ease-out); }
   .next-card:hover :global(.next-thumb) { transform: rotate(0) translateX(0) translateY(-8px); }
+  .next-card :global(.next-thumb.plate--device) { width: 58%; margin-inline: auto; }
   .next-card { max-height: min(70cqh, 560px); }
   .sp-more { display: flex; justify-content: space-between; gap: 12px; padding-inline: 4px; }
 
@@ -462,6 +466,7 @@ const panels: PanelLink[] = [
     .ov, .st, .sp { grid-template-columns: minmax(0, 1fr); align-content: start; height: auto; min-height: 100%; }
     .ov-stage { height: auto; container-type: normal; }
     .ov-stage :global(.ov-plate) { width: 100%; }
+    .ov-stage :global(.ov-plate.plate--device) { width: min(76vw, 340px); height: auto; margin-inline: auto; }
     .eng { height: auto; min-height: 100%; }
     .how { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; height: auto; min-height: 100%; }
     .how-steps { overflow: visible; }
