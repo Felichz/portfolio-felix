@@ -62,7 +62,7 @@ function check(ledger) {
   console.log(ok ? '\nall hold' : '\nbroken: see FAIL above. Who asks and who forces is in the full ledger (run it without --check).');
   return ok;
 }
-const saved = checking && process.argv[process.argv.indexOf('--check') + 1];
+const saved = checking ? process.argv[process.argv.indexOf('--check') + 1] : undefined;
 if (saved?.endsWith('.json')) process.exit(check(JSON.parse(readFileSync(resolve(saved), 'utf8'))) ? 0 : 1);
 
 // ---- Compare two ledgers ---------------------------------------------------------------------------
