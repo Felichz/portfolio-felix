@@ -13,7 +13,28 @@ How to measure the frames of this site, and the numbers to compare against. The 
 - **Attribute before you change.** switchtrace.mjs (CLICK, FLING, THEME, LABEL, JS, COUNTS) splits the renderers, names the JavaScript, and counts the style work. Remove a cost by injected CSS first, measure, and only then change the code.
 - **Close what competes.** League, Riot clients or any game left running make the numbers about the game. If the gate says the machine is busy, close it and run again.
 
-## The work ledger: counts instead of frames
+## Late frames, counted by Chrome: the first measure
+
+`drops.mjs` counts what the visitor sees. Chrome's compositor reports every frame it meant to show (`PipelineReporter` in the trace): shown, shown in part (the compositor drew on time without the main thread's update) or dropped, whether that hurt smoothness, and how long each stage took. A cycle (`window`: open and close; `scroll`: down and up; `product`: next and back) repeats N times on a fresh page and each step is traced alone. With `--ab` two builds alternate in blocks and each step gets a permutation test: `p < 0.05` is a real difference, anything else is noise. `--throttle 4` slows the CPU (the GPU stays), which is what a modest laptop does and what makes a main-thread cost stand out. `--why` also traces the main thread and says what it did in the late frames (script by source line through a build with maps, style, layout, paint); it costs the page something, so count without it and explain with it.
+
+```bash
+npx astro build --outDir scripts/perf/out/dist-a                     # one folder per variant
+node scripts/perf/drops.mjs --cycle window --n 10 --throttle 4 --ab scripts/perf/out/dist-a dist   # about 4 min
+SOURCEMAP=1 npx astro build --outDir scripts/perf/out/dist-maps
+DIST=scripts/perf/out/dist-maps node scripts/perf/drops.mjs --cycle window --n 4 --throttle 4 --why
+```
+
+How it was checked, on win, 2026-11-02, the machine free:
+
+- **A/A.** The same build against itself, 10 cycles: no difference (open p = 0.74, close p = 0.09).
+- **A known cost.** 12 ms of busy work in each frame for 600 ms after each step, in one build only: 5 late frames a step became 28, p < 0.001, both steps, and the cause read as the main thread.
+- **A regression the gate reported.** The gate breaches `lifeui:close` at HEAD, and the baseline of 2026-10-27 had it passing, so the close looked worse since 560092e. `drops.mjs` with `ID=lifeui` says 560092e and ef45156 close the same (11.6 and 10.6 late frames, p = 0.5), and the gate on 560092e breaches the same phase twice. There was no regression: the passing run sat at p99 16.8 ms against a 17.5 ms budget.
+
+What it found on that day (ef45156 against 7e4877b, 10 cycles each): at 4x throttle the close went from 50 to 44 late frames a step (p = 0.02); open, scroll and product change showed no difference at either speed. Product change is the noisiest cycle (18 to 133 late frames a step at 4x): read it with more cycles. `--why` on the close at 4x: about 283 ms of style recalculation and 144 ms of paint a step in the late frames against 35 ms of script, so the close is rendering work, not JavaScript.
+
+## The work ledger: where the work goes
+
+The ledger counts work, not late frames, and the two don't match: on 2026-11-02 it showed 80 frame callbacks and a third of the deck's forced styles gone, and the late frames didn't move, because that work sat in frames that were on time. Use it to find and rank work, and to hold the invariants; judge a change by `drops.mjs`.
 
 Frame rates move with the machine's load, so they need a free machine, alternations and medians. The work behind them doesn't: styles recalculated and on how many elements, layout objects walked, paints, script time, style and layout forced from script, and the frames and timers the page asks for. `ledger.mjs` counts that per scene (load, to-work, idle-work, hover-live, use, next-product, theme, open-window, close-window, scroll, idle-live) from Chrome's own trace, takes a CPU profile, and maps the script back to `src/` through a build with source maps. Eleven scenes run in about half a minute, and a busy machine changes the milliseconds, not the counts (except the frames an animation asks for: see Invariants).
 
@@ -28,7 +49,7 @@ node scripts/perf/ledger.mjs --compare scripts/perf/out/ledger-before.json scrip
 - **What it counts.** The page's own process: the page, its stages and their apps. A frame from another site (the YouTube player inside PlaySync) runs in a process of its own; it costs the page nothing and is left out.
 - **Each scene checks itself.** A scene works on what the one before left, so one that did nothing (the arrow key went to the app the window left focused, the click missed a button the tilt had moved) would count another interaction. Each says what it must have done (the window open, the deck moved down and back, the theme changed) and the run fails if it didn't.
 - **A/B.** Build each variant into its own folder (`DIST=` picks it), run each with `--repeat 3`, compare. A change of 10% or more is marked.
-- **Then the frames.** The ledger finds and ranks the work; the gate still confirms the frames on a free machine before anything is integrated.
+- **Then the frames.** The ledger finds and ranks the work; `drops.mjs` says whether the frames changed.
 
 ### Invariants
 

@@ -21,7 +21,8 @@ Said by Felix on 2026-10-11. The common things must be fluid for everyone, on mo
 One instance works here, on Felix's Windows laptop. Until 2026-11-02 a second one ran on his Mac and the two talked through `scripts/coord/coord.mjs` on the `coord` branch; the Mac is retired, the channel is history (its old claims hold nothing), and checking it is optional.
 
 - **Branches.** `main` is production. `live-apps` is the integration branch and follows `main`; work goes on a branch of its own (`perf/<topic>`) and reaches both by fast-forward once Felix agrees.
-- **What may be integrated.** Measured A/B, alternating the variants, with the same metric, at least 3 runs each, and the median better; no visible loss; `npx astro check` with 0 errors; `node scripts/perf/ledger.mjs --check` holding; the gate in PASS. When the laptop is too busy for the gate (Felix's jobs, a game), say so plainly: "gate unconfirmed".
+- **What may be integrated.** An A/B with `scripts/perf/drops.mjs --ab` (late frames counted by Chrome, alternated, with a p-value) on the cycles the change touches, at normal speed and at `--throttle 4`: better where it aims (p < 0.05) and not worse elsewhere. No visible loss; `npx astro check` with 0 errors; `node scripts/perf/ledger.mjs --check` holding. The gate (`check.mjs --gate`) still runs as a smoke test; `lifeui:close` breaches it at every commit since at least 560092e (2026-11-02), so that breach alone says nothing. When the laptop is too busy to measure (Felix's jobs, a game), say so plainly: "unmeasured".
+- **Work is not frames.** The ledger counts work; it found savings on 2026-11-02 that moved no late frame. Report a change by what `drops.mjs` says, and the ledger's counts only as where the work went.
 - **One baseline.** `scripts/perf/baseline-win.md`. Numbers from another machine or another day are never compared with these.
 
 ### Notes on the machine
