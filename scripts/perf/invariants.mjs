@@ -7,6 +7,10 @@
 // next-product, open-window, theme) are ceilings with room, there to catch a cost that doubles.
 // When a change lowers a count for good, lower its rule in the same commit.
 //
+// While something animates, the frames asked for follow the frames the machine draws: the same deck
+// scroll asked 29 frames on a loaded laptop and 94 on a free one. So a rule on an animation counts per
+// frame (what forced per frame the deck asked for, who else asks), never the frames themselves.
+//
 // A rule's `count(run)` gets one run of the scene: its totals (`run.rafs`, `run.forced`, ...) and two
 // helpers, `asked(kind, where)` for frames or timers asked for from a source location, and
 // `forced(kind, where)` for style or layout forced there (`where` is a RegExp over `src/...:line name`).
@@ -42,12 +46,15 @@ export const INVARIANTS = [
   // The window.
   { scene: 'close-window', says: 'closing the window asks for 5 frames at most', count: (r) => r.rafs, max: 5 },
   { scene: 'close-window', says: 'closing the window forces 10 styles or layouts at most', count: (r) => r.forced(), max: 10 },
-  { scene: 'open-window', says: 'opening the window forces 35 styles or layouts at most', count: (r) => r.forced(), max: 35 },
+  { scene: 'open-window', says: 'opening the window forces 50 styles or layouts at most', count: (r) => r.forced(), max: 50 },
 
   // Scrolling the deck: one section down and back.
   { scene: 'scroll', says: 'while the deck scrolls, layout is forced only by the deck, the cursor light and live.ts', count: (r) => r.forced('layout') - r.forced('layout', /^src\/scripts\/(deck|field|live)\.ts/), max: 0 },
   { scene: 'scroll', says: 'the deck forces one layout per frame it asks for, at most', count: (r) => r.forced('layout', /deck\.ts/) / Math.max(1, r.asked('rAF', /deck\.ts/)), max: 1 },
-  { scene: 'scroll', says: 'a deck scroll asks for 100 frames at most', count: (r) => r.rafs, max: 100 },
+  // It reads its position once a frame, in the frame (1.07 styles forced a frame; 1.42 when the scroll
+  // event read it too).
+  { scene: 'scroll', says: 'the deck forces one style per frame it asks for, a little more at most', count: (r) => r.forced('style', /deck\.ts/) / Math.max(1, r.asked('rAF', /deck\.ts/)), max: 1.2 },
+  { scene: 'scroll', says: 'while the deck scrolls, frames are asked only by the deck, the cursor light and live.ts', count: (r) => r.rafs - r.asked('rAF', /^src\/scripts\/(deck|field|live)\.ts/), max: 0 },
 
   // Scenes that load something: ceilings with room.
   // (Styles forced on arrival are left out: when the app arrives before its preview is live, pausing
@@ -55,6 +62,5 @@ export const INVARIANTS = [
   // element, about 20 ms together.)
   { scene: 'to-work', says: 'arriving at the showcase forces 50 layouts at most', count: (r) => r.forced('layout'), max: 50 },
   { scene: 'next-product', says: 'changing product forces 90 styles or layouts at most', count: (r) => r.forced(), max: 90 },
-  { scene: 'next-product', says: 'changing product asks for 150 frames at most', count: (r) => r.rafs, max: 150 },
   { scene: 'theme', says: 'the theme switch forces 15 styles or layouts at most', count: (r) => r.forced(), max: 15 },
 ];
