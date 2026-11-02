@@ -186,7 +186,7 @@ export const projects: Project[] = [
     main: {
       ...themed(
         'knowgraph-main',
-        'KnowGraph product video: a concept picked on the heat-grid map is explained in your own words, coached to 71 out of 120, discussed with the mentor, revised to 89 and 105, and evaluated at 118 against a four-part rubric. This frame shows the Explain stage: the draft on the left, and on the right the coach’s next focus, an estimate of 71 out of 120 and the checklist of ideas to cover.',
+        'KnowGraph product video: a local model is connected through Ollama and the local gateway; a concept picked on the heat-grid map is explained in your own words, coached to 71 out of 120, discussed with the mentor, revised to 89 and 105, and evaluated at 118 against a four-part rubric; then the progress is exported to a backup file and restored. This frame shows the Explain stage: the draft on the left, and on the right the coach’s next focus, an estimate of 71 out of 120 and the checklist of ideas to cover.',
       ),
       tape: 'knowgraph',
     },
