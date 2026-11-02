@@ -44,6 +44,9 @@ Fixed with it, 2026-11-02 (A/B, 10 cycles a step, warm):
 - **PlaySync's YouTube frame waited for.** Shown as the app booted under its tape, the YouTube frame made the page's frames wait on its own first one while its process evaluated the player (70 ms): the change to PlaySync dropped 6.7 frames a step, 1.3 with the frame held unseen until the app goes live (p < 0.001); going live, 4x and the way back unchanged. (`scripts/apps/bridge.js`, `session.ts`.)
 - **KnowGraph's video on every frame.** Its page checked the clock on every frame for as long as the preview was up (100 frames a second, a frame drawn for each), and kept playing off screen. On the bridge's clock events and the video's own progress instead: opening the window 17.4 to 11.0 late frames at 4x, closing 15.6 to 6.6, both p < 0.001 (normal speed 2.2 to 1.2 and 2.1 to 0.7). (`scripts/apps/knowgraph-video/`.)
 - **Tried and dropped.** Flying the window as a scaled box (a transform) instead of the browser's width and height: opening got worse at 4x (17.6 to 22.5, p = 0.008).
+- **The window's flight length** moved from a custom property on the root (which restyled the whole page each way) into CSS per direction: closing 4.1 to 3.0 late frames at 4x (p = 0.04).
+
+What is left, normal speed, warm, 4 cycles each (`--cycle product` from each product): KatArch to KnowGraph 1, KnowGraph to PlaySync 1, PlaySync to LifeUI 4 to 5, LifeUI to LoL Impact 4 to 9 (30 the first time), LoL Impact to this site 8 to 11, this site to KatArch 5. Where it was looked at, it is the next product's app booting under its tape: LoL Impact's own script and layout (73 layouts, 39 ms), and this site booting inside itself (three first layouts of 21, 27 and 33 ms). When an app boots is a choice about what the visitor sees, so it is Felix's; at 4x CPU the change to PlaySync keeps about 28 late frames, most of them PlaySync's own code.
 
 ## The work ledger: where the work goes
 
