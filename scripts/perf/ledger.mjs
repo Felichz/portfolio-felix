@@ -9,6 +9,7 @@
 //   SOURCEMAP=1 npx astro build --outDir scripts/perf/out/dist-maps   # once per change: a build with maps
 //   node scripts/perf/ledger.mjs [--tag name] [--scenes load,idle-work,...] [--repeat 2]
 //   node scripts/perf/ledger.mjs --compare out/ledger-a.json out/ledger-b.json
+//   node scripts/perf/ledger.mjs --check [out/ledger-x.json]   # the rules in invariants.mjs; exits 1 on a break
 //
 // It serves that build itself, on [::1] (stages in the page's process, as deployed). DIST picks another
 // build; ID the product the scenes use (knowgraph). Chrome runs off screen (SHOW=1 to see it).
@@ -22,6 +23,7 @@ import { dirname, extname, join, normalize, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url';
 import sourceMap from 'source-map-js';
 import { chromePath, windowPosition } from './chrome.mjs';
+import { INVARIANTS } from './invariants.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -31,6 +33,37 @@ const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`);
   return i > 0 ? process.argv[i + 1] : fallback;
 };
+
+// ---- Check the invariants -------------------------------------------------------------------------
+const checking = process.argv.includes('--check');
+/** Each rule against a ledger's runs: prints a line per rule, returns whether all held. */
+function check(ledger) {
+  const sum = (rows, kind, where) => Object.entries(rows).reduce((n, [k, v]) => {
+    const space = k.indexOf(' ');
+    return (!kind || k.slice(0, space) === kind) && (!where || where.test(k.slice(space + 1))) ? n + v : n;
+  }, 0);
+  let ok = true;
+  console.log(`invariants, ${ledger.tag} (${ledger.runs} runs, each count's least)\n`);
+  for (const rule of INVARIANTS) {
+    const runs = ledger.each?.[rule.scene];
+    if (!runs) {
+      console.log(`  ----  ${rule.scene.padEnd(13)} ${rule.says} (scene not run)`);
+      continue;
+    }
+    const got = Math.min(...runs.map((r) => rule.count({ ...r, asked: (kind, where) => sum(r.askers, kind, where), forced: (kind, where) => sum(r.forcedBy, kind, where) })));
+    const held = got <= rule.max;
+    ok &&= held;
+    console.log(`  ${held ? 'ok  ' : 'FAIL'}  ${rule.scene.padEnd(13)} ${rule.says}: ${fmt(got)} (at most ${rule.max})`);
+  }
+  if (ledger.errors?.length) {
+    ok = false;
+    console.log(`  FAIL  page errors: ${ledger.errors.join(' | ')}`);
+  }
+  console.log(ok ? '\nall hold' : '\nbroken: see FAIL above. Who asks and who forces is in the full ledger (run it without --check).');
+  return ok;
+}
+const saved = checking && process.argv[process.argv.indexOf('--check') + 1];
+if (saved?.endsWith('.json')) process.exit(check(JSON.parse(readFileSync(resolve(saved), 'utf8'))) ? 0 : 1);
 
 // ---- Compare two ledgers ---------------------------------------------------------------------------
 if (process.argv.includes('--compare')) {
@@ -160,7 +193,16 @@ const goLive = async () => {
   return at;
 };
 
-// Each scene: what it does, and whether the setup before it is part of the scene.
+const activeHref = () => page.evaluate(() => document.querySelector('.slide[data-state="active"] .slide-media')?.getAttribute('href') ?? '');
+const windowOpen = () => page.evaluate(() => !!document.querySelector('.thaw.landed'));
+const theme = () => page.evaluate(() => document.documentElement.dataset.theme);
+const deckTop = () => page.evaluate(() => document.querySelector('[data-deck]').scrollTop);
+
+// Each scene: what it does, whether the setup before it is part of the scene, and `did`, which says
+// whether it did what it says (null) or what went wrong. A scene works on the state the one before
+// left, so one that silently did nothing (a key that went to the app, a window that never opened)
+// would count a different interaction: that run fails instead.
+let mark;
 const SCENES = {
   load: { run: async () => {
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
@@ -176,14 +218,15 @@ const SCENES = {
       if (auto?.getAttribute('aria-pressed') === 'true') auto.click();
     });
     await sleep(2500);
-  } },
+  }, did: async () => ((await activeHref()).includes(ID) ? null : `the showcase is on ${await activeHref()}`) },
   'idle-work': { run: () => sleep(3000) },
   'hover-live': { run: async () => {
     await goLive();
     await sleep(300);
-  } },
-  use: { run: async () => wiggle(await plateBox(), 1500) },
+  }, did: async () => ((await isLive()) ? null : 'the preview never went live') },
+  use: { run: async () => wiggle(await plateBox(), 1500), did: async () => ((await isLive()) ? null : 'the preview is not live') },
   'next-product': { run: async () => {
+    mark = await activeHref();
     await page.evaluate(() => {
       const go = [...document.querySelectorAll('[data-go]')];
       const i = go.findIndex((b) => b.getAttribute('aria-current') === 'true' || b.closest('[aria-current="true"]'));
@@ -191,11 +234,12 @@ const SCENES = {
     });
     await page.mouse.move(1530, 770, { steps: 3 });
     await sleep(2500);
-  } },
+  }, did: async () => ((await activeHref()) !== mark ? null : 'the showcase stayed on the same product') },
   theme: { run: async () => {
+    mark = await theme();
     await page.evaluate(() => document.querySelector('[data-theme-toggle]').click());
     await sleep(1500);
-  } },
+  }, did: async () => ((await theme()) !== mark ? null : 'the theme did not change') },
   'open-window': {
     before: async () => {
       await page.evaluate(() => (location.hash = '#work/' + window.__ledgerId));
@@ -203,26 +247,45 @@ const SCENES = {
       await goLive();
     },
     run: async () => {
-      const zoom = await page.evaluate(() => {
-        const r = document.querySelector('.slide[data-state="active"] .plate .lights--left .light--zoom')?.getBoundingClientRect();
+      // The lights show on the pointer's side, and the plate tilts toward the pointer, so the button
+      // moves as the pointer comes: aim at the set on show, again until the pointer is on it.
+      const zoom = () => page.evaluate(() => {
+        const pair = document.querySelector('.slide[data-state="active"] .plate .lights-pair');
+        const r = pair?.querySelector(`.lights--${pair.dataset.side === 'right' ? 'right' : 'left'} .light--zoom`)?.getBoundingClientRect();
         return r && { x: r.left + r.width / 2, y: r.top + r.height / 2 };
       });
-      await page.mouse.move(zoom.x, zoom.y, { steps: 8 });
-      await page.mouse.click(zoom.x, zoom.y);
+      const on = (at) => page.evaluate((z) => !!document.elementFromPoint(z.x, z.y)?.closest('.light--zoom'), at);
+      let at = await zoom();
+      await page.mouse.move(at.x, at.y, { steps: 8 });
+      for (let i = 0; i < 20 && !(await on(at)); i++) {
+        await sleep(30);
+        at = await zoom();
+        await page.mouse.move(at.x, at.y);
+      }
+      await page.mouse.click(at.x, at.y);
       await sleep(1500);
     },
+    did: async () => ((await windowOpen()) ? null : 'the window did not open'),
   },
   'close-window': { run: async () => {
     await page.keyboard.press('Escape');
     await sleep(1500);
-  } },
-  scroll: { run: async () => {
-    await page.mouse.move(80, 500);
-    await page.keyboard.press('ArrowDown');
-    await sleep(1500);
-    await page.keyboard.press('ArrowUp');
-    await sleep(1500);
-  } },
+  }, did: async () => ((await windowOpen()) ? 'the window is still open' : null) },
+  scroll: {
+    // The keys go to the page, not to the app the window left focused.
+    before: () => page.evaluate(() => document.activeElement?.blur()),
+    run: async () => {
+      await page.mouse.move(80, 500);
+      const top = await deckTop();
+      await page.keyboard.press('ArrowDown');
+      await sleep(1500);
+      mark = (await deckTop()) > top ? null : 'the deck did not move down';
+      await page.keyboard.press('ArrowUp');
+      await sleep(1500);
+      mark ??= Math.abs((await deckTop()) - top) < 2 ? null : 'the deck did not come back';
+    },
+    did: () => mark,
+  },
   'idle-live': { run: async () => {
     await page.mouse.move(1590, 1000);
     await sleep(3000);
@@ -251,13 +314,18 @@ async function measure(name) {
   const wall = Date.now() - t0;
   const { profile } = await cdp.send('Profiler.stop');
   const trace = JSON.parse(Buffer.from(await page.tracing.stop()).toString());
+  const failed = await scene.did?.();
+  if (failed) throw new Error(`scene ${name}: ${failed}`);
   return { wall, ...reduceTrace(trace.traceEvents ?? trace), profile: reduceProfile(profile) };
 }
 
 // ---- The trace, reduced ----------------------------------------------------------------------------
 function reduceTrace(events) {
-  // The renderer main threads (the page, and its stages and apps when they share its process).
-  const mains = new Set(events.filter((e) => e.ph === 'M' && e.name === 'thread_name' && e.args?.name === 'CrRendererMain').map((e) => `${e.pid}:${e.tid}`));
+  // The page's renderer main thread (its stages and apps share it, served from its origin). A frame
+  // from elsewhere (the YouTube player inside PlaySync) runs in a process of its own and isn't
+  // counted: it costs the page nothing, and whether it is still running varies from run to run.
+  const ours = new Set(events.flatMap((e) => (e.name === 'TracingStartedInBrowser' ? e.args.data.frames ?? [] : e.name === 'FrameCommittedInBrowser' ? [e.args.data] : [])).filter((f) => f?.url?.startsWith(BASE)).map((f) => f.processId));
+  const mains = new Set(events.filter((e) => e.ph === 'M' && e.name === 'thread_name' && e.args?.name === 'CrRendererMain' && (!ours.size || ours.has(e.pid))).map((e) => `${e.pid}:${e.tid}`));
   // Which document each frame id is.
   const frames = new Map();
   for (const e of events) {
@@ -393,14 +461,17 @@ function reduceProfile(profile) {
 }
 
 // ---- Run ---------------------------------------------------------------------------------------------
-const repeat = Number(arg('repeat', 1));
+const repeat = Number(arg('repeat', checking ? 2 : 1));
 const runs = [];
 for (let r = 0; r < repeat; r++) {
   const scenes = {};
   if (r > 0) await page.goto('about:blank');
   for (const name of chosen) {
     process.stdout.write(`  ${name}${repeat > 1 ? ` (run ${r + 1})` : ''}\n`);
-    scenes[name] = await measure(name);
+    // A scene that waits on the page forever (seen once in a long --repeat) fails instead of hanging.
+    let late;
+    scenes[name] = await Promise.race([measure(name), new Promise((_, no) => (late = setTimeout(() => no(new Error(`scene ${name} took over 40 s`)), 40000)))]);
+    clearTimeout(late);
   }
   runs.push(scenes);
 }
@@ -415,8 +486,10 @@ for (const name of Object.keys(runs[0])) {
   least[name] = {};
   for (const k of Object.keys(runs[0][name].totals)) least[name][k] = Math.min(...runs.map((r) => r[name].totals[k]));
 }
-const ledger = { tag: arg('tag', new Date().toISOString().slice(0, 16)), id: ID, build: relative(root, dist), runs: runs.length, least, scenes: runs[0], errors };
+const each = Object.fromEntries(Object.keys(runs[0]).map((name) => [name, runs.map((r) => ({ ...r[name].totals, askers: r[name].askers, forcedBy: r[name].forced }))]));
+const ledger = { tag: arg('tag', checking ? 'check' : new Date().toISOString().slice(0, 16)), id: ID, build: relative(root, dist), runs: runs.length, least, each, scenes: runs[0], errors };
 writeFileSync(join(outDir, `ledger-${ledger.tag}.json`), JSON.stringify(ledger, null, 1));
+if (checking) process.exit(check(ledger) ? 0 : 1);
 
 const cols = ['busyMs', 'scriptMs', 'styleMs', 'layoutMs', 'paintMs', 'styleElements', 'layoutObjects', 'paints', 'forced', 'rafs', 'timers', 'frames'];
 console.log('\nper scene (counts are work, ms is this machine)');
