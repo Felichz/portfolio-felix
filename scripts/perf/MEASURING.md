@@ -44,9 +44,9 @@ Checked on win, 2026-11-02: three runs in a row hold at HEAD; with the pace loop
 
 What doesn't hold apart from the load: while something animates, the frames asked for follow the frames the machine draws (the same deck scroll asked 29 frames on the loaded laptop and 94 on the free one), and so does anything done once a frame. Rules on an animation count per frame asked, or who asks; only rules at rest count frames.
 
-## Two machines
+## One machine
 
-Two Claude instances measure here, one per machine (see CLAUDE.md). The numbers of one machine are never compared with the other's: the displays, GPUs and loads differ. Each keeps its own baseline, `scripts/perf/baseline-<agent>.md`, written with the commands below, and every A/B runs on one machine. `node scripts/perf/ceiling.mjs` shows what a blank page holds on a screen: set `DISPLAY_HZ` to it. The table under Baseline is `win`'s.
+The numbers here are win's (Felix's laptop), against `scripts/perf/baseline-win.md`; a number from another machine is never compared with them: the displays, GPUs and loads differ. (Until 2026-11-02 a second instance measured on a Mac with its own baseline.) `node scripts/perf/ceiling.mjs` shows what a blank page holds on a screen: set `DISPLAY_HZ` to it.
 
 ## Running the scripts
 
