@@ -90,7 +90,10 @@ function type(win: Window & typeof globalThis, el: HTMLElement, value: string) {
     const proto = el instanceof win.HTMLTextAreaElement ? win.HTMLTextAreaElement.prototype : win.HTMLInputElement.prototype;
     Object.getOwnPropertyDescriptor(proto, 'value')?.set?.call(el, value);
   }
-  el.focus();
+  // Without moving anything: a field focused in a frame of the page scrolls every scroller above it
+  // to show it, the page's own among them (a recording typing into PlaySync, under its tape, sent the
+  // page to the next section while the visitor was on the showcase).
+  el.focus({ preventScroll: true });
   el.dispatchEvent(new win.InputEvent('input', { bubbles: true, composed: true, data: value, inputType: 'insertText' }));
 }
 
