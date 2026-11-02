@@ -153,16 +153,17 @@ export const projects: Project[] = [
     face: 'face-bricolage',
     year: '2026',
     tagline:
-      'Senior React and Rails interview prep as a map of 142 concepts, each studied in a four-stage session with an AI mentor that grades your explanation.',
-    proof: '160 commits, 142 concepts and 266 links, 10 ADRs, 37 Playwright tests',
+      'Senior React and Rails interview prep as a map of 142 concepts. Each one is read, explained from memory, and graded by an AI against a rubric.',
+    proof: '167 commits, 142 concepts and 266 links, 10 ADRs, 48 Playwright tests',
     live: 'https://know-graph.vercel.app/',
+    liveNote: 'It needs your own LLM, so it runs on your machine: the website has the demo video, the Windows download and the source.',
     source: 'https://github.com/Felichz/KnowGraph',
     role: 'Solo: product, curriculum, design, frontend and AI gateway',
     stack: ['React 19', 'Vite', 'Node gateway', 'Zod', 'Server-sent events', 'IndexedDB', 'Mermaid', 'Playwright', 'Electron'],
-    scale: ['160 commits', '142 concepts, 266 links', '10 ADRs', '37 Playwright tests'],
+    scale: ['167 commits', '142 concepts, 266 links', '10 ADRs', '48 Playwright tests'],
     story: [
-      'I built it to prepare my own senior interviews. 142 concepts across React and Rails, linked by what you need to understand first, grouped into focus areas and milestones by seniority level. Each concept runs a four-stage session: read it, talk it through with a Socratic AI mentor, explain it back from memory, then get graded against a rubric.',
-      'Scores run from 0 to 120. 100 means the base is covered and the concept counts as mastered; 101 to 120 is extra depth, marked with a star, there to push back on the grade inflation LLMs tend toward. Everything is local-first and bring-your-own-key: progress stays in IndexedDB, and the AI gateway never stores anything.',
+      'I built it to prepare my own senior interviews. 142 concepts across React and Rails, linked by what you need to understand first. The map opens on one next step, and below it a heat grid of every concept: each cell fills with its area’s color as you master it. Studying a concept takes three steps: read it, explain it in your own words, then get it evaluated against a rubric. A Socratic mentor is one click away while you work.',
+      'Scores run from 0 to 120. 100 means the base is covered and the concept counts as mastered; 101 to 120 is extra depth, marked with a star, there to push back on the grade inflation LLMs tend toward. Flashcards run on spaced repetition: each rating reschedules the card, and it comes back on the day it is due. Everything is local-first and bring-your-own-key: progress stays in IndexedDB, and the AI gateway never stores anything.',
     ],
     highlights: [
       {
@@ -181,26 +182,26 @@ export const projects: Project[] = [
     typefaces: ['Bricolage Grotesque', 'Figtree', 'JetBrains Mono'],
     palette: ['#0E1117', '#EEF1F6', '#3DB9EE', '#FFA347', '#43D69B'],
     language: 'English and Spanish',
-    accent: { light: '#0A87B8', dark: '#3DB9EE', onLight: '#FFFFFF', onDark: '#0E1117' },
+    accent: { light: '#12161D', dark: '#EEF1F6', onLight: '#F6F7F9', onDark: '#0E1117' },
     main: {
       ...themed(
         'knowgraph-main',
-        'KnowGraph map view: the heat grid, one row of concept cells per area with the current one ringed, the Continue section with the best next concept, and the focus areas in the sidebar.',
+        'KnowGraph product video: a concept picked on the heat-grid map is explained in your own words, coached to 71 out of 120, discussed with the mentor, revised to 89 and 105, and evaluated at 118 against a four-part rubric. This frame shows the Explain stage: the draft on the left, and on the right the coach’s next focus, an estimate of 71 out of 120 and the checklist of ideas to cover.',
       ),
       tape: 'knowgraph',
     },
     callouts: [
-      { x: 54.5, y: 16.5, text: 'Every concept is a cell that fills with its area’s color as you master it; the ringed one is where you are.' },
-      { x: 23, y: 79.5, text: 'Continue answers what to study now: the best next concept, and why it comes next.' },
-      { x: 21.5, y: 36.3, text: 'Focus areas with their mastered counts; picking one narrows the map to it.' },
+      { x: 31.3, y: 51.7, text: 'You explain the concept in your own words, typed or dictated.' },
+      { x: 75.5, y: 35.8, text: 'When you pause, a coach estimates the score and points at the next gap.' },
+      { x: 75.5, y: 68.3, text: 'The card’s essential ideas, marked as you cover them.' },
     ],
     gallery: [
-      themed('knowgraph-card', 'KnowGraph study card in its reading stage: the Read, AI mentor, Paraphrase and Evaluate steps with the score, the concept’s text and a code sample.', { caption: 'Study card, reading stage' }),
+      themed('knowgraph-card', 'KnowGraph study session on the Read stage for Controlled and uncontrolled forms: the concept’s heat cell and score sit in the header beside an Ask the mentor button, the three steps run across the top, and a side rail lists what the concept needs and unlocks.', { caption: 'Study session, Read stage' }),
       moving(
-        themed('knowgraph-graph', 'KnowGraph graph view: hovering Error boundaries and recovery lights its prerequisite chain back to Modern JavaScript and dims the rest of the stage columns, beside the panel for the best next concept and a minimap of the whole curriculum.', { caption: 'Dependency graph' }),
+        themed('knowgraph-graph', 'KnowGraph graph view: hovering Controlled and uncontrolled forms lights its prerequisite chain and the concepts it unlocks, and the rest of the stage columns dim. The panel beside it explains why the concept comes next, and a minimap keeps the whole curriculum in view.', { caption: 'Dependency graph' }),
         'knowgraph-graph',
       ),
-      themed('knowgraph-progress', 'KnowGraph progress view: the heat grid by area, then the seniority levels and their progress.', { caption: 'Progress by seniority' }),
+      themed('knowgraph-review', 'KnowGraph review: a flashcard for useRef, DOM and mutable values at 64 out of 120, with its key idea and the explanation saved for it. Under the answer, Again, Hard, Good and Easy schedule the next review, and the keys 1 to 4 rate the card.', { caption: 'Review: rate a card to schedule it' }),
     ],
   },
   {
