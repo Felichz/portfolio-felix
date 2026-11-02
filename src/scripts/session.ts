@@ -293,9 +293,12 @@ export class Session {
     this.#attach();
     // An app of several pages gets the same hooks on each page it goes to.
     frame.addEventListener('load', () => this.#attach());
-    // Unseen, it rests; checked again now and then, for animations its own timers started since.
+    // Unseen, it rests: now, then whenever the app starts a CSS animation or transition of its own
+    // (#attach listens), and every few seconds for ones its script makes. Always in an idle moment:
+    // asking a document for its animations brings its style and layout up to date there and then
+    // (18 ms at 4x CPU, every second, when it polled; freezes.mjs).
     this.#rest();
-    this.#restTimer = window.setInterval(() => this.#rest(), 1000);
+    this.#restTimer = window.setInterval(this.#restSoon, 3000);
     // Following is driven by the tape: when it plays (from wherever it was put), pauses, and when an
     // action is due.
     this.player.addEventListener('playing', this.follow);
@@ -311,6 +314,9 @@ export class Session {
     const doc = frame.contentDocument;
     if (!win || !doc || this.#attached.has(doc)) return;
     this.#attached.add(doc);
+    // (An animation or a transition the app starts while it follows its tape: see #rest.)
+    doc.addEventListener('animationstart', this.#restSoon, true);
+    doc.addEventListener('transitionrun', this.#restSoon, true);
     const tape = this.tape;
     const { hooks } = this.opts;
     this.syncTheme();
@@ -517,6 +523,14 @@ export class Session {
    * the app on every frame for nobody. Only ones with more than two seconds left: nothing the replay
    * waits for. They run again, from where they were, as it goes live.
    */
+  #restQueued = false;
+  #restSoon = () => {
+    if (this.#restQueued || this.live) return;
+    this.#restQueued = true;
+    const run = () => ((this.#restQueued = false), this.#rest());
+    if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 1500 });
+    else setTimeout(run, 200);
+  };
   #rest() {
     const doc = this.frame?.contentDocument;
     if (!doc || this.live) return;
