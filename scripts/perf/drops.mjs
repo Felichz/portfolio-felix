@@ -9,17 +9,20 @@
 //   window   open the window from a live preview, then close it        (steps: open, close)
 //   scroll   one section down, then back up                            (steps: down, up)
 //   product  to the next product and back                              (steps: next, back)
+//   live     a fresh page on the product, the pointer on it until it's live (step: live)
 //
 //   node scripts/perf/drops.mjs --cycle window --n 10 [--throttle 4]
 //   node scripts/perf/drops.mjs --cycle window --n 10 --ab dist-a dist-b    # alternated, with p-values
 //   node scripts/perf/drops.mjs --cycle window --n 5 --why                  # what the main thread did in them
 //
 // A build is a folder under the repo (DIST for one, --ab for two; default `dist`). --throttle slows the
-// CPU (the GPU stays as it is). INJECT=busy:<ms> burns that much of every frame for 600 ms after each
-// step starts: a known cost, to check that the count sees it (with --ab, only in the second build if
-// INJECT_ONLY=b).
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+// CPU (the GPU stays as it is). --cold starts each block in a fresh browser profile (see profileOf).
+// INJECT=css:<rules> adds a stylesheet: a cost taken away, priced before the code changes.
+// INJECT=busy:<ms> burns that much of every frame for 600 ms after each step starts: a known cost, to
+// check that the count sees it. With --ab, INJECT_ONLY=b injects in the second build only.
+// CATEGORIES=a,b adds trace categories; KEEP=1 keeps the last traces.
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hand, launch, placer, serve, sleep } from './kit.mjs';
 
@@ -37,6 +40,12 @@ const THROTTLE = Number(arg('throttle', 1));
 const ID = process.env.ID ?? 'knowgraph';
 const ab = process.argv.includes('--ab') ? process.argv.slice(process.argv.indexOf('--ab') + 1, process.argv.indexOf('--ab') + 3) : null;
 const builds = (ab ?? [process.env.DIST ?? 'dist']).map((d) => resolve(root, d));
+// Each build keeps a browser profile of its own across runs, as a visitor's browser does: the GPU's
+// compiled shaders stay in it. In a fresh profile the first visit to a product compiles them (33 late
+// frames instead of 7 on PlaySync, on win), once in a browser's life, not once a visit. --cold starts
+// fresh every block.
+const COLD = process.argv.includes('--cold');
+const profileOf = (dist) => (COLD ? undefined : join(outDir, 'profiles', basename(dist)));
 
 // ---- One frame's report ------------------------------------------------------------------------------
 // The stage that took longest names the frame's cause.
@@ -54,9 +63,12 @@ const STAGE = {
   Swap: 'gpu',
   SwapEndToPresentationCompositorFrame: 'present',
 };
-function reduce(events, placeTrace) {
-  // The page's renderer: the process with a renderer main thread (the stages share it, on [::1]).
-  const ours = new Set(events.filter((e) => e.ph === 'M' && e.name === 'thread_name' && e.args?.name === 'CrRendererMain').map((e) => e.pid));
+function reduce(events, placeTrace, mainFrame) {
+  // The page's renderer: the process its main frame runs in (its stages share it, on [::1]). A frame
+  // from another site (YouTube inside PlaySync) has a process and a compositor of its own: its frames
+  // and its work don't make the page's frames late, and aren't counted.
+  const ours = new Set(events.filter((e) => (e.args?.data?.frame ?? e.args?.beginData?.frame) === mainFrame).map((e) => e.pid));
+  if (!ours.size) throw new Error("no event in the trace names the page's main frame");
   const open = new Map();
   const spans = [];
   for (const e of events.filter((e) => (e.ph === 'b' || e.ph === 'e') && e.cat?.includes('benchmark') && ours.has(e.pid)).sort((a, b) => a.ts - b.ts)) {
@@ -151,7 +163,7 @@ function blame(events, ours, spans, placeTrace) {
 // --why also traces the main thread's tasks and the stacks that installed them, to say what it was doing
 // in its late frames. It costs the page something, so the counts with it are not the counts without.
 const WHY = process.argv.includes('--why');
-const CATEGORIES = ['cc', 'benchmark', 'disabled-by-default-devtools.timeline.frame', 'devtools.timeline', ...(WHY ? ['toplevel', 'disabled-by-default-devtools.timeline', 'disabled-by-default-devtools.timeline.stack', 'v8.execute'] : [])];
+const CATEGORIES = ['cc', 'benchmark', 'disabled-by-default-devtools.timeline.frame', 'devtools.timeline', ...(WHY ? ['toplevel', 'disabled-by-default-devtools.timeline', 'disabled-by-default-devtools.timeline.stack', 'v8.execute'] : []), ...(process.env.CATEGORIES ? process.env.CATEGORIES.split(',') : [])];
 const CYCLES = {
   window: (h, page) => ({
     ready: async () => {
@@ -185,6 +197,18 @@ const CYCLES = {
       ],
     };
   },
+  live: (h, page, base) => ({
+    ready: async () => {
+      await page.goto(`${base}/#work/${ID}`, { waitUntil: 'load' });
+      await page.evaluate(() => {
+        const auto = document.querySelector('[data-auto]');
+        if (auto?.getAttribute('aria-pressed') === 'true') auto.click();
+      });
+      await page.mouse.move(40, 900);
+      await sleep(3000);
+    },
+    steps: [{ name: 'live', act: () => h.goLive(), did: async () => ((await h.isLive()) ? null : 'the preview never went live') }],
+  }),
   product: (h, page) => {
     let from;
     const go = (d) => page.evaluate((d) => {
@@ -207,14 +231,22 @@ const CYCLES = {
 if (!CYCLES[CYCLE]) throw new Error(`no cycle ${CYCLE}: ${Object.keys(CYCLES).join(', ')}`);
 
 /** One block: a fresh page on one build, the cycle n times; per step, each repetition's report. */
-async function block(dist, n, inject) {
+async function block(dist, n, inject, measure = true) {
   const { base, close } = await serve(dist);
   const { placeTrace } = placer(dist, base);
-  const browser = await launch('drops');
+  const browser = await launch('drops', { profile: profileOf(dist) });
   try {
     const [page] = await browser.pages();
     const cdp = await page.createCDPSession();
-    const [kind, ms] = (inject ?? '').split(':');
+    const [kind, ms] = (inject ?? '').split(':', 2);
+    if (kind === 'css') {
+      const css = inject.slice(4);
+      await page.evaluateOnNewDocument((css) => {
+        const add = () => document.head.append(Object.assign(document.createElement('style'), { textContent: css }));
+        if (document.head) add();
+        else document.addEventListener('DOMContentLoaded', add);
+      }, css);
+    }
     if (kind === 'busy') {
       // A known cost: each step burns `ms` of every frame for 600 ms.
       await page.evaluateOnNewDocument((ms) => {
@@ -239,7 +271,7 @@ async function block(dist, n, inject) {
     await sleep(3000);
     if (THROTTLE > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: THROTTLE });
     const h = hand(page);
-    const cycle = CYCLES[CYCLE](h, page);
+    const cycle = CYCLES[CYCLE](h, page, base);
     const reports = Object.fromEntries(cycle.steps.map((s) => [s.name, []]));
     for (let i = 0; i < n; i++) {
       await cycle.ready();
@@ -252,8 +284,9 @@ async function block(dist, n, inject) {
         const trace = JSON.parse(Buffer.from(await page.tracing.stop()).toString());
         if (process.env.KEEP) writeFileSync(join(outDir, `drops-trace-${step.name}.json`), JSON.stringify(trace));
         const failed = await step.did();
+        if (!measure) continue;
         if (failed) throw new Error(`${CYCLE} ${step.name}, repetition ${i + 1}: ${failed}`);
-        reports[step.name].push(reduce(trace.traceEvents ?? trace, placeTrace));
+        reports[step.name].push(reduce(trace.traceEvents ?? trace, placeTrace, page.mainFrame()._id));
       }
     }
     return reports;
@@ -267,6 +300,13 @@ async function block(dist, n, inject) {
 // Two builds alternate in blocks (A B A B), so a drift in the machine falls on both.
 const runs = builds.map(() => ({}));
 const blocks = ab ? 2 : 1;
+for (const dist of builds)
+  if (!COLD && !existsSync(profileOf(dist))) {
+    // A new profile: one cycle, unmeasured, to fill its caches.
+    process.stdout.write(`  ${relative(root, dist)}: warming a new profile
+`);
+    await block(dist, 1, null, false);
+  }
 for (let b = 0; b < blocks; b++)
   for (let v = 0; v < builds.length; v++) {
     process.stdout.write(`  ${relative(root, builds[v])}, block ${b + 1}: ${Math.ceil(N / blocks)} cycles\n`);
