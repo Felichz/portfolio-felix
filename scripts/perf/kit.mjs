@@ -144,3 +144,91 @@ export function placer(dist, base) {
   };
   return { place, placeTrace: (s) => place(s.url, (s.lineNumber ?? 1) - 1, (s.columnNumber ?? 1) - 1, s.functionName) };
 }
+
+/** A fresh page on the showcase at a product, its auto-advance off (which product is on screen would
+    otherwise depend on how long each step took), the pointer off the plate, settled. */
+export async function arrive(page, base, id) {
+  await page.goto(`${base}/#work/${id}`, { waitUntil: 'load' });
+  await page.evaluate(() => {
+    const auto = document.querySelector('[data-auto]');
+    if (auto?.getAttribute('aria-pressed') === 'true') auto.click();
+  });
+  await page.mouse.move(40, 900);
+  await sleep(3000);
+}
+
+/**
+ * The interactions the frame counts repeat, each a `ready` and its steps (each step acts, and says with
+ * `did` whether it did what it says, or what went wrong). `id` is the product they run on.
+ */
+export const cycles = (id) => ({
+  window: (h, page) => ({
+    ready: async () => {
+      if (await h.windowOpen()) {
+        await page.keyboard.press('Escape');
+        await sleep(1500);
+      }
+      await h.goLive();
+      await sleep(300);
+      if (!(await h.isLive())) throw new Error('the preview never went live');
+    },
+    steps: [
+      { name: 'open', act: () => h.clickZoom(), did: async () => ((await h.windowOpen()) ? null : 'the window did not open') },
+      // Escape on the page itself (live.ts listens there): pressed for real it goes to the app, which
+      // may take it for a dialog of its own, and the step would measure something else.
+      { name: 'close', act: () => page.evaluate(() => dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))), did: async () => ((await h.windowOpen()) ? 'the window is still open' : null) },
+    ],
+  }),
+  scroll: (h, page) => {
+    let top;
+    return {
+      // The keys go to the page, not to an app that has focus.
+      ready: async () => {
+        await page.evaluate(() => document.activeElement?.blur());
+        await page.mouse.move(80, 500);
+        top = await h.deckTop();
+      },
+      steps: [
+        { name: 'down', act: () => page.keyboard.press('ArrowDown'), did: async () => ((await h.deckTop()) > top ? null : 'the deck did not move down') },
+        { name: 'up', act: () => page.keyboard.press('ArrowUp'), did: async () => (Math.abs((await h.deckTop()) - top) < 2 ? null : 'the deck did not come back') },
+      ],
+    };
+  },
+  live: (h, page, base) => ({
+    ready: async () => {
+      await arrive(page, base, id);
+    },
+    steps: [{ name: 'live', act: () => h.goLive(), did: async () => ((await h.isLive()) ? null : 'the preview never went live') }],
+  }),
+  product: (h, page) => {
+    let from;
+    const go = (d) => page.evaluate((d) => {
+      const go = [...document.querySelectorAll('[data-go]')];
+      const i = go.findIndex((b) => b.getAttribute('aria-current') === 'true' || b.closest('[aria-current="true"]'));
+      go[(i + d + go.length) % go.length]?.click();
+    }, d);
+    return {
+      ready: async () => {
+        await page.mouse.move(1530, 770, { steps: 3 });
+        from = await h.activeHref();
+      },
+      steps: [
+        { name: 'next', act: () => go(1), did: async () => ((await h.activeHref()) !== from ? null : 'the showcase stayed on the same product') },
+        { name: 'back', act: () => go(-1), did: async () => ((await h.activeHref()) === from ? null : 'the showcase did not come back') },
+      ],
+    };
+  },
+  theme: (h, page) => {
+    let from;
+    return {
+      ready: async () => {
+        await page.mouse.move(1530, 770, { steps: 3 });
+        from = await h.theme();
+      },
+      steps: [
+        { name: 'switch', act: () => page.evaluate(() => document.querySelector('[data-theme-toggle]').click()), did: async () => ((await h.theme()) !== from ? null : 'the theme did not change') },
+        { name: 'back', act: () => page.evaluate(() => document.querySelector('[data-theme-toggle]').click()), did: async () => ((await h.theme()) === from ? null : 'the theme did not come back') },
+      ],
+    };
+  },
+});
