@@ -74,7 +74,7 @@ const panels: PanelLink[] = [
       </header>
 
       <div class="ov-stage">
-        <Plate shot={p.main} chrome={host(p.live)} eager motion="lead" vt={`shot-${p.id}`} sizes="(min-width: 1400px) 1000px, (min-width: 761px) 66vw, 94vw" widths={[640, 1000, 1400, 2000]} class="ov-plate">
+        <Plate shot={p.main} chrome={host(p.live)} eager motion="lead" model vt={`shot-${p.id}`} sizes="(min-width: 1400px) 1000px, (min-width: 761px) 66vw, 94vw" widths={[640, 1000, 1400, 2000]} class="ov-plate">
           {
             p.callouts.map((c, i) => (
               <button
@@ -320,7 +320,7 @@ const panels: PanelLink[] = [
   }
   .ov-stage :global(.ov-plate) { width: min(100cqw, calc((100cqh - 34px) * 1.6)); }
   /* A phone app's lead stands as a phone, fitted by height. */
-  .ov-stage :global(.ov-plate.plate--device) { width: auto; height: min(calc(100cqh - 34px), 820px); transform: perspective(1600px) rotateX(3deg) rotateY(-13deg); }
+  .ov-stage :global(.ov-plate.plate--device) { width: auto; height: min(calc(100cqh - 34px), 820px); }
 
   /* ---- Story ---- */
   .st {

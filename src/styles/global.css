@@ -652,20 +652,29 @@ kbd .icon { width: 12px; height: 12px; }
   border-radius: 2px;
   background: linear-gradient(90deg, #2d2f34, #8d9098 60%, #3a3c41);
 }
-.plate--device::before { right: -1.1%; top: 27%; height: 11%; transform: translateZ(-5px); }
-.plate--device::after { left: -1.1%; top: 21%; height: 13%; transform: translateZ(-5px); }
-/* Depth: the front sits at z 0 and the edge layers step back behind it. Composited layers that a
-   new angle only moves, so the tilt never repaints. */
-.plate--device { transform-style: preserve-3d; }
-.device-body { position: absolute; inset: -3px; border-radius: inherit; transform-style: preserve-3d; pointer-events: none; }
-.device-edge {
+.plate--device::before { right: -1.1%; top: 27%; height: 11%; }
+.plate--device::after { left: -1.1%; top: 21%; height: 13%; }
+/* Once the 3D phone (src/scripts/phone3d.ts) has drawn its first frame, it takes over from this one,
+   which stays for the zoom button, the notes over the screen and as the fallback without WebGL. The
+   canvas goes first in the plate, under the screen's notes, and overflows the plate (12% of its
+   height above and below) so a leaning phone isn't cut off. */
+.phone3d {
   position: absolute;
-  inset: 0;
-  border-radius: 14.5% / 6.96%;
-  background: linear-gradient(90deg, #1c1d21, #6c6f76 18%, #2e3035 50%, #6c6f76 82%, #1c1d21);
-  transform: translateZ(calc(var(--k) * -1.5px));
+  top: -12%;
+  left: -40%;
+  width: 180%;
+  max-width: none;
+  height: 124%;
+  pointer-events: none;
+  visibility: hidden;
 }
-.device-edge:last-child { background: #0d0d10; box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.55); }
+/* A straight swap: both phones stand in the same place and pose, so there is nothing to fade. */
+.plate--device[data-3d] .phone3d { visibility: visible; }
+.plate--device[data-3d],
+.plate--device[data-3d] .plate-screen { background: none; border-color: transparent; box-shadow: none; }
+.plate--device[data-3d] :is(.device-status, .plate-frame, .device-gloss),
+.plate--device[data-3d]::before,
+.plate--device[data-3d]::after { opacity: 0; }
 .plate--device .plate-screen {
   position: absolute;
   inset: 1.6% 3.4%;

@@ -20,11 +20,13 @@ interface Props {
    * manual: rendered, but driven by the component around it (the work showcase).
    */
   motion?: 'hover' | 'lead' | 'manual';
+  /** A device shot drawn as a phone in real 3D once it nears the viewport (src/scripts/phone3d.ts). */
+  model?: boolean;
   class?: string;
   style?: string;
 }
 
-const { shot, sizes, widths = [480, 800, 1200, 1600, 2000], chrome, zoom = true, eager = false, vt, motion, class: className, style } = Astro.props;
+const { shot, sizes, widths = [480, 800, 1200, 1600, 2000], chrome, zoom = true, eager = false, vt, motion, model, class: className, style } = Astro.props;
 const single = shot.light === shot.dark;
 const phone = !!shot.phone;
 const device = !!shot.device;
@@ -35,6 +37,11 @@ const tape = motion && shot.tape ? shot.tape : undefined;
 const full = async (src: ImageMetadata) => (await getImage({ src, format: 'webp', width: Math.min(src.width, 2880), quality: 84 })).src;
 const zoomLight = zoom ? await full(shot.light) : undefined;
 const zoomDark = zoom ? (single ? zoomLight : await full(shot.dark)) : undefined;
+// The 3D phone's screen, per site theme: inverted like the pictures below.
+const screen = async (src: ImageMetadata) => (await getImage({ src, format: 'webp', width: Math.min(src.width, 900), quality: 84 })).src;
+const model3d = device && model;
+const screenLight = model3d ? await screen(shot.dark) : undefined;
+const screenDark = model3d ? (single ? screenLight : await screen(shot.light)) : undefined;
 
 const common = {
   alt: shot.alt,
@@ -57,6 +64,9 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
   style={styles}
   data-motion={clip || tape ? motion : undefined}
   data-app={tape}
+  data-phone3d={model3d ? '' : undefined}
+  data-screen-light={screenLight}
+  data-screen-dark={screenDark}
 >
   {
     chrome && !phone && !device && (
@@ -73,16 +83,6 @@ const styles = [vt && `view-transition-name:${vt}`, style].filter(Boolean).join(
           )}
         </span>
       </div>
-    )
-  }
-  {
-    device && (
-      <span class="device-body" aria-hidden="true">
-        {/* The phone's thickness: the same outline stacked back in depth, seen as an edge once it turns. */}
-        {[1, 2, 3, 4, 5, 6, 7].map((k) => (
-          <span class="device-edge" style={`--k:${k}`} />
-        ))}
-      </span>
     )
   }
   <div class="plate-screen">
