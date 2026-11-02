@@ -48,6 +48,31 @@ Fixed with it, 2026-11-02 (A/B, 10 cycles a step, warm):
 
 What is left, normal speed, warm, 4 cycles each (`--cycle product` from each product): KatArch to KnowGraph 1, KnowGraph to PlaySync 1, PlaySync to LifeUI 4 to 5, LifeUI to LoL Impact 4 to 9 (30 the first time), LoL Impact to this site 8 to 11, this site to KatArch 5. Where it was looked at, it is the next product's app booting under its tape: LoL Impact's own script and layout (73 layouts, 39 ms), and this site booting inside itself (three first layouts of 21, 27 and 33 ms). When an app boots is a choice about what the visitor sees, so it is Felix's; at 4x CPU the change to PlaySync keeps about 28 late frames, most of them PlaySync's own code.
 
+## Freezes, one by one
+
+A count of late frames says how often the page stutters; a single freeze of 80 ms is what a visitor feels, and each has a cause of its own. `freezes.mjs` runs the same cycles (`window`, `product`, `scroll`, `theme`, `live`), finds every run of late frames of `--min` ms or more (30 by default) and writes a dossier for each, from one trace with everything in it:
+
+- the stage that held the frames, and how many were dropped or drawn without the main thread's update;
+- the page's main thread: each task over the freeze, split into script (its `src/` line through the build's source maps, or the first of the page's functions under a timer or an event), style (elements, and what invalidated them), layout (dirty and total objects, and who forced it), paint, GC, parsing; and V8's own CPU samples in the window, by function;
+- other processes: a frame from another site busy, the display compositor waiting on its surface; the GPU process (shaders compiled, raster, composition, video);
+- the page's marks around it (`live:<app>:<stage>`, `live:mount:...`);
+- a verdict, and the trace saved in `scripts/perf/out/freezes/` to open in DevTools at the time given.
+
+Then the freezes grouped by cause over the repetitions: a cause in 4 of 4 is the page's, one in 1 of 4 may be the machine.
+
+```bash
+SOURCEMAP=1 npx astro build --outDir scripts/perf/out/dist-maps
+node scripts/perf/freezes.mjs --cycles theme,product --n 4            # about 3 min a cycle
+INJECT=freeze:120 node scripts/perf/freezes.mjs --cycles window --n 1  # a known freeze, to check it is found
+```
+
+The tracing it needs (stacks, V8 samples, invalidations) costs the page something: its milliseconds run a little high, the causes don't change (`--light` drops the invalidations). Checked on win, 2026-11-02: a 120 ms freeze injected 200 ms into each step is found in every step and named, `script TimerFire at injectedFreeze`, with V8's samples on `injectedFreeze`.
+
+Found with it, 2026-11-02:
+
+- **Theme switch and product change: `deck.ts` `glow()`.** It read the section's glow colors right after the theme or the product changed (a forced restyle of the whole page, about 650 elements) and wrote them as custom properties on the root, which restyled the whole page again: four full restyles in the theme switch's first frames. Written instead on the elements that draw with them (`[data-glow]`): the theme switch at 4x CPU, the way back 18.5 to 11.4 late frames (p = 0.003), and no freeze of 30 ms or more left in 4 theme cycles (6 before). Colors checked identical on the four elements, at load, product change, theme switch and on About.
+- **Tried and dropped:** reading the toggle's position first in `switchTheme`, before its writes: no better, the way back a little worse (0.9 to 2.2 late frames, p = 0.04).
+
 ## The work ledger: where the work goes
 
 The ledger counts work, not late frames, and the two don't match: on 2026-11-02 it showed 80 frame callbacks and a third of the deck's forced styles gone, and the late frames didn't move, because that work sat in frames that were on time. Use it to find and rank work, and to hold the invariants; judge a change by `drops.mjs`.

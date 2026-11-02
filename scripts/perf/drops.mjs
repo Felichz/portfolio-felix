@@ -24,7 +24,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { hand, launch, placer, serve, sleep } from './kit.mjs';
+import { arrive, cycles, hand, launch, placer, serve, sleep } from './kit.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -164,70 +164,7 @@ function blame(events, ours, spans, placeTrace) {
 // in its late frames. It costs the page something, so the counts with it are not the counts without.
 const WHY = process.argv.includes('--why');
 const CATEGORIES = ['cc', 'benchmark', 'disabled-by-default-devtools.timeline.frame', 'devtools.timeline', ...(WHY ? ['toplevel', 'disabled-by-default-devtools.timeline', 'disabled-by-default-devtools.timeline.stack', 'v8.execute'] : []), ...(process.env.CATEGORIES ? process.env.CATEGORIES.split(',') : [])];
-const CYCLES = {
-  window: (h, page) => ({
-    ready: async () => {
-      if (await h.windowOpen()) {
-        await page.keyboard.press('Escape');
-        await sleep(1500);
-      }
-      await h.goLive();
-      await sleep(300);
-      if (!(await h.isLive())) throw new Error('the preview never went live');
-    },
-    steps: [
-      { name: 'open', act: () => h.clickZoom(), did: async () => ((await h.windowOpen()) ? null : 'the window did not open') },
-      // Escape on the page itself (live.ts listens there): pressed for real it goes to the app, which
-      // may take it for a dialog of its own, and the step would measure something else.
-      { name: 'close', act: () => page.evaluate(() => dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))), did: async () => ((await h.windowOpen()) ? 'the window is still open' : null) },
-    ],
-  }),
-  scroll: (h, page) => {
-    let top;
-    return {
-      // The keys go to the page, not to an app that has focus.
-      ready: async () => {
-        await page.evaluate(() => document.activeElement?.blur());
-        await page.mouse.move(80, 500);
-        top = await h.deckTop();
-      },
-      steps: [
-        { name: 'down', act: () => page.keyboard.press('ArrowDown'), did: async () => ((await h.deckTop()) > top ? null : 'the deck did not move down') },
-        { name: 'up', act: () => page.keyboard.press('ArrowUp'), did: async () => (Math.abs((await h.deckTop()) - top) < 2 ? null : 'the deck did not come back') },
-      ],
-    };
-  },
-  live: (h, page, base) => ({
-    ready: async () => {
-      await page.goto(`${base}/#work/${ID}`, { waitUntil: 'load' });
-      await page.evaluate(() => {
-        const auto = document.querySelector('[data-auto]');
-        if (auto?.getAttribute('aria-pressed') === 'true') auto.click();
-      });
-      await page.mouse.move(40, 900);
-      await sleep(3000);
-    },
-    steps: [{ name: 'live', act: () => h.goLive(), did: async () => ((await h.isLive()) ? null : 'the preview never went live') }],
-  }),
-  product: (h, page) => {
-    let from;
-    const go = (d) => page.evaluate((d) => {
-      const go = [...document.querySelectorAll('[data-go]')];
-      const i = go.findIndex((b) => b.getAttribute('aria-current') === 'true' || b.closest('[aria-current="true"]'));
-      go[(i + d + go.length) % go.length]?.click();
-    }, d);
-    return {
-      ready: async () => {
-        await page.mouse.move(1530, 770, { steps: 3 });
-        from = await h.activeHref();
-      },
-      steps: [
-        { name: 'next', act: () => go(1), did: async () => ((await h.activeHref()) !== from ? null : 'the showcase stayed on the same product') },
-        { name: 'back', act: () => go(-1), did: async () => ((await h.activeHref()) === from ? null : 'the showcase did not come back') },
-      ],
-    };
-  },
-};
+const CYCLES = cycles(ID);
 if (!CYCLES[CYCLE]) throw new Error(`no cycle ${CYCLE}: ${Object.keys(CYCLES).join(', ')}`);
 
 /** One block: a fresh page on one build, the cycle n times; per step, each repetition's report. */
@@ -261,14 +198,7 @@ async function block(dist, n, inject, measure = true) {
         };
       }, Number(ms));
     }
-    await page.goto(`${base}/#work/${ID}`, { waitUntil: 'load' });
-    await page.evaluate(() => {
-      // The showcase stays on the product asked for.
-      const auto = document.querySelector('[data-auto]');
-      if (auto?.getAttribute('aria-pressed') === 'true') auto.click();
-    });
-    await page.mouse.move(40, 900);
-    await sleep(3000);
+    await arrive(page, base, ID);
     if (THROTTLE > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: THROTTLE });
     const h = hand(page);
     const cycle = CYCLES[CYCLE](h, page, base);
