@@ -44,12 +44,14 @@ export async function serve(dist) {
 }
 
 /** Chrome, headful and off screen (SHOW=1 to see it, HEADLESS=1 for true headless). */
-export function launch(tag) {
+export function launch(tag, { profile } = {}) {
   return puppeteer.launch({
     executablePath: chromePath(),
     headless: !!process.env.HEADLESS,
     defaultViewport: null,
-    userDataDir: mkdtempSync(join(tmpdir(), `perf-${tag}-`)),
+    // PROFILE=<dir> keeps one profile across runs: its caches (the GPU's compiled shaders among them)
+    // stay warm, as in a visitor's own browser. A fresh one starts cold.
+    userDataDir: profile ?? (process.env.PROFILE || mkdtempSync(join(tmpdir(), `perf-${tag}-`))),
     args: ['--window-size=1600,1047', `--window-position=${windowPosition()}`, '--lang=en-US', '--no-first-run', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-features=CalculateNativeWinOcclusion', '--disable-background-timer-throttling'],
     ignoreDefaultArgs: ['--enable-automation'],
   });
