@@ -25,8 +25,8 @@ export function initDeck() {
   const desktop = matchMedia('(min-width: 761px)');
 
   // The active section is the last one whose top has passed the middle of the window.
-  const nearest = () => {
-    const mid = stage.scrollTop + stage.clientHeight / 2;
+  const nearest = (top = stage.scrollTop) => {
+    const mid = top + stage.clientHeight / 2;
     let i = 0;
     panels.forEach((p, j) => p.offsetTop <= mid && (i = j));
     return i;
@@ -100,25 +100,30 @@ export function initDeck() {
   // flung, the ambient light steps between its colors instead of drifting: a drift repaints the whole
   // fixed background on every frame for the better part of a second, panel after panel at that speed.
   // At rest and at reading speed it drifts as usual.
+  // The deck is read once a frame, in the frame, and written after: read in the scroll event, its
+  // position would lay the page out there, and the class it sets would have the frame lay it out again.
   let raf = 0;
   let settle = 0;
   let fast = 0;
   let lastTop = stage.scrollTop;
   let lastAt = 0;
+  const onFrame = (now: number) => {
+    raf = 0;
+    const top = stage.scrollTop;
+    const v = Math.abs(top - lastTop) / Math.max(1, now - lastAt);
+    lastTop = top;
+    lastAt = now;
+    setActive(nearest(top));
+    if (v > 1.1) {
+      root.classList.add('deck-fast');
+      clearTimeout(fast);
+      fast = window.setTimeout(() => root.classList.remove('deck-fast'), 160);
+    }
+  };
   stage.addEventListener(
     'scroll',
     () => {
-      const now = performance.now();
-      const v = Math.abs(stage.scrollTop - lastTop) / Math.max(1, now - lastAt);
-      lastTop = stage.scrollTop;
-      lastAt = now;
-      if (v > 1.1) {
-        root.classList.add('deck-fast');
-        clearTimeout(fast);
-        fast = window.setTimeout(() => root.classList.remove('deck-fast'), 160);
-      }
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => setActive(nearest()));
+      raf ||= requestAnimationFrame(onFrame);
       clearTimeout(settle);
       settle = window.setTimeout(() => (target = nearest()), 140);
     },
