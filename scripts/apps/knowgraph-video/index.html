@@ -22,28 +22,37 @@
         // Must match the tape (public/tapes/knowgraph.json): clock0 is the app clock at tape time 0.
         var CLOCK0 = 1793000000000;
         var v = document.querySelector('video');
-        var last = null;
-        function tick() {
+        // Whether the clock runs: the bridge's handoff says (frozen while the app boots or is held off
+        // screen). Opened on its own, outside the portfolio, the clock is the real one.
+        var handoff = null;
+        try {
+          handoff = window.parent !== window && window.parent.__live && window.parent.__live.knowgraph;
+        } catch (e) {}
+        function sync() {
           var dur = v.duration;
-          if (dur > 0) {
-            var now = Date.now();
-            var want = (((now - CLOCK0) / 1000) % dur + dur) % dur;
-            var running = last !== null && now !== last;
-            last = now;
-            // The clock frozen (the app booting, or held off screen): hold the frame. Running: play,
-            // and correct only real drift, so playback stays smooth.
-            if (!running) {
-              if (!v.paused) v.pause();
-              if (Math.abs(v.currentTime - want) > 0.05) v.currentTime = want;
-            } else {
-              if (v.paused) v.play().catch(function () {});
-              var d = Math.abs(v.currentTime - want);
-              if (d > 0.3 && d < dur - 0.3) v.currentTime = want;
-            }
+          if (!(dur > 0)) return;
+          var want = (((Date.now() - CLOCK0) / 1000) % dur + dur) % dur;
+          // The clock frozen: hold the frame. Running: play, and correct only real drift, so playback
+          // stays smooth.
+          if (handoff && handoff.frozen && handoff.frozen()) {
+            if (!v.paused) v.pause();
+            if (Math.abs(v.currentTime - want) > 0.05) v.currentTime = want;
+          } else {
+            if (v.paused) v.play().catch(function () {});
+            var d = Math.abs(v.currentTime - want);
+            if (d > 0.3 && d < dur - 0.3) v.currentTime = want;
           }
-          requestAnimationFrame(tick);
         }
-        requestAnimationFrame(tick);
+        // Called when the bridge sets the clock, and as the video plays (a few times a second), never
+        // on every frame: that would have the page draw a frame for it, every frame, for as long as
+        // the preview is up. (Not a timer either: the bridge stops the app's timers while its clock
+        // is frozen.)
+        window.addEventListener('portfolio:clock', sync);
+        v.addEventListener('loadedmetadata', sync);
+        v.addEventListener('timeupdate', function () {
+          if (!v.paused) sync();
+        });
+        sync();
       })();
     </script>
   </body>

@@ -32,6 +32,19 @@ How it was checked, on win, 2026-11-02, the machine free:
 
 What it found on that day (ef45156 against 7e4877b, 10 cycles each): at 4x throttle the close went from 50 to 44 late frames a step (p = 0.02); open, scroll and product change showed no difference at either speed. Product change is the noisiest cycle (18 to 133 late frames a step at 4x): read it with more cycles. `--why` on the close at 4x: about 283 ms of style recalculation and 144 ms of paint a step in the late frames against 35 ms of script, so the close is rendering work, not JavaScript.
 
+Read before trusting a count:
+
+- **Warm profiles.** Each build keeps a browser profile of its own in `scripts/perf/out/profiles/`, warmed by one unmeasured cycle the first time. In a fresh profile the GPU compiles its shaders on first use (`GrShaderCache::store` in the GPU process): the first change to PlaySync dropped 33 frames cold and 7 warm. A visitor pays that once in their browser's life, not once a visit, so the counts are warm by default; `--cold` measures the other case. With warm profiles the product change went from 2 to 39 late frames a step to 5 to 8.
+- **One process.** A frame from another site (YouTube inside PlaySync) has its own renderer and compositor; the count reads the page's process only, found by its main frame's id in the trace.
+- **A late frame with an idle main thread.** When the page's frames are dropped while its main thread is idle, look at the GPU process (`CATEGORIES=gpu,viz`, `KEEP=1`) and at `DisplayDamageTracker::HasPendingSurfaces`: the page's frame can be waiting on a frame from another process.
+- **Price before changing.** `INJECT=css:...` with `INJECT_ONLY=b` takes a cost away in one build: the rail's color transitions on a product change priced at nothing (p = 0.94), and a change of design was not made for them.
+
+Fixed with it, 2026-11-02 (A/B, 10 cycles a step, warm):
+
+- **PlaySync's YouTube frame waited for.** Shown as the app booted under its tape, the YouTube frame made the page's frames wait on its own first one while its process evaluated the player (70 ms): the change to PlaySync dropped 6.7 frames a step, 1.3 with the frame held unseen until the app goes live (p < 0.001); going live, 4x and the way back unchanged. (`scripts/apps/bridge.js`, `session.ts`.)
+- **KnowGraph's video on every frame.** Its page checked the clock on every frame for as long as the preview was up (100 frames a second, a frame drawn for each), and kept playing off screen. On the bridge's clock events and the video's own progress instead: opening the window 17.4 to 11.0 late frames at 4x, closing 15.6 to 6.6, both p < 0.001 (normal speed 2.2 to 1.2 and 2.1 to 0.7). (`scripts/apps/knowgraph-video/`.)
+- **Tried and dropped.** Flying the window as a scaled box (a transform) instead of the browser's width and height: opening got worse at 4x (17.6 to 22.5, p = 0.008).
+
 ## The work ledger: where the work goes
 
 The ledger counts work, not late frames, and the two don't match: on 2026-11-02 it showed 80 frame callbacks and a third of the deck's forced styles gone, and the late frames didn't move, because that work sat in frames that were on time. Use it to find and rank work, and to hold the invariants; judge a change by `drops.mjs`.
