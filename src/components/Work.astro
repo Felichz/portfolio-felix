@@ -57,7 +57,7 @@ const glowCSS = projects
           <span class="auto-on">Auto-advancing</span>
           <span class="auto-off">Auto-advance paused</span>
         </button>
-        <p class="t-label t-num rail-pos" aria-hidden="true"><span data-pos>01</span> / {total}</p>
+        <p class="t-label t-num rail-pos" aria-hidden="true"><span class="rail-pos-n" data-pos>{projects.map((_, i) => <span data-on={i === 0 ? '' : undefined}>{String(i + 1).padStart(2, '0')}</span>)}</span> / {total}</p>
       </footer>
     </aside>
 
@@ -277,6 +277,12 @@ const glowCSS = projects
   .auto[aria-pressed='true'] :global(.auto-off),
   .auto[aria-pressed='false'] :global(.auto-on) { display: none; }
   .rail-pos { color: var(--ink-3); }
+  /* The count's numbers sit on one another and only the current one shows: changing its text would lay
+     the page out again from the root on every product change (32 ms at 4x CPU, freezes.mjs), where a
+     change of visibility only repaints it. */
+  .rail-pos-n { display: inline-grid; }
+  .rail-pos-n > span { grid-area: 1 / 1; visibility: hidden; }
+  .rail-pos-n > [data-on] { visibility: visible; }
 
   /* ---- Showcase ---- */
   .show { position: relative; display: grid; min-height: 0; container: show / size; }
@@ -573,7 +579,7 @@ const glowCSS = projects
       const prev = index;
       index = j;
       items.forEach((b, k) => (k === j ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
-      if (pos) pos.textContent = String(j + 1).padStart(2, '0');
+      if (pos) [...pos.children].forEach((n, k) => n.toggleAttribute('data-on', k === j));
       root.dataset.p = slides[j]!.dataset.id;
       if (prev !== j) rest(prev);
       // The room takes the product's light, read from the slide's own style: no style is computed for it.
