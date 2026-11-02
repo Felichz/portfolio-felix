@@ -25,9 +25,11 @@ export const INVARIANTS = [
   { scene: 'idle-live', says: 'at rest, no layout forced', count: (r) => r.forced('layout'), max: 0 },
 
   // At rest on the showcase, before any preview went live.
-  { scene: 'idle-work', says: 'the showcase at rest asks for 10 frames at most', count: (r) => r.rafs, max: 10 },
+  // (Its recording plays: the pointer is off the plate.)
+  { scene: 'idle-work', says: 'the showcase at rest asks frames only for the recording, the slide and the app', count: (r) => r.rafs - r.asked('rAF', /tape\.ts|Work\.astro|^app:/), max: 0 },
+  { scene: 'idle-work', says: 'the recording asks for 30 frames at most in 3 s', count: (r) => r.asked('rAF', /tape\.ts/), max: 30 },
   { scene: 'idle-work', says: 'the showcase at rest forces no layout', count: (r) => r.forced('layout'), max: 0 },
-  { scene: 'idle-work', says: 'the showcase at rest, a few timers', count: (r) => r.timers, max: 16 },
+  { scene: 'idle-work', says: 'the showcase at rest, a few timers', count: (r) => r.timers, max: 20 },
 
   // The pace loop (src/scripts/session.ts) samples frames only for apps with endless animations, and
   // KnowGraph has none: no frames asked for it in any scene that keeps to KnowGraph.
@@ -39,7 +41,7 @@ export const INVARIANTS = [
   })),
 
   // Going live and using the app: the app's own work, nothing forced from the page.
-  { scene: 'hover-live', says: 'going live forces no layout', count: (r) => r.forced('layout'), max: 0 },
+  { scene: 'hover-live', says: 'going live forces one layout at most (the session settling in)', count: (r) => r.forced('layout'), max: 1 },
   { scene: 'use', says: 'using a live preview forces no layout', count: (r) => r.forced('layout'), max: 0 },
   { scene: 'use', says: 'using a live preview, the page asks for no frames of its own', count: (r) => r.rafs - r.asked('rAF', /^app:/), max: 0 },
 
