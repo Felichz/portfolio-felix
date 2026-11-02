@@ -576,7 +576,10 @@ const glowCSS = projects
       if (pos) pos.textContent = String(j + 1).padStart(2, '0');
       root.dataset.p = slides[j]!.dataset.id;
       if (prev !== j) rest(prev);
-      document.dispatchEvent(new CustomEvent('deck:refresh'));
+      // The room takes the product's light, read from the slide's own style: no style is computed for it.
+      const style = slides[j]!.style;
+      const glow = { light: style.getPropertyValue('--a-light').trim(), dark: style.getPropertyValue('--a-dark').trim() };
+      document.dispatchEvent(new CustomEvent('deck:refresh', { detail: { panel: root, glow } }));
       cancelAnimationFrame(change1);
       change1 = requestAnimationFrame(() => {
         change1 = 0;
