@@ -151,8 +151,7 @@
 :root.live-vt, :root.live-vt :is(.bar, .plate, .slide-name, .ov-name) { view-transition-name: none !important; }
 :root.live-vt .live-vt-shape { view-transition-name: live-window !important; }
 :root.live-vt::view-transition-group(live-window) {
-  animation-duration: var(--live-d);
-  animation-timing-function: var(--live-ease);
+  animation-timing-function: cubic-bezier(0.45, 0, 0.15, 1); /* live.ts CURVE */
   border-radius: var(--radius);
   box-shadow: 0 0 0 1px var(--line-2), var(--shadow-lg);
 }
@@ -165,10 +164,18 @@
   height: 100%;
   object-fit: fill;
   mix-blend-mode: plus-lighter;
-  animation-duration: var(--live-d);
-  animation-timing-function: var(--live-ease);
+  animation-timing-function: cubic-bezier(0.45, 0, 0.15, 1);
   animation-fill-mode: both;
 }
+/* The flight's length (live.ts FLIGHT, 85% of it on the way back) is written here, not set from script
+   in a custom property on the root: a custom property changed there restyles the whole page, on the
+   way in and on the way out. */
+:root.live-vt-in::view-transition-group(live-window),
+:root.live-vt-in::view-transition-old(live-window),
+:root.live-vt-in::view-transition-new(live-window) { animation-duration: 560ms; }
+:root.live-vt-out::view-transition-group(live-window),
+:root.live-vt-out::view-transition-old(live-window),
+:root.live-vt-out::view-transition-new(live-window) { animation-duration: 476ms; }
 :root.live-vt::view-transition-old(live-window) { animation-name: live-pic-out; }
 :root.live-vt::view-transition-new(live-window) { animation-name: live-pic-in; }
 @keyframes live-pic-out { to { opacity: 0; } }
