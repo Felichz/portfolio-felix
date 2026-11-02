@@ -1,19 +1,24 @@
 /**
- * A phone in real 3D for an app's lead shot: a rounded metal band around glass, lit by a room, with
+ * A phone in real 3D for an app's lead shot: a rounded metal band around glass, lit by a studio, with
  * the screenshot on its screen. Loaded on demand by phone3d.ts, which owns when it shows and how it
  * leans; this module only builds the scene and draws it.
  */
 import {
   ACESFilmicToneMapping,
+  AdditiveBlending,
+  BackSide,
+  DoubleSide,
+  BoxGeometry,
   CanvasTexture,
   CapsuleGeometry,
-  DirectionalLight,
   ExtrudeGeometry,
   Group,
   MathUtils,
   Mesh,
+  MeshBasicMaterial,
   MeshPhysicalMaterial,
   PerspectiveCamera,
+  PlaneGeometry,
   PMREMGenerator,
   Scene,
   Shape,
@@ -21,7 +26,6 @@ import {
   SRGBColorSpace,
   WebGLRenderer,
 } from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 // Real proportions, in millimetres (a 6.1" phone).
 const W = 71.6;
@@ -97,6 +101,31 @@ function drawScreen(img: HTMLImageElement, darkSite: boolean) {
   return c;
 }
 
+/**
+ * The light the phone reflects, as in a product photo: a dim room with softboxes to the sides and
+ * above, which the rounded metal edge catches, and only a faint panel behind the camera, which is
+ * what the screen's glass faces. A tilt of up to 16 degrees swings the screen's reflection about 32
+ * degrees, so the bright boxes stay well outside that cone and never wash the screen out.
+ */
+function studio() {
+  const room = new Scene();
+  const walls = new Mesh(new BoxGeometry(20, 20, 20), new MeshBasicMaterial({ color: 0x2c2c31, side: BackSide }));
+  room.add(walls);
+  const panel = (w: number, h: number, light: number, x: number, y: number, z: number) => {
+    const m = new Mesh(new PlaneGeometry(w, h), new MeshBasicMaterial({ color: 0xffffff, side: DoubleSide }));
+    m.material.color.multiplyScalar(light);
+    m.position.set(x, y, z);
+    m.lookAt(0, 0, 0);
+    room.add(m);
+  };
+  panel(5, 12, 5, -7, 1, 4);
+  panel(4, 12, 3, 7, 0, 3.5);
+  panel(10, 3, 4, 0, 7, 2);
+  // Behind the camera, over its left half only: a soft edge for the glass to sweep across.
+  panel(6, 8, 0.45, -3.5, 1, 8);
+  return room;
+}
+
 export interface PhoneModel {
   /** The phone's height as a share of the canvas height. */
   fill: number;
@@ -113,11 +142,8 @@ export function createPhone(canvas: HTMLCanvasElement, fill: number): PhoneModel
 
   const scene = new Scene();
   const pmrem = new PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environment = pmrem.fromScene(studio(), 0.02).texture;
   pmrem.dispose();
-  const key = new DirectionalLight(0xffffff, 1.6);
-  key.position.set(-60, 120, 140);
-  scene.add(key);
 
   // A long lens, as in product photography: little distortion, so the phone reads as an object.
   const camera = new PerspectiveCamera(18, 1, 10, 4000);
@@ -151,25 +177,31 @@ export function createPhone(canvas: HTMLCanvasElement, fill: number): PhoneModel
   button(10, -W / 2 - 0.1, H * 0.21);
   button(10, -W / 2 - 0.1, H * 0.06);
 
-  // The screen glows with its own colors (emissive, untouched by the light) under glass that
-  // reflects the room as the phone turns.
+  // The screen shows its own colors, untouched by the light. Over it, the glass adds only what it
+  // reflects (additive, black underneath), blurred and faint: a sharp reflection of the room's lights
+  // would wash the whole screen out at some angles.
   const SW = W - 6.2;
   const SH = SW / (TW / TH);
   const screenGeo = new ShapeGeometry(roundedRect(SW, SH, R - 2.9), 32);
   const uv = screenGeo.attributes.uv;
   const pos = screenGeo.attributes.position;
   for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getX(i) + SW / 2) / SW, (pos.getY(i) + SH / 2) / SH);
-  const screenMat = new MeshPhysicalMaterial({
-    color: 0x000000,
-    emissive: 0xffffff,
-    roughness: 0.04,
-    clearcoat: 1,
-    clearcoatRoughness: 0.02,
-    envMapIntensity: 0.55,
-  });
+  const screenMat = new MeshBasicMaterial({ toneMapped: false });
   const screen = new Mesh(screenGeo, screenMat);
   screen.position.z = D / 2 + 0.01;
   phone.add(screen);
+  const reflection = new Mesh(
+    screenGeo,
+    new MeshPhysicalMaterial({
+      color: 0x000000,
+      roughness: 0.18,
+      transparent: true,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    }),
+  );
+  reflection.position.z = D / 2 + 0.03;
+  phone.add(reflection);
 
   return {
     fill,
@@ -177,8 +209,8 @@ export function createPhone(canvas: HTMLCanvasElement, fill: number): PhoneModel
       const texture = new CanvasTexture(drawScreen(img, darkSite));
       texture.colorSpace = SRGBColorSpace;
       texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      screenMat.emissiveMap?.dispose();
-      screenMat.emissiveMap = texture;
+      screenMat.map?.dispose();
+      screenMat.map = texture;
       screenMat.needsUpdate = true;
     },
     resize(width, height) {
