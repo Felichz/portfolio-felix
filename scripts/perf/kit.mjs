@@ -13,7 +13,9 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.map': 'application/json', '.webp': 'image/webp', '.avif': 'image/avif', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.woff2': 'font/woff2', '.ico': 'image/x-icon', '.pdf': 'application/pdf', '.txt': 'text/plain', '.xml': 'application/xml', '.webmanifest': 'application/manifest+json', '.wasm': 'application/wasm' };
 
-/** Serves a build on [::1] at a free port; resolves to its base URL and a close(). */
+/** Serves a build on [::1] at a free port (stages in the page's process, as deployed), or on 127.0.0.1
+    with HOST=127.0.0.1 (stages load from localhost, another site, each in its own process, as with
+    PUBLIC_STAGE_ORIGIN); resolves to its base URL and a close(). */
 export async function serve(dist) {
   const server = createServer((req, res) => {
     const p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -39,8 +41,9 @@ export async function serve(dist) {
     res.writeHead(200, { 'content-type': type, 'content-length': size, 'accept-ranges': 'bytes' });
     createReadStream(f).pipe(res);
   });
-  await new Promise((r) => server.listen(0, '::1', r));
-  return { base: `http://[::1]:${server.address().port}`, close: () => server.close() };
+  const host = process.env.HOST ?? '::1';
+  await new Promise((r) => server.listen(0, host, r));
+  return { base: `http://${host.includes(':') ? `[${host}]` : host}:${server.address().port}`, close: () => server.close() };
 }
 
 /** Chrome, headful and off screen (SHOW=1 to see it, HEADLESS=1 for true headless). */
