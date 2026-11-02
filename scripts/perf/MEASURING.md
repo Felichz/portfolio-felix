@@ -24,9 +24,23 @@ node scripts/perf/ledger.mjs --compare scripts/perf/out/ledger-before.json scrip
 ```
 
 - **What it prints.** Per scene: busy, script, style, layout and paint ms (this machine's), then the counts. Then the hottest functions and files over all scenes (native calls charged to the script that made them), the forced style and layout with the function that forced them, who asks for frames and timers, and the totals by document (the page, each stage, each app).
-- **What repeats.** Scenes at rest or under a steady hand (idle-live, scroll, hover-live, use, close-window) give the same counts run after run. Scenes that load something (to-work, next-product) move with when a tape or an app finishes arriving: three runs, and the comparison takes each count's least, the work the scene can't do without. Read those two as a range, not a verdict.
+- **What repeats.** Scenes at rest or under a steady hand (idle-live, idle-work, scroll, hover-live, close-window) give the same counts run after run. Scenes that load something (to-work, next-product, theme, open-window) move with when a tape or an app finishes arriving: three runs, and the comparison takes each count's least, the work the scene can't do without. Read those as a range, not a verdict.
+- **What it counts.** The page's own process: the page, its stages and their apps. A frame from another site (the YouTube player inside PlaySync) runs in a process of its own; it costs the page nothing and is left out.
+- **Each scene checks itself.** A scene works on what the one before left, so one that did nothing (the arrow key went to the app the window left focused, the click missed a button the tilt had moved) would count another interaction. Each says what it must have done (the window open, the deck moved down and back, the theme changed) and the run fails if it didn't.
 - **A/B.** Build each variant into its own folder (`DIST=` picks it), run each with `--repeat 3`, compare. A change of 10% or more is marked.
 - **Then the frames.** The ledger finds and ranks the work; the gate still confirms the frames on a free machine before anything is integrated.
+
+### Invariants
+
+`scripts/perf/invariants.mjs` holds what the ledger must keep true: at rest a live preview paints and lays out nothing and only the cursor light asks for frames, the pace loop asks no frames for an app without endless animations, the deck forces one layout per frame at most, and ceilings on the scenes that load. `--check` runs the scenes twice, takes each count's least, prints a line per rule and exits 1 if one breaks. A broken rule names its scene and count; the full ledger (without `--check`) says who asked and who forced.
+
+```bash
+SOURCEMAP=1 npx astro build --outDir scripts/perf/out/dist-maps
+node scripts/perf/ledger.mjs --check                                  # about 70 s
+node scripts/perf/ledger.mjs --check scripts/perf/out/ledger-x.json   # the rules over a ledger already taken
+```
+
+Checked on win, 2026-11-02: three runs in a row hold at HEAD; with the pace loop's fix (5b45945) undone, 11 rules break. When a change lowers a count for good, lower its rule in the same commit.
 
 ## Two machines
 
