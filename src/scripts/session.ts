@@ -83,17 +83,18 @@ function press(win: Window & typeof globalThis, el: HTMLElement, key: string) {
   el.dispatchEvent(new win.KeyboardEvent('keyup', at));
 }
 
-/** Text in a field, set the way typing sets it (through the native setter, so frameworks see it). */
+/**
+ * Text in a field, set the way typing sets it (through the native setter, so frameworks see it). The
+ * field isn't focused: the app types under its tape, unseen, and a focus there took the keyboard from
+ * the page, scrolled every scroller above the field (the page went to the next section on its own),
+ * and laid the whole page out on the spot (45 ms at 4x CPU, freezes.mjs).
+ */
 function type(win: Window & typeof globalThis, el: HTMLElement, value: string) {
   if (el.isContentEditable) el.textContent = value;
   else {
     const proto = el instanceof win.HTMLTextAreaElement ? win.HTMLTextAreaElement.prototype : win.HTMLInputElement.prototype;
     Object.getOwnPropertyDescriptor(proto, 'value')?.set?.call(el, value);
   }
-  // Without moving anything: a field focused in a frame of the page scrolls every scroller above it
-  // to show it, the page's own among them (a recording typing into PlaySync, under its tape, sent the
-  // page to the next section while the visitor was on the showcase).
-  el.focus({ preventScroll: true });
   el.dispatchEvent(new win.InputEvent('input', { bubbles: true, composed: true, data: value, inputType: 'insertText' }));
 }
 
@@ -297,7 +298,7 @@ export class Session {
     // (#attach listens), and every few seconds for ones its script makes. Always in an idle moment:
     // asking a document for its animations brings its style and layout up to date there and then
     // (18 ms at 4x CPU, every second, when it polled; freezes.mjs).
-    this.#rest();
+    this.#restSoon();
     this.#restTimer = window.setInterval(this.#restSoon, 3000);
     // Following is driven by the tape: when it plays (from wherever it was put), pauses, and when an
     // action is due.
