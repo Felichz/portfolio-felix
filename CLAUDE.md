@@ -22,7 +22,8 @@ Before taking a choice to Felix, check it against these and decide when they set
 
 - **What gets the frames.** Modest machines count (`--throttle 4`) for the scroll, the carousel and the projects; the window and the theme come after. Where frames clash with something Felix chose, his choice stays and the frames go. So the window keeps its view transition (the transform alternative measured worse anyway) and its 70 to 100 ms at 4x is accepted.
 - **Felix's other apps.** Their code may be changed (said 2026-11-03): his own repos in `~/dev` (`../rave2-embed`, `../life-ui-embed`, `../katarch`, `../LoLImpact`, ...), never the employer's (`seekr`, `design-system`). A change there goes on a branch of that repo, measured here with the app vendored again, and reaches its main branch with Felix's OK, like here.
-- **Open, ask Felix:** how much a freeze seen only on a first visit weighs (a portfolio's visitors mostly come once; the GPU's first shaders cost 450 ms there); how much load cost (CPU, memory, data at arrival) is worth fluidity later; whether infrastructure may be added (a second origin for the stages, `PUBLIC_STAGE_ORIGIN`).
+- **Costs paid once per browser** (said 2026-11-03): accepted, unless they land at load or on the first interaction. Heavy work isn't moved to the arrival to save it later: the arrival is a first impression for every visitor. So the GPU's first shaders on a first visit to PlaySync (450 ms in an empty profile, 1.2 s after arriving at the product, while its recording plays) stay.
+- **Infrastructure** (said 2026-11-03): may be added when it serves this work, such as a second hostname of this same Vercel project for the stages (`PUBLIC_STAGE_ORIGIN`). The apps' own deployments (`katarch.vercel.app`, ...) don't serve as stages: the stages need the vendored builds with the bridge, on the stage's own origin.
 
 ## How the work runs
 
