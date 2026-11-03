@@ -8,16 +8,26 @@ export function initFx() {
   const fine = matchMedia('(hover: hover) and (pointer: fine)');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 
+  // Read and written in the frame, not in the event: the box read in the event laid the page out there
+  // and then, inside the input's own task (31 ms at 4x CPU while a slide was being prepared under the
+  // pointer, freezes.mjs). The frame shows the light where it showed it before: the next one.
+  let spotAt: { spot: HTMLElement; x: number; y: number } | null = null;
+  let spotFrame = 0;
   document.addEventListener(
     'pointermove',
     (e) => {
       if (!fine.matches) return;
       const spot = (e.target as HTMLElement).closest<HTMLElement>('.spot');
-      if (spot) {
+      if (!spot) return;
+      spotAt = { spot, x: e.clientX, y: e.clientY };
+      spotFrame ||= requestAnimationFrame(() => {
+        spotFrame = 0;
+        if (!spotAt) return;
+        const { spot, x, y } = spotAt;
         const r = spot.getBoundingClientRect();
-        spot.style.setProperty('--mx', `${e.clientX - r.left}px`);
-        spot.style.setProperty('--my', `${e.clientY - r.top}px`);
-      }
+        spot.style.setProperty('--mx', `${x - r.left}px`);
+        spot.style.setProperty('--my', `${y - r.top}px`);
+      });
     },
     { passive: true },
   );
