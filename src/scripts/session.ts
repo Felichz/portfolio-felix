@@ -431,20 +431,45 @@ export class Session {
     if (next && !p.paused) this.#timer = window.setTimeout(this.follow, Math.max(0, (next.t - t) / (p.playbackRate || 1)));
   };
 
+  /**
+   * Typing waits. A recording types a letter at a time (PlaySync's has 32 in a row), and each one the
+   * app was given re-rendered it, unseen under its tape, in the middle of whatever the page was doing
+   * (the biggest share of a product change's freezes at 4x CPU, freezes.mjs). The field's text is
+   * only needed by the next thing that isn't typing (the Enter that sends it) or as the app goes live:
+   * it's given then, its last value at once.
+   */
+  #typed: Action | null = null;
+  async #type() {
+    const a = this.#typed;
+    this.#typed = null;
+    const win = this.frame?.contentWindow as (Window & typeof globalThis) | null;
+    const doc = this.frame?.contentDocument;
+    if (!a || !win || !doc || this.#disposed) return;
+    let el: HTMLElement | undefined;
+    for (let tries = 0; !(el = resolve(doc, a)) && tries < 40; tries++) await frames(win, 1);
+    if (el) type(win, el, a.value ?? '');
+    await frames(win, 1);
+  }
+
   async #replay(a: Action) {
     const win = this.frame.contentWindow as Window & typeof globalThis;
     const doc = this.frame.contentDocument;
     if (!win || !doc || this.#disposed) return;
+    if (a.kind === 'input') {
+      // Into another field: the one before gets its text first.
+      if (this.#typed && this.#typed.path.join() !== a.path.join()) await this.#type();
+      this.#typed = a;
+      this.handoff.setClock?.(this.#clockAt(a.t), true);
+      return;
+    }
+    await this.#type();
     this.handoff.setClock?.(this.#clockAt(a.t), true);
     let el: HTMLElement | undefined;
     for (let tries = 0; !(el = resolve(doc, a)) && tries < 40; tries++) await frames(win, 1);
     if (el && a.kind === 'key') press(win, el, a.key!);
-    else if (el && a.kind === 'input') type(win, el, a.value ?? '');
     else if (el) click(win, el);
     // A click can start async work: wait for the DOM to settle (bounded: a playing video never does).
-    // Typing is synchronous, and there's a lot of it: one frame is enough.
-    if (a.kind === 'input') await frames(win, 1);
-    else await quiet(win, doc, 450);
+    await quiet(win, doc, 450);
     this.#rest();
     // The clock stays where the tape is, frozen, until the next action moves it on (firing whatever
     // fell due on the way) or the app goes live. Unseen, an app has no reason to tick: its timers would
@@ -486,6 +511,8 @@ export class Session {
         this.#done++;
         await this.#replay(a);
       }
+    // Typing the tape had reached: its text, before the app shows.
+    await this.#type();
     let shown = 0;
     for (const a of this.tape.actions ?? []) if (a.t <= at) shown = Math.max(shown, a.t);
     for (const e of this.tape.events) if (e[0] === 't' && e[1] <= at && e[1] > shown) shown = e[1];

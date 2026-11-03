@@ -228,7 +228,9 @@ function analyze(events, mainFrame, placeTrace, vsync) {
     }
 
     // V8's own samples in the window, on the page's main thread: what JavaScript really ran.
-    out.js = samples(a, b);
+    const js = samples(a, b);
+    out.js = js.self;
+    out.jsBy = js.by;
 
     // What invalidated style or layout in the window.
     const inv = {};
@@ -288,9 +290,25 @@ function analyze(events, mainFrame, placeTrace, vsync) {
     const prof = events.find((e) => e.name === 'Profile' && `${e.pid}:${e.tid}` === pageMain);
     const chunks = events.filter((e) => e.name === 'ProfileChunk' && prof && e.pid === prof.pid && e.id === prof.id);
     const start = prof?.args?.data?.startTime;
-    if (!chunks.length || start === undefined) return [];
+    if (!chunks.length || start === undefined) return { self: [], by: [] };
     let t = start;
     const self = {};
+    // Also by the nearest of the code's own functions up the stack (src/, not a library): which
+    // component or module the time was spent for, React's own work charged to it.
+    const by = {};
+    const ownOf = new Map();
+    const own = (n) => {
+      if (ownOf.has(n.id)) return ownOf.get(n.id);
+      let w = null;
+      for (let p = n; p && !w; p = byId.get(p.parent)) {
+        const c = p.callFrame;
+        if (!c?.url) continue;
+        const at = placeTrace({ url: c.url, lineNumber: c.lineNumber + 1, columnNumber: c.columnNumber + 1, functionName: c.functionName }).where;
+        if (/(^|\s)src\//.test(at)) w = at;
+      }
+      ownOf.set(n.id, w);
+      return w;
+    };
     for (const c of chunks.sort((x, y) => x.ts - y.ts)) {
       const p = c.args?.data?.cpuProfile ?? {};
       for (const n of p.nodes ?? []) byId.set(n.id, n);
@@ -311,10 +329,14 @@ function analyze(events, mainFrame, placeTrace, vsync) {
           const c = p?.callFrame;
           where = `${f.functionName || '(native)'}${c ? ' <- ' + placeTrace({ url: c.url, lineNumber: c.lineNumber + 1, columnNumber: c.columnNumber + 1, functionName: c.functionName }).where : ''}`;
         }
-        self[where] = (self[where] ?? 0) + (deltas[i + 1] ?? deltas[i] ?? 0) / 1000;
+        const ms = (deltas[i + 1] ?? deltas[i] ?? 0) / 1000;
+        self[where] = (self[where] ?? 0) + ms;
+        const o = own(n);
+        if (o) by[o] = (by[o] ?? 0) + ms;
       });
     }
-    return Object.entries(self).sort((x, y) => y[1] - x[1]).slice(0, 6).map(([w, ms]) => `${w} ${ms.toFixed(1)} ms`);
+    const top = (o) => Object.entries(o).sort((x, y) => y[1] - x[1]).slice(0, 6).map(([w, ms]) => `${w} ${ms.toFixed(1)} ms`);
+    return { self: top(self), by: top(by) };
   }
 }
 
@@ -414,6 +436,7 @@ for (const s of all) {
       for (const d of t.detail.slice(0, 5)) console.log(`              ${String(d.ms).padStart(5)} ms ${d.kind} ${d.what}${d.doc ? ' [' + d.doc + ']' : ''}${d.where ? ' ' + d.where : ''}${d.forced ? ' (forced)' : ''}`);
     }
     if (f.js.length) console.log(`  js        ${f.js.join('; ')}`);
+    if (f.jsBy?.length) console.log(`  js for    ${f.jsBy.join('; ')}`);
     if (f.invalidations.length) console.log(`  invalid.  ${f.invalidations.join('; ')}`);
     if (f.others.length) console.log(`  others    ${f.others.map((o) => `${o.process} busy ${o.busy} ms${o.scripts.length ? ' (' + o.scripts.join(', ') + ')' : ''}`).join('; ')}${f.waitedOnSurface ? `; display waited on a surface ${f.waitedOnSurface}x` : ''}`);
     if (f.gpu) console.log(`  gpu       busy ${f.gpu.busy} ms, shaders compiled ${f.gpu.shaders}, raster ${f.gpu.raster} ms, composite ${f.gpu.composite} ms${f.gpu.video ? `, video ${f.gpu.video} ms` : ''}`);
