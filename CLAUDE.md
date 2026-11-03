@@ -16,6 +16,14 @@ Felix writes in Spanish: answer him in Spanish. Code, comments, commits, docs an
 
 Said by Felix on 2026-10-11. The common things must be fluid for everyone, on modest machines too: **the page's scroll, the interaction with the projects carousel, and the projects themselves**. The window that opens over a preview, and the theme switch, come after. Where the two clash, he keeps his choice and gives up frames: the theme switch is the **circle** (a radial reveal from the toggle), not a fade, even if it doesn't reach 60 fps. A preview's window opens with the app live, not over its recording.
 
+## Deciding trade-offs
+
+Before taking a choice to Felix, check it against these and decide when they settle it; ask only what they leave open, and add his answer here.
+
+- **What gets the frames.** Modest machines count (`--throttle 4`) for the scroll, the carousel and the projects; the window and the theme come after. Where frames clash with something Felix chose, his choice stays and the frames go. So the window keeps its view transition (the transform alternative measured worse anyway) and its 70 to 100 ms at 4x is accepted.
+- **Felix's other apps.** Their code may be changed (said 2026-11-03): his own repos in `~/dev` (`../rave2-embed`, `../life-ui-embed`, `../katarch`, `../LoLImpact`, ...), never the employer's (`seekr`, `design-system`). A change there goes on a branch of that repo, measured here with the app vendored again, and reaches its main branch with Felix's OK, like here.
+- **Open, ask Felix:** how much a freeze seen only on a first visit weighs (a portfolio's visitors mostly come once; the GPU's first shaders cost 450 ms there); how much load cost (CPU, memory, data at arrival) is worth fluidity later; whether infrastructure may be added (a second origin for the stages, `PUBLIC_STAGE_ORIGIN`).
+
 ## How the work runs
 
 One instance works here, on Felix's Windows laptop. Until 2026-11-02 a second one ran on his Mac and the two talked through `scripts/coord/coord.mjs` on the `coord` branch; the Mac is retired, the channel is history (its old claims hold nothing), and checking it is optional.
