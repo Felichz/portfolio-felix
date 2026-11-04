@@ -1,13 +1,14 @@
 /**
  * A phone app's lead shot as a phone in real 3D (phone-model.ts), over the CSS phone that Plate.astro
- * draws. The CSS phone is what shows first and what stays if WebGL or the module never arrive; the 3D
- * one fades in over it once its first frame is drawn. three.js is fetched only when such a plate
- * nears the viewport.
+ * draws. The CSS phone is what shows first and what stays if WebGL or the worker never arrive; the 3D
+ * one takes over once its first frame is drawn. It is built and drawn in a worker (phone-worker.ts),
+ * started when such a plate nears the viewport.
  *
  * Inside a `[data-phone-stage]` it leans toward the pointer and eases back when the pointer leaves.
  * It draws only while it moves: a resting phone costs nothing.
  */
-import type { PhoneModel } from './phone-model';
+import { drawScreen } from './phone-screen';
+import type { PhoneMessage } from './phone-worker';
 
 // The canvas overflows the plate so a leaning phone isn't cut off; see .phone3d in global.css.
 const OVER_Y = 0.12; // the share of its height it takes above and below
@@ -22,7 +23,7 @@ export function initPhones() {
       for (const e of entries) {
         if (!e.isIntersecting) continue;
         io.unobserve(e.target);
-        mount(e.target as HTMLElement).catch(() => e.target.querySelector('.phone3d')?.remove());
+        mount(e.target as HTMLElement).catch(() => unmount(e.target as HTMLElement));
       }
     },
     { rootMargin: '50%' },
@@ -30,26 +31,39 @@ export function initPhones() {
   plates.forEach((p) => io.observe(p));
 }
 
+const unmount = (plate: HTMLElement) => {
+  plate.removeAttribute('data-3d');
+  plate.querySelector('.phone3d')?.remove();
+};
+
 async function mount(plate: HTMLElement) {
   const canvas = document.createElement('canvas');
   canvas.className = 'phone3d';
   canvas.setAttribute('aria-hidden', 'true');
+  // Before it joins the page: handing over a canvas that's in the document lays the page out.
+  const offscreen = canvas.transferControlToOffscreen();
   plate.prepend(canvas);
-  const { createPhone } = await import('./phone-model');
-  const model: PhoneModel = createPhone(canvas, 1 / (1 + OVER_Y * 2));
+  const worker = new Worker(new URL('./phone-worker.ts', import.meta.url), { type: 'module' });
+  const post = (message: PhoneMessage, transfer: Transferable[] = []) => worker.postMessage(message, transfer);
+  // Without WebGL in a worker, or if it never loads: the CSS phone stays.
+  worker.onerror = () => {
+    unmount(plate);
+    worker.terminate();
+  };
+  // Shown once there is something to show: the CSS phone goes under it.
+  worker.onmessage = () => plate.setAttribute('data-3d', '');
+  post({ type: 'init', canvas: offscreen, fill: 1 / (1 + OVER_Y * 2), pixelRatio: devicePixelRatio }, [offscreen]);
 
   const root = document.documentElement;
   const rad = Math.PI / 180;
   const now = { x: 0, y: 0 };
   const target = { x: 0, y: 0 };
   let raf = 0;
-  let sized = false;
 
-  const draw = () => sized && model.render(now.x, now.y);
   const frame = () => {
     now.x += (target.x - now.x) * 0.1;
     now.y += (target.y - now.y) * 0.1;
-    draw();
+    post({ type: 'turn', x: now.x, y: now.y });
     const moving = Math.abs(target.x - now.x) + Math.abs(target.y - now.y) > 1e-4;
     raf = moving ? requestAnimationFrame(frame) : 0;
   };
@@ -62,22 +76,13 @@ async function mount(plate: HTMLElement) {
     await img.decode();
     // The theme may have changed again while it loaded.
     if ((root.dataset.theme === 'dark') !== dark) return;
-    model.setScreen(img, dark);
-    draw();
+    const bitmap = drawScreen(img, dark);
+    post({ type: 'screen', screen: bitmap }, [bitmap]);
   };
 
-  new ResizeObserver(() => {
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    sized = w > 0 && h > 0;
-    if (!sized) return;
-    model.resize(w, h);
-    draw();
-  }).observe(canvas);
+  new ResizeObserver(() => post({ type: 'size', width: canvas.clientWidth, height: canvas.clientHeight })).observe(canvas);
 
   await screen();
-  // Shown once there is something to show: the CSS phone fades out under it.
-  requestAnimationFrame(() => plate.setAttribute('data-3d', ''));
   new MutationObserver(() => screen().catch(() => {})).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
   const stage = plate.closest<HTMLElement>('[data-phone-stage]');
