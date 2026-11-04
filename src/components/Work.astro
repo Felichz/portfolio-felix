@@ -57,7 +57,7 @@ const glowCSS = projects
           <span class="auto-on">Auto-advancing</span>
           <span class="auto-off">Auto-advance paused</span>
         </button>
-        <p class="t-label t-num rail-pos" aria-hidden="true"><span data-pos>01</span> / {total}</p>
+        <p class="t-label t-num rail-pos" aria-hidden="true"><span class="rail-pos-n" data-pos>{projects.map((_, i) => <span data-on={i === 0 ? '' : undefined}>{String(i + 1).padStart(2, '0')}</span>)}</span> / {total}</p>
       </footer>
     </aside>
 
@@ -293,6 +293,12 @@ const glowCSS = projects
   .auto[aria-pressed='true'] :global(.auto-off),
   .auto[aria-pressed='false'] :global(.auto-on) { display: none; }
   .rail-pos { color: var(--ink-3); }
+  /* The count's numbers sit on one another and only the current one shows: changing its text would lay
+     the page out again from the root on every product change (32 ms at 4x CPU, freezes.mjs), where a
+     change of visibility only repaints it. */
+  .rail-pos-n { display: inline-grid; }
+  .rail-pos-n > span { grid-area: 1 / 1; visibility: hidden; }
+  .rail-pos-n > [data-on] { visibility: visible; }
 
   /* ---- Showcase ---- */
   .show { position: relative; display: grid; min-height: 0; container: show / size; }
@@ -595,8 +601,14 @@ const glowCSS = projects
     // (still aria-hidden and inert), timed from the countdown — which always runs out the same way —
     // and from a rail hover, whose click follows within a beat. The switch then composes textures
     // that exist instead of building them.
+    // When the deck last moved. A slide's preparation can mount its recording (a new document's first
+    // layout, 22 ms), and while the deck scrolls it must wait: the rail's items pass under a resting
+    // pointer and each one entered asked for its slide, in the first frames of a scroll (freezes.mjs).
+    let moved = -Infinity;
+    document.querySelector('[data-deck]')?.addEventListener('scroll', () => (moved = performance.now()), { passive: true });
     const prerastered = new Set<HTMLElement>();
     const preraster = (j: number) => {
+      if (performance.now() - moved < 300) return;
       const s = slides[((j % slides.length) + slides.length) % slides.length];
       if (!s || s.dataset.state === 'active' || prerastered.has(s)) return;
       prerastered.add(s);
@@ -619,10 +631,13 @@ const glowCSS = projects
       const prev = index;
       index = j;
       items.forEach((b, k) => (k === j ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
-      if (pos) pos.textContent = String(j + 1).padStart(2, '0');
+      if (pos) [...pos.children].forEach((n, k) => n.toggleAttribute('data-on', k === j));
       root.dataset.p = slides[j]!.dataset.id;
       if (prev !== j) rest(prev);
-      document.dispatchEvent(new CustomEvent('deck:refresh'));
+      // The room takes the product's light, read from the slide's own style: no style is computed for it.
+      const style = slides[j]!.style;
+      const glow = { light: style.getPropertyValue('--a-light').trim(), dark: style.getPropertyValue('--a-dark').trim() };
+      document.dispatchEvent(new CustomEvent('deck:refresh', { detail: { panel: root, glow } }));
       cancelAnimationFrame(change1);
       change1 = requestAnimationFrame(() => {
         change1 = 0;
@@ -710,7 +725,8 @@ const glowCSS = projects
         setTimeout(() => {
           let k = 0;
           const iv = setInterval(() => {
-            if (document.hidden) return;
+            // (While the deck moves, the next turn: preraster would skip this slide for good.)
+            if (document.hidden || performance.now() - moved < 300) return;
             if (k >= slides.length || !active) return clearInterval(iv);
             preraster(k++);
           }, 400);

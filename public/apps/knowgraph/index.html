@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <script data-app="knowgraph">/*
  * Portfolio bridge, inlined at the top of each vendored app's index.html (scripts/apps/vendor.mjs).
@@ -8,13 +8,17 @@
  * app's time belongs to the portfolio:
  * - Date reads a clock the portfolio sets: frozen at the checkpoint's recorded moment while the app
  *   boots, moved to each recorded click's moment while the scene's clicks are replayed, and released at
- *   the frame the preview froze on as the app appears, running from there.
+ *   the frame the preview froze on as the app appears, running from there. Each time the portfolio
+ *   sets it or holds it, a `portfolio:clock` event goes to the window (`handoff.frozen()` says whether
+ *   it stands), for a page that follows the clock without timers (KnowGraph's video).
  * - setTimeout and setInterval run on that clock. Moving it forward fires what fell due, the way the
  *   recording lived through it (a toast that had time to leave leaves); while it's frozen, nothing
  *   timed fires early.
  * - Its backend answers as it did while the scene was recorded: fetches the scene made get the
  *   recorded responses (anything else goes to the network as usual).
  * - Once the app has painted its first screen, the portfolio is told.
+ * - Frames from other sites (PlaySync's YouTube player) load and boot unseen while the app is under its
+ *   tape; the portfolio shows them as the app goes live.
  * The app's own state (localStorage) was already seeded by the portfolio, same origin.
  */
 (function () {
@@ -23,6 +27,18 @@
     handoff = window.parent !== window && window.parent.__live && window.parent.__live[document.currentScript.dataset.app];
   } catch (e) {}
   if (!handoff) return;
+
+  // ---- Frames from other sites, unseen until the app goes live. Shown, a frame from another process
+  // holds every frame of the page until its own first one arrives, and it boots in the very second the
+  // visitor arrives at the product (PlaySync's YouTube player: 6 late frames of the page, 1 without).
+  // Hidden, it still loads and boots; the tape covers the app meanwhile, and the portfolio shows the
+  // frames once the app is about to go live (a later page of a live app never hides them).
+  if (!handoff.live) {
+    var hold = document.createElement('style');
+    hold.id = 'portfolio-held-frames';
+    hold.textContent = 'iframe[src^="http"] { display: none !important; }';
+    document.documentElement.appendChild(hold);
+  }
 
   // ---- The route, for a single-page app loaded from its index.html: set once, before its code runs.
   if (handoff.route) {
@@ -42,6 +58,9 @@
   }
   var now = function () {
     return frozen ? base : base + (RealDate.now() - realBase);
+  };
+  handoff.frozen = function () {
+    return frozen;
   };
   class ShiftedDate extends RealDate {
     constructor() {
@@ -114,6 +133,7 @@
       timers.forEach(function (t) {
         if (t.every && typeof t.fn === 'function') t.fn.apply(window, t.args);
       });
+    window.dispatchEvent(new Event('portfolio:clock'));
   };
 
   // ---- Frames. While nobody can see the app (held), requestAnimationFrame callbacks wait instead of
@@ -163,13 +183,14 @@
     held = !!on;
     timers.forEach(schedule);
     if (!held) release();
+    window.dispatchEvent(new Event('portfolio:clock'));
   };
 
   // ---- The backend, as the scene got it
   if (handoff.network && handoff.network.length) {
     var answers = {};
     handoff.network.forEach(function (x) {
-      answers[x.m + ' ' + x.u] = x;
+      answers[x.m + ' ' + x.u + (x.q ? ' ' + x.q : '')] = x;
     });
     var keyOf = function (method, url) {
       var u = new URL(url, location.href);
@@ -179,7 +200,10 @@
     window.fetch = function (input, init) {
       var req = typeof Request !== 'undefined' && input instanceof Request ? input : null;
       var method = (init && init.method) || (req && req.method) || 'GET';
-      var x = answers[keyOf(method, req ? req.url : String(input))];
+      var key = keyOf(method, req ? req.url : String(input));
+      // A POST is told apart by its body (LoLImpact's draft call), when the body is text.
+      var body = init && typeof init.body === 'string' ? init.body : '';
+      var x = (body && answers[key + ' ' + body]) || answers[key];
       if (!x) return realFetch(input, init);
       return Promise.resolve(new Response(x.b, { status: x.s, headers: { 'content-type': x.h } }));
     };
@@ -209,29 +233,71 @@
   });
 })();
 </script>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0E1117" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-kkWPNMdv3Q3Uk2RalS4XJYVpSn3uHvfduLvjrQ1GytA=' 'sha256-XEYkRQBG76W6GOEmCV+Q+iplhMws5h1uZpvrV38fcDE='; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
-    <!-- Theme before first paint: saved choice (localStorage "knowgraph:theme") or the system setting. The CSP allows this exact script by hash; tests/logic/theme.mjs checks it. -->
-    <script>(function(){var t;try{t=localStorage.getItem("knowgraph:theme")}catch(e){}if(t!=="light"&&t!=="dark")t=window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#F6F7F9":"#0E1117"})()</script>
-    <style>html{background:#0E1117;color-scheme:dark}html[data-theme="light"]{background:#F6F7F9;color-scheme:light}</style>
-    <link rel="manifest" href="/apps/knowgraph/manifest.json" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><circle cx=%2232%22 cy=%2232%22 r=%2228%22 fill=%22%230b0d13%22 stroke=%22%2361dafb%22 stroke-width=%224%22/><circle cx=%2232%22 cy=%2232%22 r=%226%22 fill=%22%2361dafb%22/></svg>" />
-    <meta name="description" content="Study workspace for senior React and Rails interviews: a concept dependency graph, study cards and an AI mentor that grades your explanations." />
-    <title>Learning Workspace: React and Rails interview maps</title>
-    <script type="module" crossorigin src="/apps/knowgraph/assets/index-CJZnutg3.js"></script>
-    <link rel="stylesheet" crossorigin href="/apps/knowgraph/assets/index-BnhFPFRa.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KnowGraph</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0E1117; overflow: hidden; }
+      html[data-theme='light'], html[data-theme='light'] body { background: #F6F7F9; }
+      video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+      /* One video per edition; the portfolio sets the theme attribute (src/scripts/session.ts). */
+      html[data-theme='light'] video[data-edition='dark'], html:not([data-theme='light']) video[data-edition='light'] { display: none; }
+    </style>
   </head>
   <body>
     <!--
-    THESIS: The curriculum is a heat grid of concept cells that light up in their area's colour as you master them; it refuses the dark-graphite-plus-one-accent productivity look.
-    OWN-WORLD: Cool ink/paper neutrals; eleven owned area hues used as fields (cells, swatches, tinted cards), never only dots; interaction in pure ink/paper contrast with no brand accent; square cells, 4-8px radii; Bricolage Grotesque display, Figtree UI and reading, JetBrains Mono figures.
-    STORY: At a glance the learner sees which areas are lit and which are dark, finds the NOW cell and continues; more colour means more mastered.
-    FIRST VIEWPORT: Map: full-width "Your map" grid (one row per area: swatch, name, mastered count, a row of cells) with the NOW cell ringed; Continue tiles below, primary action in the best-next tile. Mobile exception (cited in DESIGN.md): Continue comes first, the grid right after, because the product's core job is "where do I continue".
-    FORM: Heat grid, 3rd of 7 (transit map, periodic table, heat grid, index-card catalogue, Swiss colour fields, whiteboard, skill tree); seed c2b6d70f.
-    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+      KnowGraph's preview is its product video, not the app: the app needs the visitor's own LLM, so it
+      ships as a desktop download (know-graph.vercel.app). The tape carries this video as a clip
+      (scripts/tapes/make-video-tape.mjs); this page is the "live app" under it, and plays the same
+      video on the clock the portfolio's bridge gives it, so the switch from the tape is seamless.
     -->
-    <div id="root"></div>
+    <video data-edition="dark" src="/tapes/knowgraph.clip.mp4" muted playsinline loop preload="auto" disablepictureinpicture></video>
+    <video data-edition="light" src="/tapes/knowgraph.light.clip.mp4" muted playsinline loop preload="auto" disablepictureinpicture></video>
+    <script>
+      (function () {
+        // Must match the tape (public/tapes/knowgraph.json): clock0 is the app clock at tape time 0.
+        var CLOCK0 = 1793000000000;
+        var videos = document.querySelectorAll('video');
+        // Whether the clock runs: the bridge's handoff says (frozen while the app boots or is held off
+        // screen). Opened on its own, outside the portfolio, the clock is the real one.
+        var handoff = null;
+        try {
+          handoff = window.parent !== window && window.parent.__live && window.parent.__live.knowgraph;
+        } catch (e) {}
+        // Each edition's video on the same clock.
+        function sync(v) {
+          var dur = v.duration;
+          if (!(dur > 0)) return;
+          var want = (((Date.now() - CLOCK0) / 1000) % dur + dur) % dur;
+          // The clock frozen: hold the frame. Running: play, and correct only real drift, so playback
+          // stays smooth.
+          if (handoff && handoff.frozen && handoff.frozen()) {
+            if (!v.paused) v.pause();
+            if (Math.abs(v.currentTime - want) > 0.05) v.currentTime = want;
+          } else {
+            if (v.paused) v.play().catch(function () {});
+            var d = Math.abs(v.currentTime - want);
+            if (d > 0.3 && d < dur - 0.3) v.currentTime = want;
+          }
+        }
+        function syncAll() {
+          for (var i = 0; i < videos.length; i++) sync(videos[i]);
+        }
+        // Called when the bridge sets the clock, and as each video plays (a few times a second), never
+        // on every frame: that would have the page draw a frame for it, every frame, for as long as
+        // the preview is up. (Not a timer either: the bridge stops the app's timers while its clock
+        // is frozen.)
+        window.addEventListener('portfolio:clock', syncAll);
+        Array.prototype.forEach.call(videos, function (v) {
+          v.addEventListener('loadedmetadata', function () {
+            sync(v);
+          });
+          v.addEventListener('timeupdate', function () {
+            if (!v.paused) sync(v);
+          });
+        });
+        syncAll();
+      })();
+    </script>
   </body>
 </html>

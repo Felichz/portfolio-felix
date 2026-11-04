@@ -23,6 +23,8 @@ interface Handoff {
   network?: Exchange[];
   /** A recorded real-time room, which the bridge plays to the app's WebSocket. */
   socket?: Tape['app']['socket'];
+  /** Set as the app starts to go live: the bridge hides frames from other sites until then. */
+  live?: boolean;
   /** Installed by the bridge: sets the app's clock, frozen or running; its timers follow it. */
   setClock?: (ms: number, freeze?: boolean, tick?: boolean) => void;
   /** Installed by the bridge: holds the app's clock where it is (nothing timed fires), or lets it run on. */
@@ -81,14 +83,18 @@ function press(win: Window & typeof globalThis, el: HTMLElement, key: string) {
   el.dispatchEvent(new win.KeyboardEvent('keyup', at));
 }
 
-/** Text in a field, set the way typing sets it (through the native setter, so frameworks see it). */
+/**
+ * Text in a field, set the way typing sets it (through the native setter, so frameworks see it). The
+ * field isn't focused: the app types under its tape, unseen, and a focus there took the keyboard from
+ * the page, scrolled every scroller above the field (the page went to the next section on its own),
+ * and laid the whole page out on the spot (45 ms at 4x CPU, freezes.mjs).
+ */
 function type(win: Window & typeof globalThis, el: HTMLElement, value: string) {
   if (el.isContentEditable) el.textContent = value;
   else {
     const proto = el instanceof win.HTMLTextAreaElement ? win.HTMLTextAreaElement.prototype : win.HTMLInputElement.prototype;
     Object.getOwnPropertyDescriptor(proto, 'value')?.set?.call(el, value);
   }
-  el.focus();
   el.dispatchEvent(new win.InputEvent('input', { bubbles: true, composed: true, data: value, inputType: 'insertText' }));
 }
 
@@ -288,9 +294,12 @@ export class Session {
     this.#attach();
     // An app of several pages gets the same hooks on each page it goes to.
     frame.addEventListener('load', () => this.#attach());
-    // Unseen, it rests; checked again now and then, for animations its own timers started since.
-    this.#rest();
-    this.#restTimer = window.setInterval(() => this.#rest(), 1000);
+    // Unseen, it rests: now, then whenever the app starts a CSS animation or transition of its own
+    // (#attach listens), and every few seconds for ones its script makes. Always in an idle moment:
+    // asking a document for its animations brings its style and layout up to date there and then
+    // (18 ms at 4x CPU, every second, when it polled; freezes.mjs).
+    this.#restSoon();
+    this.#restTimer = window.setInterval(this.#restSoon, 3000);
     // Following is driven by the tape: when it plays (from wherever it was put), pauses, and when an
     // action is due.
     this.player.addEventListener('playing', this.follow);
@@ -306,6 +315,9 @@ export class Session {
     const doc = frame.contentDocument;
     if (!win || !doc || this.#attached.has(doc)) return;
     this.#attached.add(doc);
+    // (An animation or a transition the app starts while it follows its tape: see #rest.)
+    doc.addEventListener('animationstart', this.#restSoon, true);
+    doc.addEventListener('transitionrun', this.#restSoon, true);
     const tape = this.tape;
     const { hooks } = this.opts;
     this.syncTheme();
@@ -419,20 +431,45 @@ export class Session {
     if (next && !p.paused) this.#timer = window.setTimeout(this.follow, Math.max(0, (next.t - t) / (p.playbackRate || 1)));
   };
 
+  /**
+   * Typing waits. A recording types a letter at a time (PlaySync's has 32 in a row), and each one the
+   * app was given re-rendered it, unseen under its tape, in the middle of whatever the page was doing
+   * (the biggest share of a product change's freezes at 4x CPU, freezes.mjs). The field's text is
+   * only needed by the next thing that isn't typing (the Enter that sends it) or as the app goes live:
+   * it's given then, its last value at once.
+   */
+  #typed: Action | null = null;
+  async #type() {
+    const a = this.#typed;
+    this.#typed = null;
+    const win = this.frame?.contentWindow as (Window & typeof globalThis) | null;
+    const doc = this.frame?.contentDocument;
+    if (!a || !win || !doc || this.#disposed) return;
+    let el: HTMLElement | undefined;
+    for (let tries = 0; !(el = resolve(doc, a)) && tries < 40; tries++) await frames(win, 1);
+    if (el) type(win, el, a.value ?? '');
+    await frames(win, 1);
+  }
+
   async #replay(a: Action) {
     const win = this.frame.contentWindow as Window & typeof globalThis;
     const doc = this.frame.contentDocument;
     if (!win || !doc || this.#disposed) return;
+    if (a.kind === 'input') {
+      // Into another field: the one before gets its text first.
+      if (this.#typed && this.#typed.path.join() !== a.path.join()) await this.#type();
+      this.#typed = a;
+      this.handoff.setClock?.(this.#clockAt(a.t), true);
+      return;
+    }
+    await this.#type();
     this.handoff.setClock?.(this.#clockAt(a.t), true);
     let el: HTMLElement | undefined;
     for (let tries = 0; !(el = resolve(doc, a)) && tries < 40; tries++) await frames(win, 1);
     if (el && a.kind === 'key') press(win, el, a.key!);
-    else if (el && a.kind === 'input') type(win, el, a.value ?? '');
     else if (el) click(win, el);
     // A click can start async work: wait for the DOM to settle (bounded: a playing video never does).
-    // Typing is synchronous, and there's a lot of it: one frame is enough.
-    if (a.kind === 'input') await frames(win, 1);
-    else await quiet(win, doc, 450);
+    await quiet(win, doc, 450);
     this.#rest();
     // The clock stays where the tape is, frozen, until the next action moves it on (firing whatever
     // fell due on the way) or the app goes live. Unseen, an app has no reason to tick: its timers would
@@ -474,11 +511,17 @@ export class Session {
         this.#done++;
         await this.#replay(a);
       }
+    // Typing the tape had reached: its text, before the app shows.
+    await this.#type();
     let shown = 0;
     for (const a of this.tape.actions ?? []) if (a.t <= at) shown = Math.max(shown, a.t);
     for (const e of this.tape.events) if (e[0] === 't' && e[1] <= at && e[1] > shown) shown = e[1];
     const win = this.frame.contentWindow!;
     const doc = this.frame.contentDocument!;
+    // Frames from other sites, held unseen by the bridge while the app booted, are shown now, still
+    // under the tape: their first frame comes while the app settles, not as it appears.
+    this.handoff.live = true;
+    doc.getElementById('portfolio-held-frames')?.remove();
     mark(this.id, 'caught-up');
     this.handoff.setClock?.(this.#clockAt(at), true);
     // Let it settle: async work after the last action, and animations it started (both bounded).
@@ -508,6 +551,14 @@ export class Session {
    * the app on every frame for nobody. Only ones with more than two seconds left: nothing the replay
    * waits for. They run again, from where they were, as it goes live.
    */
+  #restQueued = false;
+  #restSoon = () => {
+    if (this.#restQueued || this.live) return;
+    this.#restQueued = true;
+    const run = () => ((this.#restQueued = false), this.#rest());
+    if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 1500 });
+    else setTimeout(run, 200);
+  };
   #rest() {
     const doc = this.frame?.contentDocument;
     if (!doc || this.live) return;
@@ -565,6 +616,10 @@ export class Session {
     if (this.#disposed || !this.live || this.#held) return;
     const chain = this.#paceChain;
     if (document.hidden || !this.frame.isConnected) return void (this.#paceTimer = window.setTimeout(this.#tunePace, 1500));
+    // Nothing endless to rest or wake: no batch. Its 40 frames in a row, every 1.5 s, kept the stage
+    // drawing for as long as the app was live, whatever it showed. Looked at again in a while, for an
+    // endless animation that starts later (a spinner).
+    if (!this.#decorative.length && !this.#endless()) return void (this.#paceTimer = window.setTimeout(this.#tunePace, 3000));
     const ts: number[] = [];
     const tick = (t: number) => {
       if (chain !== this.#paceChain) return;
@@ -586,6 +641,11 @@ export class Session {
     };
     requestAnimationFrame(tick);
   };
+  /** Whether the app runs an endless animation now (what #restDecorative would pause). */
+  #endless() {
+    const doc = this.frame?.contentDocument;
+    return !!doc?.getAnimations().some((a) => a.playState === 'running' && Number(a.effect?.getComputedTiming().endTime) === Infinity);
+  }
   #judge(ts: number[]) {
     if (this.#disposed || !this.live || this.#held) return;
     const iv = ts

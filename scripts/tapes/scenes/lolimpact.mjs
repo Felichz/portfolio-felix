@@ -1,4 +1,4 @@
-// LoLImpact, one of LP Felix's games (minute 12: 64%, the case study's screenshot). The scene steps
+// LoLImpact, one of LP Felix's games (a loss decided in mid lane, the case study's screenshot). The scene steps
 // through the minutes with the readout's own buttons, back and forth.
 //
 // Its API answers are recorded against a local backend (LoLImpact/backend: uvicorn app.main:app
@@ -30,10 +30,22 @@ export default {
     });
     await page.reload({ waitUntil: 'networkidle0' });
     await page.waitForSelector('article.detail', { timeout: 60000 });
-    // Every game on the profile, so any of them opens in the live app.
+    // Every game on the profile, so any of them opens in the live app, with the pre-game panel's
+    // draft call made exactly as the app makes it (MatchDetail: the first minute's ten picks).
     await page.evaluate(async (profile) => {
       const p = await (await fetch(profile)).json();
-      for (const m of p.matches) await fetch(`/api/match/LAS/${m.match_id}`);
+      for (const m of p.matches) {
+        const d = await (await fetch(`/api/match/LAS/${m.match_id}`)).json();
+        if (!d.curve?.length) continue;
+        const lm = d.curve[0].landmark;
+        const picks = { blue: {}, red: {} };
+        for (const x of d.players) if (x.landmark === lm && x.role) picks[x.side][x.role] = x.champ;
+        await fetch('/api/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ blue: picks.blue, red: picks.red }),
+        });
+      }
     }, PROFILE);
     await new Promise((r) => setTimeout(r, 1200));
   },
@@ -43,7 +55,7 @@ export default {
     await s.wait(900);
     const steps = ['Previous', 'Previous', 'Next', 'Next', 'Next', 'Next', 'Next', 'Previous', 'Previous', 'Previous'];
     for (const [i, dir] of steps.entries()) {
-      await s.clickText(new RegExp(`^${dir} min$`), { rest: i && steps[i - 1] === dir ? 60 : 200 });
+      await s.clickText(new RegExp(`${dir} min`), { rest: i && steps[i - 1] === dir ? 60 : 200 });
       await s.wait(760);
     }
     await s.moveTo(920, 512, 900);

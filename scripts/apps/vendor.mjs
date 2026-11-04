@@ -5,7 +5,7 @@
 // Usage: node scripts/apps/vendor.mjs [id]   (each app's repo must be checked out next to this one)
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -32,10 +32,10 @@ export const APPS = {
     ],
   },
   knowgraph: {
-    // A worktree of github.com/Felichz/KnowGraph on the portfolio-embed branch, which makes its routes
-    // and service worker follow the base path.
-    repo: resolve(root, '../learning-embed'),
-    build: (out) => ['npx', ['vite', 'build', '--base', '/apps/knowgraph/', '--outDir', out, '--emptyOutDir']],
+    // Not the app: KnowGraph needs the visitor's own LLM and ships as a desktop download, so its
+    // preview is its product video. A page in this repo plays it on the bridge's clock, under a tape
+    // that carries the same video as a clip (scripts/tapes/make-video-tape.mjs).
+    static: resolve(here, 'knowgraph-video'),
   },
   playsync: {
     // A worktree of github.com/Felichz/PlaySync on the portfolio-embed branch: no service worker in
@@ -105,10 +105,17 @@ if (process.argv.includes('--bridge')) {
 for (const [id, app] of Object.entries(APPS)) {
   if (only && only !== id) continue;
   const out = resolve(root, 'public/apps', id);
-  const [cmd, args] = app.build(out);
-  console.log(`building ${id} from ${app.repo}`);
-  execFileSync(cmd, args, { cwd: app.repo, stdio: 'inherit', shell: process.platform === 'win32', env: { ...process.env, ...app.env } });
-  for (const dir of app.drop ?? []) rmSync(resolve(out, dir), { recursive: true, force: true });
+  if (app.static) {
+    // A page kept in this repo: copied as it is.
+    console.log(`copying ${id} from ${app.static}`);
+    rmSync(out, { recursive: true, force: true });
+    cpSync(app.static, out, { recursive: true });
+  } else {
+    const [cmd, args] = app.build(out);
+    console.log(`building ${id} from ${app.repo}`);
+    execFileSync(cmd, args, { cwd: app.repo, stdio: 'inherit', shell: process.platform === 'win32', env: { ...process.env, ...app.env } });
+    for (const dir of app.drop ?? []) rmSync(resolve(out, dir), { recursive: true, force: true });
+  }
 
   const bridge = readFileSync(resolve(here, 'bridge.js'), 'utf8');
   // App-specific stand-ins (a room server, for PlaySync) go right after it, before the app's code.
@@ -128,7 +135,7 @@ for (const [id, app] of Object.entries(APPS)) {
     if (text !== before) writeFileSync(file, text);
   }
 
-  const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: app.repo, encoding: 'utf8' }).trim();
+  const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: app.repo ?? root, encoding: 'utf8' }).trim();
   writeFileSync(resolve(out, 'vendored.json'), JSON.stringify({ id, commit, built: new Date().toISOString() }, null, 2) + '\n');
   console.log(`vendored ${id} @ ${commit.slice(0, 7)} -> public/apps/${id}/`);
 }

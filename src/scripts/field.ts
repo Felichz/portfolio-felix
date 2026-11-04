@@ -65,9 +65,11 @@ export function initField() {
   };
 
   const readColor = () => {
-    // deck.ts sets --glow inline on the root, so its value is there without a style flush (a computed read
-    // here recalculated the whole page on every product change, twice). The computed value stays the fallback.
-    color = root.style.getPropertyValue('--glow').trim() || getComputedStyle(root).getPropertyValue('--glow').trim() || color;
+    // deck.ts sets --glow inline on the elements that draw with it (this one among them), so its value
+    // is there without a style flush (a computed read here recalculated the whole page on every product
+    // change, twice). The computed value stays the fallback.
+    const lit = light?.closest<HTMLElement>('[data-glow]') ?? root;
+    color = lit.style.getPropertyValue('--glow').trim() || getComputedStyle(lit).getPropertyValue('--glow').trim() || color;
     dark = root.dataset.theme === 'dark';
     kick();
   };
@@ -188,9 +190,8 @@ export function initField() {
   });
 
   addEventListener('resize', resize, { passive: true });
-  document.addEventListener('deck:refresh', readColor);
-  document.addEventListener('deck:change', () => setTimeout(readColor, 0));
-  new MutationObserver(readColor).observe(root, { attributes: true, attributeFilter: ['data-theme', 'style'] });
+  document.addEventListener('deck:glow', readColor);
+  new MutationObserver(readColor).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
   resize();
   readColor();

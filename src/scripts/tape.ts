@@ -419,7 +419,8 @@ export class TapeCore extends HTMLElement {
       v.muted = true;
       v.playsInline = true;
       v.preload = 'auto';
-      v.src = new URL(this.tape.clip.src, location.href).href;
+      // A clip can name its own file (one per app edition, shown by the tape's css); otherwise it's the tape's.
+      v.src = new URL(attrs['data-tape-clip'] || this.tape.clip.src, location.href).href;
       this.#clips.add(v);
     }
     return el;
