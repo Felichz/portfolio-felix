@@ -4,7 +4,7 @@ const START = { year: 2020, month: 12 };
 const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
 /**
- * Time in frontend, as of the build date. Rounds honestly: "nearly six" from 9 months short of a
+ * Time in the industry, as of the build date. Rounds honestly: "nearly six" from 9 months short of a
  * full year, otherwise the completed years with a plus.
  */
 export function experience(now = new Date()) {

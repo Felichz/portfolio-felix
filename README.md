@@ -1,6 +1,6 @@
 # Felix Andersson, portfolio
 
-Personal site of Felix Andersson, Senior Frontend Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, plus products of my own, designed and built end to end. Built like a desktop app: one fixed window, full-height sections that move one at a time.
+Personal site of Felix Andersson, Senior Fullstack Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, now the whole stack at Clayful (Rails, Node, Firebase, a Capacitor app), plus products of my own, designed and built end to end. Built like a desktop app: one fixed window, full-height sections that move one at a time.
 
 **[portfolio-felix-teal.vercel.app](https://portfolio-felix-teal.vercel.app/)** · [Résumé (PDF)](public/felix-andersson-resume.pdf) · [LinkedIn](https://www.linkedin.com/in/felixandersson/) · [GitHub](https://github.com/Felichz)
 
@@ -140,7 +140,7 @@ npm run preview  # serve dist/
 | --- | --- |
 | `src/data/projects.ts` | Every product: order, copy, stack, scale, accent colors, screenshots, callouts, gallery. |
 | `src/pages/index.astro` | Home sections: `Intro`, `Work` (the showcase), `Experience` (the timeline), `About`. |
-| `src/data/career.ts` | Time in frontend, computed at build time. |
+| `src/data/career.ts` | Time in the industry, computed at build time. |
 | `src/pages/work/[id].astro` | Case study template (five sections), generated from `projects.ts`. |
 | `src/layouts/Base.astro` | The app shell: head, pre-paint theme and deep-link scripts, `Bar`, the section rail (`Dock`), the deck, image viewer. |
 | `src/scripts/deck.ts` | The vertical deck: wheel, keys, links, hash, section rail and ambient light. |
