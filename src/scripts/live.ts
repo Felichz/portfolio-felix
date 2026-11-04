@@ -25,8 +25,9 @@
  */
 import type { TapePlayer } from './player';
 
-const FLIGHT = 560; // the window's morph, ms
-/** Its curve: a gentle start and a long settle, shared by the window and the page behind it. */
+const FLIGHT = 560; // the window's morph, ms (and 85% of it on the way back; global.css has both)
+/** Its curve: a gentle start and a long settle, shared by the window and the page behind it (and in
+    global.css, for the window's view transition). */
 const CURVE = 'cubic-bezier(0.45, 0, 0.15, 1)';
 /** How long a preview is on screen before its app boots. */
 const DWELL = 600;
@@ -392,7 +393,7 @@ async function zoom(plate: HTMLElement) {
    * same one; back in its preview it takes the other again. The site's theme stays. The window's two
    * pictures, the preview's and the window's, cross-fade over the morph.
    */
-  const morph = async (open: boolean, duration: number, page: Animation[], land?: DOMRect) => {
+  const morph = async (open: boolean, page: Animation[], land?: DOMRect) => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
     if (!doc.startViewTransition || reduce.matches) {
       swap(open);
@@ -400,8 +401,6 @@ async function zoom(plate: HTMLElement) {
       page.forEach((a) => a.play());
       return;
     }
-    root.style.setProperty('--live-d', `${duration}ms`);
-    root.style.setProperty('--live-ease', CURVE);
     root.classList.add('live-vt', open ? 'live-vt-in' : 'live-vt-out');
     (open ? plate : win).classList.add('live-vt-shape');
     const vt = doc.startViewTransition(() => {
@@ -446,7 +445,7 @@ async function zoom(plate: HTMLElement) {
   // doesn't also pay for a subtree the page has never laid out.
   await new Promise<void>((r) => requestAnimationFrame(() => r()));
   const steps = stepping(true, FLIGHT);
-  await morph(true, FLIGHT, steps);
+  await morph(true, steps);
   overlay.classList.add('landed');
 
   // ---- Leaving
@@ -468,7 +467,7 @@ async function zoom(plate: HTMLElement) {
     steps.forEach((a) => a.cancel());
     player.send({ k: 'mode', window: false });
     app.inWindow = false;
-    await morph(false, FLIGHT * 0.85, returns, land);
+    await morph(false, returns, land);
     await Promise.all(returns.map((a) => a.finished));
     returns.forEach((a) => a.cancel());
     layers.forEach((el) => (el.style.transformOrigin = ''));

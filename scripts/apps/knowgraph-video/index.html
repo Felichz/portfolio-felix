@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KnowGraph</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0E1117; overflow: hidden; }
+      html[data-theme='light'], html[data-theme='light'] body { background: #F6F7F9; }
+      video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+      /* One video per edition; the portfolio sets the theme attribute (src/scripts/session.ts). */
+      html[data-theme='light'] video[data-edition='dark'], html:not([data-theme='light']) video[data-edition='light'] { display: none; }
+    </style>
+  </head>
+  <body>
+    <!--
+      KnowGraph's preview is its product video, not the app: the app needs the visitor's own LLM, so it
+      ships as a desktop download (know-graph.vercel.app). The tape carries this video as a clip
+      (scripts/tapes/make-video-tape.mjs); this page is the "live app" under it, and plays the same
+      video on the clock the portfolio's bridge gives it, so the switch from the tape is seamless.
+    -->
+    <video data-edition="dark" src="/tapes/knowgraph.clip.mp4" muted playsinline loop preload="auto" disablepictureinpicture></video>
+    <video data-edition="light" src="/tapes/knowgraph.light.clip.mp4" muted playsinline loop preload="auto" disablepictureinpicture></video>
+    <script>
+      (function () {
+        // Must match the tape (public/tapes/knowgraph.json): clock0 is the app clock at tape time 0.
+        var CLOCK0 = 1793000000000;
+        var videos = document.querySelectorAll('video');
+        // Whether the clock runs: the bridge's handoff says (frozen while the app boots or is held off
+        // screen). Opened on its own, outside the portfolio, the clock is the real one.
+        var handoff = null;
+        try {
+          handoff = window.parent !== window && window.parent.__live && window.parent.__live.knowgraph;
+        } catch (e) {}
+        // Each edition's video on the same clock.
+        function sync(v) {
+          var dur = v.duration;
+          if (!(dur > 0)) return;
+          var want = (((Date.now() - CLOCK0) / 1000) % dur + dur) % dur;
+          // The clock frozen: hold the frame. Running: play, and correct only real drift, so playback
+          // stays smooth.
+          if (handoff && handoff.frozen && handoff.frozen()) {
+            if (!v.paused) v.pause();
+            if (Math.abs(v.currentTime - want) > 0.05) v.currentTime = want;
+          } else {
+            if (v.paused) v.play().catch(function () {});
+            var d = Math.abs(v.currentTime - want);
+            if (d > 0.3 && d < dur - 0.3) v.currentTime = want;
+          }
+        }
+        function syncAll() {
+          for (var i = 0; i < videos.length; i++) sync(videos[i]);
+        }
+        // Called when the bridge sets the clock, and as each video plays (a few times a second), never
+        // on every frame: that would have the page draw a frame for it, every frame, for as long as
+        // the preview is up. (Not a timer either: the bridge stops the app's timers while its clock
+        // is frozen.)
+        window.addEventListener('portfolio:clock', syncAll);
+        Array.prototype.forEach.call(videos, function (v) {
+          v.addEventListener('loadedmetadata', function () {
+            sync(v);
+          });
+          v.addEventListener('timeupdate', function () {
+            if (!v.paused) sync(v);
+          });
+        });
+        syncAll();
+      })();
+    </script>
+  </body>
+</html>

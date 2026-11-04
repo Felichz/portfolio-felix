@@ -159,16 +159,17 @@ export const projects: Project[] = [
     face: 'face-bricolage',
     year: '2026',
     tagline:
-      'Senior React and Rails interview prep as a map of 142 concepts, each studied in a four-stage session with an AI mentor that grades your explanation.',
-    proof: '160 commits, 142 concepts and 266 links, 10 ADRs, 37 Playwright tests',
+      'Senior React and Rails interview prep as a map of 142 concepts. Each one is read, explained from memory, and graded by an AI against a rubric.',
+    proof: '167 commits, 142 concepts and 266 links, 10 ADRs, 48 Playwright tests',
     live: 'https://know-graph.vercel.app/',
+    liveNote: 'It needs your own LLM, so it runs on your machine: the website has the demo video, the Windows download and the source.',
     source: 'https://github.com/Felichz/KnowGraph',
     role: 'Solo: product, curriculum, design, frontend and AI gateway',
     stack: ['React 19', 'Vite', 'Node gateway', 'Zod', 'Server-sent events', 'IndexedDB', 'Mermaid', 'Playwright', 'Electron'],
-    scale: ['160 commits', '142 concepts, 266 links', '10 ADRs', '37 Playwright tests'],
+    scale: ['167 commits', '142 concepts, 266 links', '10 ADRs', '48 Playwright tests'],
     story: [
-      'I built it to prepare my own senior interviews. 142 concepts across React and Rails, linked by what you need to understand first, grouped into focus areas and milestones by seniority level. Each concept runs a four-stage session: read it, talk it through with a Socratic AI mentor, explain it back from memory, then get graded against a rubric.',
-      'Scores run from 0 to 120. 100 means the base is covered and the concept counts as mastered; 101 to 120 is extra depth, marked with a star, there to push back on the grade inflation LLMs tend toward. Everything is local-first and bring-your-own-key: progress stays in IndexedDB, and the AI gateway never stores anything.',
+      'I built it to prepare my own senior interviews. 142 concepts across React and Rails, linked by what you need to understand first. The map opens on one next step, and below it a heat grid of every concept: each cell fills with its area’s color as you master it. Studying a concept takes three steps: read it, explain it in your own words, then get it evaluated against a rubric. A Socratic mentor is one click away while you work.',
+      'Scores run from 0 to 120. 100 means the base is covered and the concept counts as mastered; 101 to 120 is extra depth, marked with a star, there to push back on the grade inflation LLMs tend toward. Flashcards run on spaced repetition: each rating reschedules the card, and it comes back on the day it is due. Everything is local-first and bring-your-own-key: progress stays in IndexedDB, and the AI gateway never stores anything.',
     ],
     highlights: [
       {
@@ -187,26 +188,26 @@ export const projects: Project[] = [
     typefaces: ['Bricolage Grotesque', 'Figtree', 'JetBrains Mono'],
     palette: ['#0E1117', '#EEF1F6', '#3DB9EE', '#FFA347', '#43D69B'],
     language: 'English and Spanish',
-    accent: { light: '#0A87B8', dark: '#3DB9EE', onLight: '#FFFFFF', onDark: '#0E1117' },
+    accent: { light: '#12161D', dark: '#EEF1F6', onLight: '#F6F7F9', onDark: '#0E1117' },
     main: {
       ...themed(
         'knowgraph-main',
-        'KnowGraph map view: the heat grid, one row of concept cells per area with the current one ringed, the Continue section with the best next concept, and the focus areas in the sidebar.',
+        'KnowGraph product video: a concept picked on the heat-grid map is explained in your own words, coached to 71 out of 120, discussed with the mentor, revised to 105, and evaluated at 118 against a four-part rubric, and its cell on the map fills in. This frame shows the Explain stage: the draft on the left, and on the right the coach’s next focus, an estimate of 71 out of 120 and the checklist of ideas to cover.',
       ),
       tape: 'knowgraph',
     },
     callouts: [
-      { x: 54.5, y: 16.5, text: 'Every concept is a cell that fills with its area’s color as you master it; the ringed one is where you are.' },
-      { x: 23, y: 79.5, text: 'Continue answers what to study now: the best next concept, and why it comes next.' },
-      { x: 21.5, y: 36.3, text: 'Focus areas with their mastered counts; picking one narrows the map to it.' },
+      { x: 31.7, y: 48, text: 'You explain the concept in your own words, typed or dictated.' },
+      { x: 79.9, y: 28, text: 'When you pause, a coach estimates the score and points at the next gap.' },
+      { x: 79.9, y: 56, text: 'The card’s essential ideas, marked as you cover them.' },
     ],
     gallery: [
-      themed('knowgraph-card', 'KnowGraph study card in its reading stage: the Read, AI mentor, Paraphrase and Evaluate steps with the score, the concept’s text and a code sample.', { caption: 'Study card, reading stage' }),
+      themed('knowgraph-card', 'KnowGraph study session on the Read stage for Controlled and uncontrolled forms: the concept’s heat cell and score sit in the header beside an Ask the mentor button, the three steps run across the top, and a side rail lists what the concept needs and unlocks.', { caption: 'Study session, Read stage' }),
       moving(
-        themed('knowgraph-graph', 'KnowGraph graph view: hovering Error boundaries and recovery lights its prerequisite chain back to Modern JavaScript and dims the rest of the stage columns, beside the panel for the best next concept and a minimap of the whole curriculum.', { caption: 'Dependency graph' }),
+        themed('knowgraph-graph', 'KnowGraph graph view: hovering Controlled and uncontrolled forms lights its prerequisite chain and the concepts it unlocks, and the rest of the stage columns dim. The panel beside it explains why the concept comes next, and a minimap keeps the whole curriculum in view.', { caption: 'Dependency graph' }),
         'knowgraph-graph',
       ),
-      themed('knowgraph-progress', 'KnowGraph progress view: the heat grid by area, then the seniority levels and their progress.', { caption: 'Progress by seniority' }),
+      themed('knowgraph-review', 'KnowGraph review: a flashcard for useRef, DOM and mutable values at 64 out of 120, with its key idea and the explanation saved for it. Under the answer, Again, Hard, Good and Easy schedule the next review, and the keys 1 to 4 rate the card.', { caption: 'Review: rate a card to schedule it' }),
     ],
   },
   {
@@ -377,7 +378,7 @@ export const projects: Project[] = [
     face: 'face-martian',
     wordmark: ['LOL', 'IMPACT'],
     year: '2026',
-    tagline: 'Which lane moved your League game, minute by minute, and how sure the model can be about it.',
+    tagline: 'Which lane decided your League game, and which enemy to watch before the next one starts.',
     proof: 'Six per-minute models, intervals on every number, no ML runtime in production',
     live: 'https://lol-impact.vercel.app/',
     liveNote: 'The public deploy is running without a Riot API key right now, so the match screens here come from a local run.',
@@ -386,8 +387,8 @@ export const projects: Project[] = [
     stack: ['Svelte 5', 'TypeScript', 'Vite', 'Python', 'FastAPI', 'numpy', 'scikit-learn', 'Riot API', 'Vercel'],
     scale: ['6 per-minute models', '~4,200 lines', '21 Svelte components', 'Light and dark'],
     story: [
-      'A win-probability model for League of Legends, trained on recent Emerald+ LAS solo queue games. You load your Riot ID and see how your team’s chances moved through each game, which lane pulled hardest, and whether that pull is real or noise. Held-out accuracy climbs from 62.8% at minute 8 to 74.9% at minute 20.',
-      'The hard part was honesty. A model with one slope per champion turned out to be unidentifiable, so slopes are grouped by role and champion class instead. Every number ships with its interval, and anything the data can’t confirm is drawn in ash and sags on the chart instead of pretending to be a finding.',
+      'A win-probability model for League of Legends, trained on recent Emerald+ LAS solo queue games. You load your Riot ID and each game opens with its conclusion: which lane decided it, how your team’s chances moved minute by minute, and which enemy was the biggest threat at each minute. Held-out accuracy climbs from 62.8% at minute 8 to 74.9% at minute 20.',
+      'The hard part was honesty. A model with one slope per champion turned out to be unidentifiable, so slopes are grouped by role and champion class, and one finding survived the audit: an enemy marksman turns gold into wins faster than anyone else in their role. The draft tool and every game name that marksman as the win condition before the first minute. Everything else comes with its range, and a plain “not sure” where the data can’t tell.',
     ],
     highlights: [
       {
@@ -410,18 +411,18 @@ export const projects: Project[] = [
     main: {
       ...themed(
         'lol-main',
-        'LoLImpact match view: recent games on the left, a readout for minute 12 showing 64% win probability with a 55% to 72% likely range, and a column chart of win probability by minute with uncertainty bands.',
+        'LoLImpact match view: recent games on the left, each with a one-word story such as Lead lost; the open game says “You lost mainly through mid lane.” above a chart of the team’s win chance by minute, with its margin of error as a grey band.',
       ),
       tape: 'lolimpact',
     },
     callouts: [
-      { x: 31.8, y: 63.8, text: 'Every probability is shown with its likely range, never alone.' },
-      { x: 94.7, y: 46.5, text: 'Hand-built SVG column: 50% and 95% bands around each minute, keyboard navigable.' },
-      { x: 85.5, y: 67.9, text: 'Lanes pulling the game at the selected minute. Unconfirmed pulls stay ash and dashed.' },
+      { x: 25.9, y: 30.6, text: 'Every game gets a one-word story, read from how its win chance moved.' },
+      { x: 33.7, y: 44.4, text: 'The conclusion comes first: which lane decided the game, in plain words.' },
+      { x: 66.0, y: 90.4, text: 'Hand-built SVG timeline: 50% and 95% bands around each minute, keyboard navigable.' },
     ],
     gallery: [
-      themed('lol-draft', 'LoLImpact draft tool with ten champion slots split between your team and the rival team.', { caption: 'Draft tool' }),
-      themed('lol-mobile', 'LoLImpact on a phone: the minute 12 readout above the probability column.', { phone: true, caption: 'On a phone' }),
+      themed('lol-draft', 'LoLImpact draft tool: ten champions with what 1,000 gold on each is worth, and below them the rival win condition, their marksman Jinx.', { caption: 'Draft and win condition' }),
+      themed('lol-mobile', 'LoLImpact on a phone: a lost game opens with “You lost mainly through mid lane.” above the win chance by minute.', { phone: true, caption: 'On a phone' }),
     ],
   },
   {

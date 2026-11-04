@@ -14,4 +14,6 @@ export default defineConfig({
   build: {
     inlineStylesheets: 'auto',
   },
+  // SOURCEMAP=1: a build whose scripts map back to src/, for the work ledger (scripts/perf/ledger.mjs).
+  vite: { build: { sourcemap: process.env.SOURCEMAP === '1' } },
 });

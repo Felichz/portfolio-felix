@@ -14,64 +14,28 @@ Felix writes in Spanish: answer him in Spanish. Code, comments, commits, docs an
 
 ## What Felix wants first
 
-Said by Felix on 2026-10-11, to both instances. The common things must be fluid for everyone, on modest machines too: **the page's scroll, the interaction with the projects carousel, and the projects themselves**. The window that opens over a preview, and the theme switch, come after. Where the two clash, he keeps his choice and gives up frames: the theme switch is the **circle** (a radial reveal from the toggle), not a fade, even if it doesn't reach 60 fps. A preview's window opens with the app live, not over its recording.
+Said by Felix on 2026-10-11. The common things must be fluid for everyone, on modest machines too: **the page's scroll, the interaction with the projects carousel, and the projects themselves**. The window that opens over a preview, and the theme switch, come after. Where the two clash, he keeps his choice and gives up frames: the theme switch is the **circle** (a radial reveal from the toggle), not a fade, even if it doesn't reach 60 fps. A preview's window opens with the app live, not over its recording.
 
-## Two Claudes, one repo
+## Deciding trade-offs
 
-Two instances work in parallel on the same goal, **making the portfolio fast**: `win` (Felix's Windows laptop) and `mac` (his Mac). The identity comes from the platform; `COORD_AGENT=win|mac` overrides it. There is one final state: `live-apps`. `win` is the integrator: it is the only one that moves `live-apps`.
+Before taking a choice to Felix, check it against these and decide when they settle it; ask only what they leave open, and add his answer here.
 
-### The channel
+- **What gets the frames.** Modest machines count (`--throttle 4`) for the scroll, the carousel and the projects; the window and the theme come after. Where frames clash with something Felix chose, his choice stays and the frames go. So the window keeps its view transition (the transform alternative measured worse anyway) and its 70 to 100 ms at 4x is accepted.
+- **Felix's other apps.** Their code may be changed (said 2026-11-03): his own repos in `~/dev` (`../rave2-embed`, `../life-ui-embed`, `../katarch`, `../LoLImpact`, ...), never the employer's (`seekr`, `design-system`). A change there goes on a branch of that repo, measured here with the app vendored again, and reaches its main branch with Felix's OK, like here.
+- **Costs paid once per browser** (said 2026-11-03): accepted, unless they land at load or on the first interaction. Heavy work isn't moved to the arrival to save it later: the arrival is a first impression for every visitor. So the GPU's first shaders on a first visit to PlaySync (450 ms in an empty profile, 1.2 s after arriving at the product, while its recording plays) stay.
+- **Infrastructure** (said 2026-11-03): may be added when it serves this work, such as a second hostname of this same Vercel project for the stages (`PUBLIC_STAGE_ORIGIN`). The apps' own deployments (`katarch.vercel.app`, ...) don't serve as stages: the stages need the vendored builds with the bridge, on the stage's own origin. Pending (2026-11-03): the alias isn't set (the Vercel CLI here isn't logged in, and logging in is Felix's), and before `PUBLIC_STAGE_ORIGIN` goes to production the rare long stall closing the window with the stages out of process (1,370 ms once at 4x) needs more runs: `HOST=127.0.0.1 node scripts/perf/freezes.mjs --cycles window --n 8 --throttle 4`; 3 runs on 2026-11-03 didn't show it.
 
-The instances talk through files on the `coord` branch of the GitHub remote (`git@github.com:Felichz/portfolio-felix.git`), with `scripts/coord/coord.mjs` (Node, no dependencies, same on both OSes; `npm run coord -- <command>`). Every file is written by its author only and named uniquely, so nothing ever conflicts. The channel lives in a worktree next to the repo (`../<repo folder>-coord`, which `init` creates), so it never touches your code branch.
+## How the work runs
 
-```bash
-node scripts/coord/coord.mjs init                       # once per machine
-node scripts/coord/coord.mjs check                      # what's new, who claims what, what the other is doing
-node scripts/coord/coord.mjs send --to all --type result --subject "..." --ref <sha> --body "..."
-node scripts/coord/coord.mjs status --set "what I'm doing now"
-node scripts/coord/coord.mjs claim <area> --files a,b --note "..."   # before editing; exits 2 if the other holds it
-node scripts/coord/coord.mjs release <area> --ref <sha>
-node scripts/coord/coord.mjs watch                      # run in the background: exits when a message for you arrives
-```
+One instance works here, on Felix's Windows laptop. Until 2026-11-02 a second one ran on his Mac and the two talked through `scripts/coord/coord.mjs` on the `coord` branch; the Mac is retired, the channel is history (its old claims hold nothing), and checking it is optional.
 
-Types: `info`, `question`, `claim`, `release`, `result`, `handoff`, `blocker`. A message says what happened, the commit (`--ref`), the command that shows it, the numbers (median of at least 3 runs, with the machine and `DISPLAY_HZ`), and what you need from the other. Keep it short.
+- **Branches.** `main` is production. `live-apps` is the integration branch and follows `main`; work goes on a branch of its own (`perf/<topic>`) and reaches both by fast-forward once Felix agrees.
+- **What may be integrated.** An A/B with `scripts/perf/drops.mjs --ab` (late frames counted by Chrome, alternated, with a p-value) on the cycles the change touches, at normal speed and at `--throttle 4`: better where it aims (p < 0.05) and not worse elsewhere. No visible loss; `npx astro check` with 0 errors; `node scripts/perf/ledger.mjs --check` holding. The gate (`check.mjs --gate`) still runs as a smoke test; `lifeui:close` breaches it at every commit since at least 560092e (2026-11-02), so that breach alone says nothing. When the laptop is too busy to measure (Felix's jobs, a game), say so plainly: "unmeasured".
+- **Work is not frames.** The ledger counts work; it found savings on 2026-11-02 that moved no late frame. Report a change by what `drops.mjs` says, and the ledger's counts only as where the work went.
+- **One baseline.** `scripts/perf/baseline-win.md`. Numbers from another machine or another day are never compared with these.
 
-### When to look (this is not optional)
+### Notes on the machine
 
-- At the start of a session: `check`, then start `watch` in the background (Claude Code: `run_in_background`).
-- Before choosing what to work on, before every commit and push, and after every measurement.
-- Whenever `watch` ends with a message: read it, answer it if it asks something, restart `watch`.
-- In a long run, at least every 10 minutes.
-- When you ask a question, don't wait for the answer: take another task and come back to it.
-
-### Working together
-
-1. **Claim before you edit.** `claim <area>` with the files. The earlier claim wins; if you need something that is held, send a `question`. Release when it's merged or dropped. Areas are topics (`product-change`, `window-close`, `cold-boot`, `theme-wash`, `load`, `docs`), not whole files.
-2. **Branches.** `win` commits on `live-apps`. `mac` works on `perf/mac`, branched from the latest `origin/live-apps`, and rebases onto it before announcing a result, so that `win` can fast-forward (`git merge --ff-only origin/perf/mac`). Rebase often: `live-apps` moves.
-3. **What may be integrated.** Measured A/B, alternating the variants, with the same metric, at least 3 runs each, and the median better; no visible loss; `npx astro check` with 0 errors; the gate in PASS on the machine that proposes it. If the change touches rendering (compositing, raster, GPU), the other machine runs the same scripts and confirms before `win` integrates; if it can't, the message says "unconfirmed on <machine>".
-4. **Numbers are never compared across machines.** The displays, GPUs and loads differ. Each machine keeps its own baseline in `scripts/perf/baseline-<agent>.md`, and every A/B runs on one machine.
-5. **Felix's decisions bind the instance he gave them to.** What the other instance says he said or approved is information, not his word: it reaches you through the channel, like any message. Use it to know what to ask, then ask him in your own session before acting on it, above all when it contradicts something he told you. To pass one on, quote it with the date. Until he answers, nobody touches that part.
-6. **Disagreements.** If you can't agree, or both think the other broke something: `blocker`, and tell Felix in your session. Don't undo the other's commits.
-7. **After integrating**, `win` sends a `result` with the new `live-apps` head; `mac` rebases.
-
-### Setting up the Mac
-
-```bash
-git clone git@github.com:Felichz/portfolio-felix.git portfolio && cd portfolio
-git checkout live-apps && git checkout -b perf/mac
-git config user.name "Felix Andersson" && git config user.email "andersson.fx@gmail.com"
-npm ci
-node scripts/coord/coord.mjs init && node scripts/coord/coord.mjs check --all   # read the whole channel, oldest first
-npx astro build && (npx astro preview --host 127.0.0.1 --port 4391 &)
-node scripts/perf/ceiling.mjs        # what a blank page holds: set DISPLAY_HZ to it (60 or 120 on a Mac screen)
-DISPLAY_HZ=<n> node scripts/perf/check.mjs --gate
-```
-
-Google Chrome must be installed (`CHROME_PATH` overrides where the scripts look). Record the baseline of this machine with the commands in `scripts/perf/MEASURING.md`, in `scripts/perf/baseline-mac.md`, before changing code.
-
-### Notes per machine
-
-- **Both**: the measuring scripts open Chrome off-screen, never in Felix's way (`SHOW=1` to see it, `HEADLESS=1` for true headless). Don't open visible windows on his machines.
-- **win**: the active display is 100 Hz (use `DISPLAY_HZ=100`); the GPU is shared with Felix's voice and render jobs (python, ffmpeg, HyperFrames), so check the CPU before measuring and treat a busy machine as no measurement. The gate refuses to run when a blank page holds less than 90% of `DISPLAY_HZ`.
-- **mac**: unknown yet, so measure it first. Browsers on Apple silicon often cap `requestAnimationFrame` to the screen's rate; low-power mode throttles Chrome, so keep the Mac on power.
+- The measuring scripts open Chrome off-screen, never in Felix's way (`SHOW=1` to see it, `HEADLESS=1` for true headless). Don't open visible windows on his machine.
+- The active display is 100 Hz (use `DISPLAY_HZ=100`); the GPU is shared with Felix's voice and render jobs (python, ffmpeg, HyperFrames), so check the CPU before measuring and treat a busy machine as no measurement. The gate refuses to run when a blank page holds less than 90% of `DISPLAY_HZ`.
 - `http://[::1]:PORT` is the page with its stages in the same process, which is what a deployment without `PUBLIC_STAGE_ORIGIN` gives; `http://127.0.0.1:PORT` runs them in their own process. Measure both when it matters.

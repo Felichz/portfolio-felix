@@ -299,6 +299,49 @@
         if (rule.cssRules) rewrite(rule.cssRules);
       }
     };
+    // A shorthand with a var() in it (`font: 400 14px var(--sans)`) serializes as its longhands with
+    // empty values (`font-family: ;`), which the player drops, so the text fell back to the default
+    // serif. The shorthand goes back where its first empty longhand stood, and the empties go. An empty
+    // custom property (`--tw-pan-x: ;`, Tailwind's) is valid and stays.
+    const SHORTHANDS = ['font', 'font-variant', 'background', 'margin', 'padding', 'inset', 'border', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-color', 'border-style', 'border-width', 'border-radius', 'border-block', 'border-inline', 'outline', 'gap', 'grid', 'grid-template', 'grid-area', 'grid-row', 'grid-column', 'place-items', 'place-content', 'place-self', 'flex', 'flex-flow', 'transition', 'animation', 'text-decoration', 'text-emphasis', 'list-style', 'overflow', 'columns', 'mask', 'offset', 'scroll-margin', 'scroll-padding', 'margin-block', 'margin-inline', 'padding-block', 'padding-inline', 'container'];
+    const probe = document.createElement('div').style;
+    const longhands = (sh) => {
+      probe.cssText = '';
+      probe.setProperty(sh, 'inherit');
+      return Array.from(probe);
+    };
+    const EMPTY = /(?<=[{;]\s*)([a-z][\w-]*): ;/g;
+    const declare = (rule) => {
+      let text = rule.cssText;
+      if (!/: ;/.test(text)) return text;
+      for (const sh of SHORTHANDS) {
+        const value = rule.style.getPropertyValue(sh);
+        if (!value || !value.includes('var(')) continue;
+        const own = new Set(longhands(sh));
+        let placed = false;
+        text = text.replace(EMPTY, (m, prop) => {
+          if (placed || !own.has(prop)) return m;
+          placed = true;
+          return `${sh}: ${value};`;
+        });
+      }
+      // What's still empty is lost (a later longhand overrode part of the shorthand, so the CSSOM can't
+      // give it back): the recording says which, so the app can write those longhands out.
+      return text.replace(/(?<=[{;])\s*([a-z][\w-]*): ;/g, (_, prop) => {
+        lost.add(`${rule.selectorText ?? '?'} { ${prop} }`);
+        return '';
+      });
+    };
+    const lost = new Set();
+    const serialize = (rule) => {
+      if (rule.style && !(rule.cssRules && rule.cssRules.length)) return declare(rule);
+      if (rule.cssRules && !rule.style) {
+        const head = rule.cssText.slice(0, rule.cssText.indexOf('{'));
+        return `${head}{\n${Array.from(rule.cssRules, serialize).join('\n')}\n}`;
+      }
+      return rule.cssText;
+    };
+
     let css = '';
     let imports = '';
     for (const sheet of document.styleSheets) {
@@ -312,9 +355,9 @@
         continue;
       }
       rewrite(rules);
-      css += Array.from(rules, (r) => r.cssText).join('\n') + '\n';
+      css += Array.from(rules, serialize).join('\n') + '\n';
     }
     css = imports + css;
-    return { snapshot, events, checkpoints, actions, clock0, css, duration };
+    return { snapshot, events, checkpoints, actions, clock0, css, duration, lost: [...lost] };
   };
 })();

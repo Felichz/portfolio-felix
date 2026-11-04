@@ -11,6 +11,7 @@
  * A hash can also name an element inside a section (its id): the
  * deck moves to its section and scrolls it into view, and the address keeps that hash.
  * - `deck:refresh` (listened for) re-reads the active section's glow color.
+ * - `deck:glow` { detail: color } once the glow is set on the elements that draw with it.
  */
 export function initDeck() {
   const stage = document.querySelector<HTMLElement>('[data-deck]');
@@ -25,8 +26,8 @@ export function initDeck() {
   const desktop = matchMedia('(min-width: 761px)');
 
   // The active section is the last one whose top has passed the middle of the window.
-  const nearest = () => {
-    const mid = stage.scrollTop + stage.clientHeight / 2;
+  const nearest = (top = stage.scrollTop) => {
+    const mid = top + stage.clientHeight / 2;
     let i = 0;
     panels.forEach((p, j) => p.offsetTop <= mid && (i = j));
     return i;
@@ -34,14 +35,23 @@ export function initDeck() {
   let index = -1;
   let target = nearest();
 
+  // The room's light, the active section's two glow colors, is set on the elements that draw with it
+  // ([data-glow]: the ambient light, the cursor's pool, the section rail, the contact card), not on the
+  // root: a custom property changed on the root restyles the whole page, and did so on every theme
+  // switch and product change, in a frame that had just restyled it all once. `deck:glow` follows.
+  const lit = [...document.querySelectorAll<HTMLElement>('[data-glow]')];
+  const setGlow = (a: string, b?: string) => {
+    for (const el of lit) {
+      if (a) el.style.setProperty('--glow', a);
+      if (b) el.style.setProperty('--glow-2', b);
+    }
+    document.dispatchEvent(new CustomEvent('deck:glow', { detail: a }));
+  };
   const glow = () => {
     const panel = panels[index];
     if (!panel) return;
     const cs = getComputedStyle(panel);
-    const a = cs.getPropertyValue('--panel-glow').trim();
-    const b = cs.getPropertyValue('--panel-glow-2').trim();
-    if (a) root.style.setProperty('--glow', a);
-    if (b) root.style.setProperty('--glow-2', b);
+    setGlow(cs.getPropertyValue('--panel-glow').trim(), cs.getPropertyValue('--panel-glow-2').trim());
   };
 
   const pill = () => {
@@ -100,27 +110,43 @@ export function initDeck() {
   // flung, the ambient light steps between its colors instead of drifting: a drift repaints the whole
   // fixed background on every frame for the better part of a second, panel after panel at that speed.
   // At rest and at reading speed it drifts as usual.
+  // The deck is read once a frame, in the frame, and written after: read in the scroll event, its
+  // position would lay the page out there, and the class it sets would have the frame lay it out again.
   let raf = 0;
   let settle = 0;
   let fast = 0;
   let lastTop = stage.scrollTop;
   let lastAt = 0;
+  const onFrame = (now: number) => {
+    raf = 0;
+    const top = stage.scrollTop;
+    const v = Math.abs(top - lastTop) / Math.max(1, now - lastAt);
+    lastTop = top;
+    lastAt = now;
+    setActive(nearest(top));
+    if (v > 1.1) {
+      root.classList.add('deck-fast');
+      clearTimeout(fast);
+      fast = window.setTimeout(() => root.classList.remove('deck-fast'), 160);
+    }
+  };
+  // `data-moving` while it scrolls: the sections out of sight that skip their rendering for a moment
+  // (global.css) render again before any of them comes in.
+  let moving = false;
   stage.addEventListener(
     'scroll',
     () => {
-      const now = performance.now();
-      const v = Math.abs(stage.scrollTop - lastTop) / Math.max(1, now - lastAt);
-      lastTop = stage.scrollTop;
-      lastAt = now;
-      if (v > 1.1) {
-        root.classList.add('deck-fast');
-        clearTimeout(fast);
-        fast = window.setTimeout(() => root.classList.remove('deck-fast'), 160);
+      raf ||= requestAnimationFrame(onFrame);
+      if (!moving) {
+        moving = true;
+        stage.setAttribute('data-moving', '');
       }
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => setActive(nearest()));
       clearTimeout(settle);
-      settle = window.setTimeout(() => (target = nearest()), 140);
+      settle = window.setTimeout(() => {
+        target = nearest();
+        moving = false;
+        stage.removeAttribute('data-moving');
+      }, 140);
     },
     { passive: true },
   );
@@ -250,9 +276,16 @@ export function initDeck() {
   // Read on the next frame: right after a product change the panel's styles are dirty, and reading
   // them here would force a full layout (container queries) and then a second style pass.
   let glowFrame = 0;
-  document.addEventListener('deck:refresh', () => {
+  // A section that knows its new light passes it ({ panel, glow: { light, dark } }, Work on a product
+  // change): set without a read, which right after the change restyled the whole page on the spot
+  // (freezes.mjs: 60 ms at 4x CPU). The second color is the section's own and stays as it is.
+  document.addEventListener('deck:refresh', (e) => {
+    const said = (e as CustomEvent<{ panel?: HTMLElement; glow?: { light: string; dark: string } } | null>).detail;
     cancelAnimationFrame(glowFrame);
-    glowFrame = requestAnimationFrame(glow);
+    glowFrame = requestAnimationFrame(() => {
+      if (said?.glow && said.panel === panels[index]) setGlow(root.dataset.theme === 'dark' ? said.glow.dark : said.glow.light);
+      else glow();
+    });
   });
   new MutationObserver(glow).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
