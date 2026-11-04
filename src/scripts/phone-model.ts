@@ -1,7 +1,7 @@
 /**
  * A phone in real 3D for an app's lead shot: a rounded metal band around glass, lit by a studio, with
- * the screenshot on its screen. Loaded on demand by phone3d.ts, which owns when it shows and how it
- * leans; this module only builds the scene and draws it.
+ * the screenshot on its screen. Runs in phone-worker.ts; phone3d.ts owns when it shows and how it
+ * leans, and this module only builds the scene and draws it.
  */
 import {
   ACESFilmicToneMapping,
@@ -26,6 +26,7 @@ import {
   SRGBColorSpace,
   WebGLRenderer,
 } from 'three';
+import { TH, TW } from './phone-screen';
 
 // Real proportions, in millimetres (a 6.1" phone).
 const W = 71.6;
@@ -35,71 +36,6 @@ const R = 10.8;
 // How far the rounded edge eats into the depth and into the outline.
 const BEVEL = 2.6;
 const ROUND = 1.9;
-// The screen texture: a 390 x 844 pt screen at 3x, the top 47 pt being the drawn status bar.
-const TW = 1170;
-const TH = 2532;
-const BAR = 141;
-
-function roundedRect(w: number, h: number, r: number) {
-  const s = new Shape();
-  const x = -w / 2;
-  const y = -h / 2;
-  s.moveTo(x + r, y);
-  s.lineTo(x + w - r, y);
-  s.absarc(x + w - r, y + r, r, -Math.PI / 2, 0, false);
-  s.lineTo(x + w, y + h - r);
-  s.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2, false);
-  s.lineTo(x + r, y + h);
-  s.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI, false);
-  s.lineTo(x, y + r);
-  s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5, false);
-  return s;
-}
-
-/** The status bar is drawn, not captured: the app runs in a browser, which has none. */
-function drawScreen(img: HTMLImageElement, darkSite: boolean) {
-  const c = document.createElement('canvas');
-  c.width = TW;
-  c.height = TH;
-  const g = c.getContext('2d')!;
-  // Its colors follow the edition on screen, the opposite of the site's theme.
-  const fg = darkSite ? '#111318' : '#f4f5f7';
-  const mid = BAR * 0.55;
-  g.fillStyle = darkSite ? '#f3f4f6' : '#15171c';
-  g.fillRect(0, 0, TW, BAR);
-  g.drawImage(img, 0, BAR, TW, TH - BAR);
-  g.fillStyle = fg;
-  g.font = `600 50px ${getComputedStyle(document.body).fontFamily}`;
-  g.textBaseline = 'middle';
-  g.fillText('9:41', 128, mid);
-  g.fillStyle = '#000';
-  g.beginPath();
-  g.roundRect(TW / 2 - 182, 30, 364, 104, 52);
-  g.fill();
-  g.fillStyle = fg;
-  [24, 32, 42, 52].forEach((h, i) => {
-    g.beginPath();
-    g.roundRect(860 + i * 16, mid + 26 - h, 11, h, 3);
-    g.fill();
-  });
-  g.strokeStyle = fg;
-  g.lineWidth = 6;
-  for (const r of [10, 22, 34]) {
-    g.beginPath();
-    g.arc(950, mid + 22, r, -Math.PI * 0.75, -Math.PI * 0.25);
-    g.stroke();
-  }
-  g.globalAlpha = 0.45;
-  g.lineWidth = 4;
-  g.beginPath();
-  g.roundRect(1000, mid - 18, 70, 36, 10);
-  g.stroke();
-  g.globalAlpha = 1;
-  g.beginPath();
-  g.roundRect(1007, mid - 11, 48, 22, 5);
-  g.fill();
-  return c;
-}
 
 /**
  * The light the phone reflects, as in a product photo: a dim room with softboxes to the sides and
@@ -126,17 +62,33 @@ function studio() {
   return room;
 }
 
+function roundedRect(w: number, h: number, r: number) {
+  const s = new Shape();
+  const x = -w / 2;
+  const y = -h / 2;
+  s.moveTo(x + r, y);
+  s.lineTo(x + w - r, y);
+  s.absarc(x + w - r, y + r, r, -Math.PI / 2, 0, false);
+  s.lineTo(x + w, y + h - r);
+  s.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2, false);
+  s.lineTo(x + r, y + h);
+  s.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI, false);
+  s.lineTo(x, y + r);
+  s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5, false);
+  return s;
+}
+
 export interface PhoneModel {
   /** The phone's height as a share of the canvas height. */
   fill: number;
-  setScreen(img: HTMLImageElement, darkSite: boolean): void;
+  setScreen(screen: ImageBitmap): void;
   resize(width: number, height: number): void;
   render(rx: number, ry: number): void;
 }
 
-export function createPhone(canvas: HTMLCanvasElement, fill: number): PhoneModel {
+export function createPhone(canvas: OffscreenCanvas, fill: number, pixelRatio: number): PhoneModel {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'low-power' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(pixelRatio, 2));
   renderer.toneMapping = ACESFilmicToneMapping;
   renderer.outputColorSpace = SRGBColorSpace;
 
@@ -205,8 +157,12 @@ export function createPhone(canvas: HTMLCanvasElement, fill: number): PhoneModel
 
   return {
     fill,
-    setScreen(img, darkSite) {
-      const texture = new CanvasTexture(drawScreen(img, darkSite));
+    setScreen(screen) {
+      // Through a canvas: a texture made from a bitmap ignores flipY and would stand upside down.
+      const copy = new OffscreenCanvas(screen.width, screen.height);
+      copy.getContext('2d')!.drawImage(screen, 0, 0);
+      screen.close();
+      const texture = new CanvasTexture(copy);
       texture.colorSpace = SRGBColorSpace;
       texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
       screenMat.map?.dispose();
