@@ -18,7 +18,7 @@ interface Role {
   tags: string[];
   glance?: { k: string; v: string }[];
   /** A few concrete examples, told in prose. */
-  examples?: { title: string; body: string }[];
+  examples?: { title: string; body: string; quote?: boolean }[];
 }
 
 // Chronological and continuous: each bar runs until the next role starts.
@@ -91,6 +91,7 @@ const roles: Role[] = [
     org: 'Cisco, Magnetic component library',
     via: 'through Vairix',
     start: [2023, 11],
+    end: [2026, 9],
     summary:
       'The proactive maintainer of the React and TypeScript library that Meraki teams build on. When leadership needs something, I take it from spec to release.',
     points: [
@@ -111,7 +112,40 @@ const roles: Role[] = [
       },
       {
         title: 'What the team lead said',
+        quote: true,
         body: 'That it was exactly what the team needed, and key to opening the repo to outside contributions.',
+      },
+    ],
+  },
+  {
+    id: 'clayful',
+    bar: 'Clayful',
+    title: 'Fullstack Engineer',
+    org: 'Clayful, student mental-health platform',
+    via: 'through GoGrow',
+    start: [2026, 10],
+    summary:
+      'The whole stack of a platform schools use for student mental health: a Rails API, Firebase Cloud Functions, a Next.js and Capacitor mobile app, and the Webflow site, wired to Salesforce, Zendesk, Memberstack and Customer.io.',
+    points: [
+      'Production incidents traced through Sentry, Cloud Run logs and the data, to a fix measured in production.',
+      'Rails background jobs (Solid Queue) that respect third-party rate limits: concurrency caps, jittered backoff, change detection.',
+      'Auth and identity across four codebases: JWKS caching, server-side JWT signing, key rotation, recorded in ADRs.',
+      'Salesforce data fixed at the source, then backfilled with a backup, dry-run and revert protocol.',
+      'Observability for minors’ health data: Sentry with PII scrubbing, a Cloud Logging fallback, a Node 20 to 22 upgrade, Android releases unblocked.',
+    ],
+    tags: ['Ruby on Rails', 'Node.js', 'Firebase / GCP', 'Salesforce', 'Auth', 'Capacitor', 'Sentry'],
+    examples: [
+      {
+        title: 'A class logged out at once',
+        body: 'Students lost their login in the first minutes of class. Lining up Sentry with the backend’s request logs minute by minute showed the network working fine, and the auth vendor’s per-IP limit tripping on a whole school behind one address. A shared request layer made the start-of-class burst about four times smaller, with outages reported once and retries spread out.',
+      },
+      {
+        title: '401s on valid logins',
+        body: 'The serverless API rejected good tokens whenever the vendor’s key file failed to download, which it did on every request. Keys cached per instance with a bundled fallback, proven on a local bench with a fake S3 that fails on demand.',
+      },
+      {
+        title: 'Jobs that stopped flooding Sentry',
+        body: 'Bulk roster imports fanned out into bursts of sync jobs that hit Zendesk’s and Memberstack’s limits, until Sentry was dropping 97% of the API’s errors. Throttled queues with backoff that honors Retry-After made the real errors visible again.',
       },
     ],
   },
@@ -137,7 +171,7 @@ const span = (r: Role) => {
   return [y && `${y} yr${y > 1 ? 's' : ''}`, mo && `${mo} mo${mo > 1 ? 's' : ''}`].filter(Boolean).join(' ');
 };
 const exp = experience();
-const current = roles.findIndex((r) => r.id === 'library');
+const current = roles.findIndex((r) => r.id === 'clayful');
 ---
 
 <section id="experience" class="panel" data-label="Experience" tabindex="-1" aria-labelledby="exp-title" data-exp>
@@ -146,8 +180,9 @@ const current = roles.findIndex((r) => r.id === 'library');
       <div class="exp-title">
         <h2 id="exp-title" class="t-section">Experience</h2>
         <p class="t-lede muted">
-          {exp.phrase} through Vairix, most of them at Cisco as the maintainer Meraki teams count on: shipping components to spec,
-          supporting the developers who build on them, and building the tools the team needed before anyone asked.
+          {exp.phrase} shipping production software. Most of them at Cisco as the frontend maintainer Meraki teams count on; now
+          the whole stack at Clayful, from Rails and Node services to the mobile app, and the tools each team needed before anyone
+          asked.
         </p>
       </div>
       <a class="btn" href="/felix-andersson-resume.pdf" target="_blank" rel="noopener"><Icon name="download" />Résumé, PDF</a>
@@ -219,7 +254,7 @@ const current = roles.findIndex((r) => r.id === 'library');
                 <div class="examples scroll-y">
                   <p class="t-label">A few examples</p>
                   {r.examples.map((x) => (
-                    <p class="example">
+                    <p class:list={['example', { quote: x.quote }]}>
                       <b>{x.title}.</b> {x.body}
                     </p>
                   ))}
@@ -423,8 +458,8 @@ const current = roles.findIndex((r) => r.id === 'library');
   .examples { display: grid; align-content: center; gap: 14px; min-height: 0; padding-right: 6px; }
   .example { font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); max-width: 64ch; }
   .example b { color: var(--ink); font-weight: 700; font-stretch: 94%; }
-  .example:last-child { padding-top: 12px; border-top: 1px solid var(--line); font-family: var(--serif); font-style: italic; font-size: 1.0625rem; }
-  .example:last-child b { font-family: var(--font); font-style: normal; font-size: 0.875rem; }
+  .example.quote { padding-top: 12px; border-top: 1px solid var(--line); font-family: var(--serif); font-style: italic; font-size: 1.0625rem; }
+  .example.quote b { font-family: var(--font); font-style: normal; font-size: 0.875rem; }
 
   @media (prefers-reduced-motion: reduce) {
     .role[data-state='active'] { animation: none; }

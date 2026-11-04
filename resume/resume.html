@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Felix Andersson, Senior Frontend Engineer</title>
+<title>Felix Andersson, Senior Fullstack Engineer</title>
 <meta name="author" content="Felix Andersson" />
-<meta name="description" content="Résumé of Felix Andersson, Senior Frontend Engineer in Montevideo, Uruguay." />
+<meta name="description" content="Résumé of Felix Andersson, Senior Fullstack Engineer in Montevideo, Uruguay." />
 <script>
   // One source, two editions: resume.html#dark prints the dark one.
   if (location.hash === '#dark') document.documentElement.dataset.theme = 'dark';
@@ -256,12 +256,12 @@
   <header class="head">
     <div>
       <h1 class="name"><span>Felix</span><span>Andersson</span></h1>
-      <p class="role">Senior Frontend Engineer, <span class="serif">building interfaces people can trust.</span></p>
+      <p class="role">Senior Fullstack Engineer, <span class="serif">building products people can trust.</span></p>
       <p class="lede">
-        Nearly six years building frontend infrastructure other teams depend on: Cisco’s Magnetic design system, the React
-        component library behind the Meraki Dashboard, and the Dashboard’s most used pages. I enjoy complex, data-heavy
-        UIs and performance work most, and I own problems from spec to release. Lately I’ve also been designing and building
-        products of my own, end to end.
+        Nearly six years shipping software other teams depend on: Cisco’s Magnetic design system and the Meraki Dashboard’s
+        most used pages, and now the whole stack of Clayful, a student mental-health platform: Rails and Node services, auth,
+        third-party integrations, data pipelines and a mobile app. I own problems from the incident to the fix, with the
+        evidence that it worked. I also design and build products of my own, end to end.
       </p>
     </div>
     <div class="portrait">
@@ -282,40 +282,40 @@
   <div class="section">
     <div class="section-head"><h2>What I bring</h2><span class="rule"></span></div>
     <ul class="strengths">
-      <li class="glass"><b>Design systems</b><span>React and TypeScript components every Meraki team builds on.</span></li>
-      <li class="glass"><b>Complex UI</b><span>Data-heavy dashboards, large tables, deeply nested forms.</span></li>
-      <li class="glass"><b>Ownership</b><span>A startup’s whole frontend, OKR epics, problem to release.</span></li>
-      <li class="glass"><b>AI-native tooling</b><span>The review pipeline my team runs on every push.</span></li>
+      <li class="glass"><b>Fullstack ownership</b><span>Rails and Node services, auth, integrations, a mobile app.</span></li>
+      <li class="glass"><b>Production debugging</b><span>Incidents traced through logs and data to a measured fix.</span></li>
+      <li class="glass"><b>Complex UI</b><span>Design systems, data-heavy dashboards, large tables.</span></li>
+      <li class="glass"><b>AI-native tooling</b><span>Review pipelines and agent skills teams run every day.</span></li>
     </ul>
   </div>
 
   <div class="section">
-    <div class="section-head"><h2>Experience</h2><span class="rule"></span><span class="note">All through Vairix, Montevideo</span></div>
+    <div class="section-head"><h2>Experience</h2><span class="rule"></span><span class="note">Montevideo, through GoGrow and Vairix</span></div>
     <ol class="roles">
       <li class="role-item now">
-        <div class="when"><p class="dates">Nov 2023 – Present</p><p class="via">Client: Cisco</p></div>
+        <div class="when"><p class="dates">Oct 2026 – Present</p><p class="via">Client: Clayful</p></div>
         <div class="what">
-          <h3>Frontend Product Engineer <span class="now-badge">Now</span></h3>
-          <p class="org"><b>Cisco</b>, Magnetic component library</p>
-          <p class="sum">The proactive maintainer of the React and TypeScript library that Meraki teams build on. When leadership needs something, I take it from spec to release.</p>
+          <h3>Fullstack Engineer <span class="now-badge">Now</span></h3>
+          <p class="org"><b>Clayful</b>, student mental-health platform · through GoGrow</p>
+          <p class="sum">The whole stack: Rails API, Firebase Cloud Functions, a Capacitor app and the Webflow site, wired to Salesforce and Zendesk.</p>
           <ul class="points">
-            <li>Non-blocking filtering for data tables with <b>100k+ rows</b>: the filter runs in short slices that yield to the browser, so typing stays at <b>60 FPS</b> and matches render as they arrive.</li>
-            <li>Complex, pixel-perfect data table features built to detailed design specs, the most demanding components in the library.</li>
-            <li>The team’s <b>AI engineering stack</b>, built in two to three months when AI adoption became an OKR: an AGENTS.md, coding skills with explicit boundaries, and a pre-push hook that runs a breaking-change scanner (designed from every hotfix and revert in the repo’s history) and a review orchestrator with five specialized reviewers. The team still runs it on every push.</li>
-            <li>Support and mentorship for the hundreds of developers who adopt the library, and the code review standards that keep it stable.</li>
+            <li>Traced classroom-wide logouts to the auth vendor’s per-IP rate limit (Sentry against Cloud Run logs) and made the start-of-class burst <b>~4× smaller</b>.</li>
+            <li>Ended 401s on valid logins in the serverless API: JWKS cached per instance with a bundled fallback.</li>
+            <li>Rails jobs (Solid Queue) that respect third-party rate limits, after the noise had Sentry dropping <b>97%</b> of the API’s errors.</li>
+            <li>Support-chat identity redesigned across web, mobile and API (server-side JWT signing, ADRs); Salesforce backfills with dry runs and reverts; PII-safe Sentry.</li>
           </ul>
         </div>
       </li>
       <li class="role-item">
-        <div class="when"><p class="dates">Aug 2022 – Nov 2023</p><p class="via">Client: Cisco Meraki</p></div>
+        <div class="when"><p class="dates">Nov 2023 – Sep 2026</p><p class="via">Client: Cisco</p></div>
         <div class="what">
-          <h3>Frontend Engineer, Product Implementation</h3>
-          <p class="org"><b>Cisco Meraki</b>, Meraki Dashboard</p>
+          <h3>Frontend Product Engineer</h3>
+          <p class="org"><b>Cisco</b>, Magnetic component library</p>
+          <p class="sum">The proactive maintainer of the React and TypeScript library that Meraki teams build on. When leadership needs something, I take it from spec to release.</p>
           <ul class="points">
-            <li>Built the Dashboard’s most used data pages (Access Points, Switches, Clients): tables with filtering, sorting and export, tuned for the largest customers’ datasets.</li>
-            <li>Worked with Cisco’s design team to build and evolve Magnetic, keeping the experience consistent and accessible across the product.</li>
-            <li>Planned and broke down critical features so several developers could build them in parallel.</li>
-            <li>Moved teams from legacy UI components to Magnetic while keeping what they had working.</li>
+            <li>Non-blocking filtering for data tables with <b>100k+ rows</b>: the filter runs in short slices that yield to the browser, so typing stays at <b>60 FPS</b> and matches render as they arrive.</li>
+                        <li>The team’s <b>AI engineering stack</b>: an AGENTS.md, coding skills, and a pre-push hook with a breaking-change scanner and five specialized reviewers. The team still runs it on every push.</li>
+            <li>Support and mentorship for the hundreds of developers who adopt the library, and the code review standards that keep it stable.</li>
           </ul>
         </div>
       </li>
@@ -332,15 +332,23 @@
     <div class="section-head"><h2>Experience, earlier</h2><span class="rule"></span></div>
     <ol class="roles">
       <li class="role-item">
+        <div class="when"><p class="dates">Aug 2022 – Nov 2023</p><p class="via">Client: Cisco Meraki</p></div>
+        <div class="what">
+          <h3>Frontend Engineer, Product Implementation</h3>
+          <p class="org"><b>Cisco Meraki</b>, Meraki Dashboard</p>
+          <ul class="points">
+            <li>Built the Dashboard’s most used data pages (Access Points, Switches, Clients): tables with filtering, sorting and export, tuned for the largest customers’ datasets.</li>
+            <li>Planned and broke down critical features so several developers could build them in parallel, and moved teams from legacy UI to Magnetic.</li>
+          </ul>
+        </div>
+      </li>
+      <li class="role-item">
         <div class="when"><p class="dates">Aug 2021 – Jul 2022</p><p class="via">Client: Cisco</p></div>
         <div class="what">
           <h3>Frontend Engineer, Design System</h3>
           <p class="org"><b>Cisco</b>, Magnetic design system</p>
-          <p class="sum">Joined Magnetic while it had its first components and helped take it to its first production release.</p>
-          <ul class="points">
-            <li>Reusable React components with accessibility and performance as the bar, not an afterthought.</li>
-            <li>Detailed design specs turned into components, working directly with the design team.</li>
-            <li>Testing and QA for the library’s first production release.</li>
+                    <ul class="points">
+            <li>Joined Magnetic at its first components and helped take it to its first production release: accessible React components built to spec.</li>
           </ul>
         </div>
       </li>
@@ -353,8 +361,6 @@
           <ul class="points">
             <li>A dynamic forms engine: unlimited nested blocks, recursive state and real-time expression evaluation.</li>
             <li>Large forms made <b>orders of magnitude faster</b> by reworking the algorithms and the rendering.</li>
-            <li>When the backend switched to an incompatible XML format, a client-side adapter that translated it on the fly instead of a rewrite.</li>
-            <li>The UI for a webcam barcode scanner: a focused scan area with real-time visual feedback.</li>
           </ul>
         </div>
       </li>
@@ -367,7 +373,7 @@
       <a class="product glass" style="--accent: var(--a-katarch)" href="https://portfolio-felix-teal.vercel.app/work/katarch/">
         <div class="top"><span class="pname face-inter">KatArch</span><span class="link">Case study ↗</span></div>
         <p>An interactive course that replays, decision by decision, how the winning team of O’Reilly’s Fall 2020 Architecture Kata designed their system.</p>
-        <p class="proof">Astro, React islands, Motion · 6 chapters, ~80 steps, 49 animated diagram scenes</p>
+        <p class="proof">Astro, React islands, Motion · 49 animated diagram scenes</p>
       </a>
       <a class="product glass" style="--accent: var(--a-knowgraph)" href="https://portfolio-felix-teal.vercel.app/work/knowgraph/">
         <div class="top"><span class="pname face-newsreader">KnowGraph</span><span class="link">Case study ↗</span></div>
@@ -377,7 +383,7 @@
       <a class="product glass" style="--accent: var(--a-playsync)" href="https://portfolio-felix-teal.vercel.app/work/playsync/">
         <div class="top"><span class="pname face-bricolage">PlaySync</span><span class="link">Case study ↗</span></div>
         <p>Same video, same second, from two different time zones. Create a room, share a code, and watch YouTube together while you chat.</p>
-        <p class="proof">React 19, Node and WebSockets · server-owned clock, drift correction, no database</p>
+        <p class="proof">React 19, Node and WebSockets · drift correction</p>
       </a>
       <a class="product glass" style="--accent: var(--a-lifeui)" href="https://portfolio-felix-teal.vercel.app/work/lifeui/">
         <div class="top"><span class="pname face-inter">LifeUI</span><span class="link">Case study ↗</span></div>
@@ -396,11 +402,12 @@
     <div>
       <div class="section-head"><h2>Toolset</h2><span class="rule"></span></div>
       <dl class="toolset glass">
-        <div><dt>Every day</dt><dd>React, TypeScript, CSS and HTML, design systems, accessibility, performance, Git</dd></div>
-        <div><dt>Also shipped with</dt><dd>Astro, Svelte 5, Vite, Radix UI, Tailwind, Motion, SVG data visualization</dd></div>
-        <div><dt>Testing</dt><dd>Jest, Testing Library, Playwright, Cypress, <span style="white-space:nowrap">axe-core</span></dd></div>
-        <div><dt>Server side</dt><dd>Node, WebSockets, Python and FastAPI, React on Ruby on Rails backends</dd></div>
-        <div><dt>AI in the loop</dt><dd>Claude Code, Codex, Cursor, agent skills and review pipelines, streaming LLM output</dd></div>
+        <div><dt>Every day</dt><dd>TypeScript, React, Node, Rails, SQL, Git</dd></div>
+        <div><dt>Backend</dt><dd>PostgreSQL, Solid Queue, Firebase, FastAPI, JWT</dd></div>
+        <div><dt>Integrations</dt><dd>Salesforce, Zendesk, GCP, Kamal, Sentry</dd></div>
+        <div><dt>Frontend</dt><dd>Astro, Svelte, Next.js, Capacitor, Tailwind</dd></div>
+        <div><dt>Testing</dt><dd>RSpec, Jest, Playwright, Cypress</dd></div>
+        <div><dt>AI</dt><dd>Claude Code, Codex, agent skills, review pipelines</dd></div>
       </dl>
     </div>
     <div>
@@ -410,7 +417,7 @@
         <li><p class="big">300k+<small>page views</small></p><p>on my site of offline flash games, from other kids.</p></li>
         <li><p class="big">2×<small>top ten</small></p><p>in ANIMATE, Uruguay’s national animation contest.</p></li>
       </ul>
-      <p class="early-note">I still care most about the same thing: <span class="serif">interfaces people can trust.</span></p>
+      <p class="early-note">I still care most about the same thing: <span class="serif">software people can trust.</span></p>
     </div>
   </div>
 
