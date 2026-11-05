@@ -342,6 +342,8 @@ async function zoom(plate: HTMLElement) {
   overlay.querySelector<HTMLElement>('.thaw-actions')!.style.top = `${top + BAR + availH + 14}px`;
   overlay.style.visibility = 'hidden';
   document.body.append(overlay);
+  // (A flag on the root, not `:has(.thaw)` in the CSS: that selector restyled the whole page on every open and close.)
+  document.documentElement.setAttribute('data-thawing', '');
   // The lights start on the side they were on in the preview.
   const plateLights = plate.querySelector<HTMLElement>('.lights-pair');
   const lights = win.querySelector<HTMLElement>('.lights-pair')!;
@@ -472,6 +474,7 @@ async function zoom(plate: HTMLElement) {
     returns.forEach((a) => a.cancel());
     layers.forEach((el) => (el.style.transformOrigin = ''));
     overlay.remove();
+    document.documentElement.removeAttribute('data-thawing');
     removeEventListener('wheel', onWheel, true);
     removeEventListener('keydown', onScrollKey, true);
     document.removeEventListener('focusin', onFocus);
