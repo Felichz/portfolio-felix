@@ -9,4 +9,6 @@ export default {
   path: '/',
   scenarios: './perf/scenarios',
   budgets: './perf/budgets.js',
+  // As scripts/perf: the scenarios park the pointer at (1530, 770), on a wide window.
+  viewport: { width: 1600, height: 960 },
 };
