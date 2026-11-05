@@ -82,3 +82,15 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - carousel/next@4x: inconclusive, -2 late frames a step [-6.2, 1.7] (first run p=0.044 did not survive the confirmation run)
   - carousel/back@4x: inconclusive, +2 late frames a step [-8.83, 9.14] (the interval [-8.83, 9.14] is wider than the margin of ±2)
 - **Run:** 2026-11-05T17-50-30-af8a on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-05 20:34 · compare · better
+
+- **Hypothesis:** tape.ts: a recording's Latin font faces load before its first layout, so their arrival doesn't lay the recording out again a few hundred ms into a product change (162 of 171 objects, 55 ms at 1x, 4/4)
+- **Change:** HEAD (7c82602) → worktree
+- **Result:** worktree against HEAD (7c82602), 24 strata in 40.3 min. better: carousel/next@1x, carousel/next@4x; inconclusive: carousel/back@1x, carousel/back@4x. mode: page on [::1]:63309, [::1]:64387, [::1]:49580, [::1]:50038, [::1]:51007, [::1]:51450, [::1]:52419, [::1]:52828, [::1]:53798, [::1]:54270, [::1]:62988, [::1]:63152, [::1]:64547, [::1]:64704, [::1]:49735, [::1]:49889, [::1]:51304, [::1]:52690, [::1]:53978, [::1]:54130; frames from [::1]:62796, [::1]:63309, [::1]:63475, [::1]:64177, [::1]:64387, [::1]:64880, [::1]:65110, [::1]:49374, [::1]:49580, [::1]:50038, [::1]:50203, [::1]:50805, [::1]:51007, [::1]:51450, [::1]:51614, [::1]:52212, [::1]:52419, [::1]:52828, [::1]:52978, [::1]:53575, [::1]:53798, [::1]:54270, [::1]:54420, [::1]:55052, [::1]:62988, [::1]:63152, [::1]:63681, [::1]:63958, [::1]:64547, [::1]:64704, [::1]:65315, [::1]:65519, [::1]:49735, [::1]:49889, [::1]:50402, [::1]:50602, [::1]:51166, [::1]:51304, [::1]:51822, [::1]:52009, [::1]:52566, [::1]:52690, [::1]:53188, [::1]:53379, [::1]:53978, [::1]:54130, [::1]:54623, [::1]:54851 shared the page's process.
+  - carousel/next@1x: better, -3 late frames a step [-4.2, 0.2] (confirmed on fresh repetitions (typical frames, p=0.011 after Holm))
+  - carousel/next@4x: better, -7.5 late frames a step [-13.2, -2.8] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+  - carousel/back@1x: inconclusive, 0 late frames a step [-2.2, 4.2] (the interval [-2.2, 4.2] is wider than the margin of ±2)
+  - carousel/back@4x: inconclusive, +6 late frames a step [-5.22, 21.2] (the interval [-5.22, 21.2] is wider than the margin of ±2)
+- **Run:** 2026-11-05T19-37-56-f47d on darwin-i5-1038ng7-8c-chrome156-95adeb
+  - Integrated. Aimed at the 1x freeze `freezes` named on 2026-11-05 (run 2026-11-05T18-45-51-95e1, f3: layout of 162 of 171 objects after "Fonts changed", 67 to 133 ms, in 4 of 4). No visible change: `play()` already waited for `fonts.ready` before the recording started, so it starts when it did; the fonts now arrive before its first layout, not after. `astro check` 0 errors, `ledger.mjs --check` all hold.
