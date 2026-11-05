@@ -12,9 +12,9 @@ In order. Each one is measured by the scenario named in backticks.
 
 1. The page's scroll: `scroll`.
 2. The products carousel, changing product: `carousel`.
-3. The projects themselves, opening a live app over its preview: `window`.
+3. The projects themselves, a preview going live with its app in its stage: `projects`.
 
-The window that opens over a preview and the theme switch come after these three.
+The window that opens over a preview (`window`) and the theme switch (`theme`) come after these three.
 
 ## What counts as a modest machine?
 
