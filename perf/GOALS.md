@@ -40,3 +40,6 @@ Things that stay even when they cost frames.
   again. The employer's repos (`seekr`, `design-system`) are never touched.
 - 2026-11-03: infrastructure may be added when it serves this work (a second hostname for the stages).
 - 2026-11-03: the GPU's first shaders on a first visit to PlaySync (450 ms in an empty profile) stay.
+- 2026-11-05: on the Mac, work at normal CPU speed (1x). Felix: "yo preferiria que trabajemos con el cpu
+  normal". A freeze at 1x is what gets fixed; 4x is run to see that nothing got worse there, not to chase
+  every frame on a 2020 i5 slowed four times.
