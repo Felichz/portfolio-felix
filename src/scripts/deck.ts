@@ -25,11 +25,21 @@ export function initDeck() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const desktop = matchMedia('(min-width: 761px)');
 
+  // Where each section starts, measured at rest and on resize, not in the frame: reading offsets while the
+  // deck's own writes are still pending makes the browser lay the page out right there (deck.ts, 49 ms at 4x).
+  let tops: number[] = [];
+  let height = 0;
+  const measure = () => {
+    height = stage.clientHeight;
+    tops = panels.map((p) => p.offsetTop);
+  };
+  measure();
+  addEventListener('resize', measure, { passive: true });
   // The active section is the last one whose top has passed the middle of the window.
   const nearest = (top = stage.scrollTop) => {
-    const mid = top + stage.clientHeight / 2;
+    const mid = top + height / 2;
     let i = 0;
-    panels.forEach((p, j) => p.offsetTop <= mid && (i = j));
+    tops.forEach((t, j) => t <= mid && (i = j));
     return i;
   };
   let index = -1;
@@ -85,7 +95,7 @@ export function initDeck() {
     panels.forEach((p, j) => p.toggleAttribute('data-active', j === i));
     panel.setAttribute('data-seen', '');
     tabs.forEach((t) => (t.dataset.tab === panel.id ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current')));
-    pill();
+    paint();
     // Keep the address in step, without adding a history entry per section.
     const current = decodeURIComponent(location.hash.slice(1)).split('/')[0];
     // (A page that opens on one of its panels, with no hash, keeps its own address there.)
@@ -93,8 +103,17 @@ export function initDeck() {
     if (current !== panel.id && !(home && !current) && inside(current)?.i !== i) {
       history.replaceState(history.state, '', i === 0 ? location.pathname + location.search : `#${panel.id}`);
     }
-    glow();
     document.dispatchEvent(new CustomEvent('deck:change', { detail: { id: panel.id, index: i } }));
+  };
+  // The pill's width and the section's glow are read after the change they follow, in the next frame: read
+  // right after it, they made the browser lay out and restyle the page on the spot (deck.ts:64, :71, 4 of 4 hunts).
+  let painting = 0;
+  const paint = () => {
+    cancelAnimationFrame(painting);
+    painting = requestAnimationFrame(() => {
+      pill();
+      glow();
+    });
   };
 
   const go = (i: number, opts: { smooth?: boolean; focus?: boolean } = {}) => {
@@ -117,12 +136,24 @@ export function initDeck() {
   let fast = 0;
   let lastTop = stage.scrollTop;
   let lastAt = 0;
+  // `data-moving` while it scrolls: the sections out of sight that skip their rendering for a moment
+  // (global.css) render again before any of them comes in.
+  let moving = false;
+  // The position is read in the scroll event, which runs before the frame's callbacks write styles; read in
+  // the frame, after another callback's writes, it made the browser restyle and lay out first (49 ms at 4x).
+  let scrolledTo = stage.scrollTop;
   const onFrame = (now: number) => {
     raf = 0;
-    const top = stage.scrollTop;
+    const top = scrolledTo;
     const v = Math.abs(top - lastTop) / Math.max(1, now - lastAt);
     lastTop = top;
     lastAt = now;
+    // Set after the read above, not in the scroll event: that attribute restyles the sections, and the
+    // next frame's read would have the browser restyle and lay them out first (deck.ts:122, 4 of 4 freezes).
+    if (!moving) {
+      moving = true;
+      stage.setAttribute('data-moving', '');
+    }
     setActive(nearest(top));
     if (v > 1.1) {
       root.classList.add('deck-fast');
@@ -130,19 +161,14 @@ export function initDeck() {
       fast = window.setTimeout(() => root.classList.remove('deck-fast'), 160);
     }
   };
-  // `data-moving` while it scrolls: the sections out of sight that skip their rendering for a moment
-  // (global.css) render again before any of them comes in.
-  let moving = false;
   stage.addEventListener(
     'scroll',
     () => {
+      scrolledTo = stage.scrollTop;
       raf ||= requestAnimationFrame(onFrame);
-      if (!moving) {
-        moving = true;
-        stage.setAttribute('data-moving', '');
-      }
       clearTimeout(settle);
       settle = window.setTimeout(() => {
+        measure();
         target = nearest();
         moving = false;
         stage.removeAttribute('data-moving');

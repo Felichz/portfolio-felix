@@ -24,9 +24,15 @@ export function initWarm() {
       return d;
     })());
 
-  const warm = () => {
+  // A few pictures per idle slice, the rest in the next one: cloning and laying out every lazy picture in
+  // one task was a 59 ms freeze at 4x (warm.ts:27, the carousel's next step).
+  const warm = (deadline?: IdleDeadline) => {
     for (const img of document.querySelectorAll<HTMLImageElement>('img[loading="lazy"]')) {
       if (img.complete || img.currentSrc || warmed.has(img)) continue;
+      if (deadline && deadline.timeRemaining() < 8) {
+        idle(warm);
+        return;
+      }
       warmed.add(img);
       const box = img.closest('picture') ?? img;
       const probe = box.cloneNode(true) as HTMLElement;

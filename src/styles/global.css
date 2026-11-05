@@ -382,7 +382,7 @@ html.app, html.app body { overflow: hidden; overscroll-behavior: none; }
    frames at 4x CPU, the theme switch 18.1 to 14.2; scripts/perf/MEASURING.md.) Never while the deck
    moves (data-moving, deck.ts): a section on its way in would show empty until it became the active one. */
 @media (min-width: 761px) {
-  :root:is(:has(.thaw), [data-theme-switching]) [data-deck]:not([data-moving]) > .panel:not([data-active]) { content-visibility: hidden; }
+  :root:is([data-thawing], [data-theme-switching]) [data-deck]:not([data-moving]) > .panel:not([data-active]) { content-visibility: hidden; }
 }
 .panel-inner {
   position: relative;
