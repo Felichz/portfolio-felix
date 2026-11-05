@@ -362,6 +362,13 @@ export class TapeCore extends HTMLElement {
       const sheet = new (frame.contentWindow as Window & typeof globalThis).CSSStyleSheet();
       sheet.replaceSync(tape.css + TAPE_CSS);
       this.#doc.adoptedStyleSheets = [sheet];
+      // The app's Latin faces, loaded before the recording's first layout. The frame sits in a slide that
+      // skips its rendering until it shows, so its fonts were only asked for at that first layout, and
+      // their arrival laid the whole recording out again a few hundred ms into a product change (55 ms at
+      // normal speed, every time: frameproof, carousel). Loaded now, the first layout has them, and the
+      // text never swaps faces. The other scripts' subsets (Cyrillic, Greek, ...) still load only if used.
+      const latin = [...this.#doc.fonts].filter((f) => f.status === 'unloaded' && LATIN.test(f.unicodeRange));
+      if (latin.length) await Promise.race([Promise.all(latin.map((f) => f.load().catch(() => {}))), new Promise((r) => setTimeout(r, 1500))]);
       this.#resize = new ResizeObserver(() => this.#fit());
       this.#resize.observe(this);
       this.#fit();
@@ -671,6 +678,9 @@ export class TapeCore extends HTMLElement {
     this.#cursorAnim.pause();
   }
 }
+
+/** A face that covers basic Latin: no range of its own, or one that starts with U+0-FF. */
+const LATIN = /^U\+0{0,4}(-|-0{0,2}FF\b|-10FFFF)/i;
 
 /**
  * Added to every tape's stylesheet: no text caret, nothing shows a pointer cursor, and no media
