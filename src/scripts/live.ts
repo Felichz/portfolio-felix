@@ -703,6 +703,11 @@ export function initLive() {
   const inView = new Set<HTMLElement>();
   const idle = (fn: () => void) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 300));
   const dwell = new Map<HTMLElement, number>();
+  // The visitor's hand on the showcase's rail: a product change is on its way, and it would drop the app
+  // a boot was starting for the preview on show. A boot nobody asked for (this one; a hover asks for its
+  // own) waits until the hand leaves the rail, instead of running under the click that follows: at 4x
+  // CPU, KnowGraph booting there put a 170 to 220 ms freeze in every product change (frameproof).
+  const handOnRail = () => !!document.querySelector('.rail-list:hover');
   const consider = (plate: HTMLElement) => {
     clearTimeout(dwell.get(plate));
     if (!started || !ok()) return;
@@ -711,10 +716,17 @@ export function initLive() {
       window.setTimeout(
         () =>
           idle(() => {
+            if (handOnRail()) return consider(plate);
             // Asked again at its turn without the zoom: a window opening then is a moment, and a boot
             // skipped for it would never be queued again while the preview stayed on screen.
             const stillWorth = () => visible.has(plate) && liveFor(plate).state === 'none';
-            !zooming && stillWorth() && queueBoot(liveFor(plate), stillWorth);
+            !zooming &&
+              stillWorth() &&
+              queueBoot(liveFor(plate), () => {
+                // Its turn came with the hand on the rail: it waits again rather than being skipped.
+                if (handOnRail()) return (consider(plate), false);
+                return stillWorth();
+              });
           }),
         DWELL,
       ),

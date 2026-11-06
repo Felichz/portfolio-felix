@@ -121,3 +121,21 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - window: 50 to 67 ms, the view transition, accepted.
   - theme: 50 to 167 ms at the circle's end, GPU, 4 of 4: the circle, accepted.
 - Not pursued: the automatic boot waiting while the hand is on the rail (written on 2026-11-05, never judged to the end). It aimed at a freeze seen at 4x; at normal speed the carousel has no episode left.
+
+## 2026-11-05 21:44 · price · inconclusive
+
+- **Hypothesis:** the load's 107 ms of GPU (raster 51) at +331 ms is the portrait's first raster, landing in the name's entrance
+- **Change:** inject css:.portrait{visibility:hidden!important} on worktree
+- **Result:** worktree with css:.portrait{visibility:hidden!important} injected, against without: inconclusive. A price is an upper bound on what the change saves: the injection removes or adds exactly that, the real change may do less. mode: page on [::1]; frames from [::1] shared the page's process.
+  - load/load@1x: inconclusive, -1 late frames a step [-2.2, 1.2] (first run p=0.024 did not survive the confirmation run)
+- **Run:** 2026-11-05T21-38-09-a3d3 on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-05 22:11 · compare · better
+
+- **Hypothesis:** live.ts: a boot nobody asked for waits while the hand is on the rail (a product change is coming, which drops that app)
+- **Change:** HEAD (9367ca8) → worktree
+- **Result:** worktree against HEAD (9367ca8), 16 strata in 23.9 min. better: carousel/next@1x, carousel/back@1x. mode: page on [::1]; frames from [::1] shared the page's process.
+  - carousel/next@1x: better, -3 late frames a step [-6.18, -0.82] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+  - carousel/back@1x: better, -4 late frames a step [-11.2, -2.82] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+- **Run:** 2026-11-05T21-46-13-64e1 on darwin-i5-1038ng7-8c-chrome156-95adeb
+  - Integrated, after the checks on the cells it could touch (run with --no-journal): projects/live@1x 2 to 2 and window/open@1x 27.5 to 27, inconclusive, none worse (run 2026-11-05T22-11-29-512c); carousel@4x better, next 64 to 55.5 (p = 0.003), back 77 to 40.5 (p < 0.001), back's episodes 31/32 to 23/32 (p = 0.013) (run 2026-11-05T22-37-05-e50c). Nothing a visitor sees changes: the preview shows its recording until it goes live, and a hover still asks for the app at once.
