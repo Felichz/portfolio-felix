@@ -120,7 +120,7 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - load: 67 to 100 ms in 2 of 4 (run 2026-11-05T20-54-04-3166), the page's first frame.
   - window: 50 to 67 ms, the view transition, accepted.
   - theme: 50 to 167 ms at the circle's end, GPU, 4 of 4: the circle, accepted.
-- Not pursued: the automatic boot waiting while the hand is on the rail (written on 2026-11-05, never judged to the end). It aimed at a freeze seen at 4x; at normal speed the carousel has no episode left.
+- The automatic boot waiting while the hand is on the rail was judged after this, and integrated: see the next entry (b7d2200).
 
 ## 2026-11-05 21:44 · price · inconclusive
 
