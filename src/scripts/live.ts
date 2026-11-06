@@ -576,6 +576,23 @@ export function initLive() {
   const hovered = (plate: HTMLElement) => plate.matches(':hover') || plate.hasAttribute('data-hover');
   const holdShow = (on: boolean) => document.dispatchEvent(new CustomEvent('live:hold', { detail: on }));
   const released = (plate: HTMLElement) => setTimeout(() => !hovered(plate) && holdShow(false), 120);
+  // A pointer that rests on a preview asks for its app; one that only crosses it on its way somewhere
+  // (to the showcase's rail, say) doesn't: its ask ran the app's handoff under the click that followed,
+  // on a preview that click then left (frameproof, carousel). The ghost answers at once either way, so
+  // the preview reacts from the first instant; the app takes its place a moment later behind it. A
+  // click still asks at once.
+  const INTENT = 120;
+  const intent = new Map<HTMLElement, number>();
+  const askSoon = (plate: HTMLElement) => {
+    if (intent.has(plate)) return;
+    intent.set(
+      plate,
+      window.setTimeout(() => {
+        intent.delete(plate);
+        if (hovered(plate) && ok()) void liveFor(plate).goLive();
+      }, INTENT),
+    );
+  };
   for (const plate of plates) {
     plate.addEventListener('pointerenter', (e) => {
       if (e.pointerType !== 'mouse' || !ok()) return;
@@ -585,7 +602,7 @@ export function initLive() {
         const r = plate.getBoundingClientRect();
         l.player?.ghost((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
       }
-      void l.goLive();
+      askSoon(plate);
     });
     // A preview that scrolled under a resting pointer gets no pointerenter: any move over it counts.
     // Under the pointer, the tape answers as a ghost (its own recorded hover styles what's under the
@@ -596,11 +613,13 @@ export function initLive() {
       if (l.state !== 'live') {
         const r = plate.getBoundingClientRect();
         l.player?.ghost((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
-        void l.goLive();
+        askSoon(plate);
       }
     });
     // (Moving into the app isn't leaving: the stage's report comes a moment later.)
     plate.addEventListener('pointerleave', () => {
+      clearTimeout(intent.get(plate));
+      intent.delete(plate);
       lives.get(plate)?.player?.ghost(-1, -1);
       released(plate);
     });

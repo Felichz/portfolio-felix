@@ -139,3 +139,14 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - carousel/back@1x: better, -4 late frames a step [-11.2, -2.82] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
 - **Run:** 2026-11-05T21-46-13-64e1 on darwin-i5-1038ng7-8c-chrome156-95adeb
   - Integrated, after the checks on the cells it could touch (run with --no-journal): projects/live@1x 2 to 2 and window/open@1x 27.5 to 27, inconclusive, none worse (run 2026-11-05T22-11-29-512c); carousel@4x better, next 64 to 55.5 (p = 0.003), back 77 to 40.5 (p < 0.001), back's episodes 31/32 to 23/32 (p = 0.013) (run 2026-11-05T22-37-05-e50c). Nothing a visitor sees changes: the preview shows its recording until it goes live, and a hover still asks for the app at once.
+
+## 2026-11-05 23:54 · compare · better
+
+- **Hypothesis:** live.ts: a pointer that only crosses a preview no longer asks for its app; one that rests 120 ms does (the ghost answers at once either way): the handoff ran under the next click (layout of 168 objects in /stage, light 10/12)
+- **Change:** HEAD (f1dde1c) → worktree
+- **Result:** worktree against HEAD (f1dde1c), 16 strata in 32.4 min. better: carousel/next@1x; inconclusive: carousel/back@1x, projects/live@1x. mode: frames from [::1] shared the page's process.
+  - carousel/next@1x: better, -5 late frames a step [-9.2, -0.8] (confirmed on fresh repetitions (typical frames, p=0.002 after Holm))
+  - carousel/back@1x: inconclusive, 0 late frames a step [-4.53, 8.04] (the interval [-4.53, 8.04] is wider than the margin of ±2)
+  - projects/live@1x: inconclusive, +1 late frames a step [-1.53, 2.16] (the interval [-1.53, 2.16] is wider than the margin of ±2)
+- **Run:** 2026-11-05T23-20-46-ce0e on darwin-i5-1038ng7-8c-chrome156-95adeb
+  - Integrated, after the checks (run with --no-journal): window@1x open 27 to 28 and close 20.5 to 19.5, inconclusive, none worse (run 2026-11-05T23-55-34-5f34); carousel@4x next 64 to 53.5, better (p < 0.001), back inconclusive (run 2026-11-06T13-50-40-0c83). The ghost still answers the pointer at once; the app takes its place 120 ms later behind it, and a click still asks at once.
