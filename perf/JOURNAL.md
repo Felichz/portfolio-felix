@@ -94,3 +94,30 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - carousel/back@4x: inconclusive, +6 late frames a step [-5.22, 21.2] (the interval [-5.22, 21.2] is wider than the margin of ±2)
 - **Run:** 2026-11-05T19-37-56-f47d on darwin-i5-1038ng7-8c-chrome156-95adeb
   - Integrated. Aimed at the 1x freeze `freezes` named on 2026-11-05 (run 2026-11-05T18-45-51-95e1, f3: layout of 162 of 171 objects after "Fonts changed", 67 to 133 ms, in 4 of 4). No visible change: `play()` already waited for `fonts.ready` before the recording started, so it starts when it did; the fonts now arrive before its first layout, not after. `astro check` 0 errors, `ledger.mjs --check` all hold.
+
+## 2026-11-05 21:35 · compare · inconclusive
+
+- **Hypothesis:** catchup.ts: after the theme's circle or the window, the sections out of sight catch up one at a time in idle time instead of all in one frame (151 ms of unexplained GPU after the circle, 4/4, light 8/8 at 1x)
+- **Change:** HEAD (d388f4c) → worktree
+- **Result:** worktree against HEAD (d388f4c), 20 strata in 35.9 min. inconclusive: theme/switch@1x, theme/switch@4x, theme/back@1x, theme/back@4x, window/open@1x, window/open@4x, window/close@1x, window/close@4x. Not known: never read this as "no difference".
+  - theme/switch@1x: inconclusive, +3 late frames a step [-7.26, 11.75] (the interval [-7.26, 11.75] is wider than the margin of ±2)
+  - theme/switch@4x: inconclusive, +0.5 late frames a step [-7.25, 7.75] (the interval [-7.25, 7.75] is wider than the margin of ±2)
+  - theme/back@1x: inconclusive, +0.5 late frames a step [-2.2, 3.2] (first run p=0.034 did not survive the confirmation run)
+  - theme/back@4x: inconclusive, -1 late frames a step [-5.25, 3.75] (the interval [-5.25, 3.75] is wider than the margin of ±2)
+  - window/open@1x: inconclusive, +4 late frames a step [-11.75, 11.25] (the interval [-11.75, 11.25] is wider than the margin of ±2)
+  - window/open@4x: inconclusive, +1 late frames a step [-9.75, 12.25] (the interval [-9.75, 12.25] is wider than the margin of ±2)
+  - window/close@1x: inconclusive, +7 late frames a step [-10.25, 16.25] (the interval [-10.25, 16.25] is wider than the margin of ±2)
+  - window/close@4x: inconclusive, 0 late frames a step [-3.2, 3.2] (first run p=0.022 did not survive the confirmation run)
+- **Run:** 2026-11-05T20-58-23-315e on darwin-i5-1038ng7-8c-chrome156-95adeb
+  - Dropped: every cell inconclusive, typical frames the same (theme/back@1x 20 to 19.5, @4x 25 to 25). The ~150 ms of GPU at the circle's end is the view transition ending, not the sections catching up. The circle stays (Felix's call), so this one is left.
+
+## 2026-11-05 · where the Mac stands at normal speed
+
+- `freezes -s journey,scroll,carousel,projects,window,theme -n 4` on [::1] after d388f4c (run 2026-11-05T20-37-21-19a6), checked against light runs:
+  - scroll: no freeze.
+  - carousel: 50 to 83 ms in 2 of 4 (a recording's own CSS animations starting, and GPU raster), under the 100 ms episode line; compare saw 0/24 episodes at 1x (run 2026-11-05T19-37-56-f47d).
+  - projects: 67 to 83 ms in 2 of 4, 1 of 8 light runs: KnowGraph's own stage code.
+  - load: 67 to 100 ms in 2 of 4 (run 2026-11-05T20-54-04-3166), the page's first frame.
+  - window: 50 to 67 ms, the view transition, accepted.
+  - theme: 50 to 167 ms at the circle's end, GPU, 4 of 4: the circle, accepted.
+- Not pursued: the automatic boot waiting while the hand is on the rail (written on 2026-11-05, never judged to the end). It aimed at a freeze seen at 4x; at normal speed the carousel has no episode left.
