@@ -397,7 +397,8 @@ async function zoom(plate: HTMLElement) {
    */
   const morph = async (open: boolean, page: Animation[], land?: DOMRect) => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
-    if (!doc.startViewTransition || reduce.matches) {
+    const noVT: boolean = true; // LITE experiment: no view transition
+    if (!doc.startViewTransition || reduce.matches || noVT) {
       swap(open);
       player.matchTheme(open);
       page.forEach((a) => a.play());
