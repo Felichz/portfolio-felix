@@ -262,3 +262,11 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
 
 - `frameproof compare --base HEAD --head HEAD --base-host ::1 --head-host 127.0.0.1 -s scroll,carousel,window` (run 2026-11-07T19-56-05-db89): the same build, its stages in the page's process (::1) against their own (127.0.0.1), alternated. carousel/back@1x better, 42.5 to 21.5 late frames, episodes 15/24 to 0/24; scroll, carousel/next and window inconclusive, none worse.
 - A noisy night (window/open 51.5 late frames at 1x against about 27 on a quiet one, the window server at 56%), so the inconclusive cells say little. The one clear result is the carousel's way back.
+
+## 2026-11-07 · where the Mac stands, final survey
+
+- `frameproof freezes -s journey,load,scroll,carousel,projects,window,theme -n 4` on [::1] (run 2026-11-07T20-38-16-febc), with the tool naming the GPU's own time (frameproof d04a731) and checking against light runs:
+  - Seven of the eight leading causes are the GPU waiting on the system's compositor (CALayerTreeCoordinator::ApplyBackpressure::Metal): carousel next and back, window open and close, theme, scroll down. The screen's other drawing (the window server at 45 to 57% these nights), not the page.
+  - The eighth is the theme switch's raster (RasterDecoderImpl::DoBeginRasterCHROMIUM): the circle, kept by Felix's call.
+  - The journey's long tasks are the page's first layout at load (111 objects, 107 to 120 ms): the work the page must do to show itself, the first time.
+- Left in the page's code: nothing found that can be removed without changing what a visitor sees. Left outside it: the stages' work in the page's process, whose fix is PUBLIC_STAGE_ORIGIN (gate passed on the Mac, carousel/back's episodes 15/24 to 0/24 measured with it), waiting on the Vercel domain.
