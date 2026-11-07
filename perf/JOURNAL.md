@@ -244,3 +244,21 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
 
 - `frameproof freezes -s window -n 8 --throttle 4`, served on 127.0.0.1 so the stages run from localhost in their own process (run 2026-11-07T19-51-23-2086): no long stall closing the window in 8 of 8; the longest freeze 283 ms (window close, 6/8 at 50 to 283 ms), against the 1,370 ms seen once on Windows on 2026-11-03.
 - Those closes, and the "GPU busy, in nothing it names" freezes of 2026-11-06 in every scenario, are named now (frameproof d04a731): CALayerTreeCoordinator::ApplyBackpressure::Metal, Chrome's GPU waiting on macOS's window server, behind with everything else on screen (it ran at 45 to 57% CPU those nights). The screen's other drawing, not the page.
+
+## 2026-11-07 20:35 · compare · better
+
+- **Hypothesis:** what PUBLIC_STAGE_ORIGIN would bring: the same build with its stages in the page's process (::1) against their own (127.0.0.1)
+- **Change:** HEAD (c7183d9) → HEAD (c7183d9)
+- **Result:** HEAD (c7183d9) on 127.0.0.1 against HEAD (c7183d9) on ::1, 12 strata in 39.5 min. better: carousel/back@1x; inconclusive: scroll/down@1x, scroll/up@1x, carousel/next@1x, window/open@1x, window/close@1x. Served on purpose two ways: base on ::1, head on 127.0.0.1. mode: frames from localhost ran in their own process; frames from [::1] shared the page's process.
+  - scroll/down@1x: inconclusive, +2 late frames a step [-13.2, 15.71] (the interval [-13.2, 15.71] is wider than the margin of ±2)
+  - scroll/up@1x: inconclusive, 0 late frames a step [-13.2, 9.2] (the interval [-13.2, 9.2] is wider than the margin of ±2)
+  - carousel/next@1x: inconclusive, +9 late frames a step [-21.96, 41.46] (the interval [-21.96, 41.46] is wider than the margin of ±2)
+  - carousel/back@1x: better, -19.5 late frames a step [-32.2, 1.2] (confirmed on fresh repetitions (rare episodes, p<0.001 after Holm))
+  - window/open@1x: inconclusive, -9 late frames a step [-27.96, 26.96] (the interval [-27.96, 26.96] is wider than the margin of ±2)
+  - window/close@1x: inconclusive, +2 late frames a step [-8.2, 10.2] (first run p=0.026 did not survive the confirmation run)
+- **Run:** 2026-11-07T19-56-05-db89 on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-07 · what PUBLIC_STAGE_ORIGIN would bring, measured
+
+- `frameproof compare --base HEAD --head HEAD --base-host ::1 --head-host 127.0.0.1 -s scroll,carousel,window` (run 2026-11-07T19-56-05-db89): the same build, its stages in the page's process (::1) against their own (127.0.0.1), alternated. carousel/back@1x better, 42.5 to 21.5 late frames, episodes 15/24 to 0/24; scroll, carousel/next and window inconclusive, none worse.
+- A noisy night (window/open 51.5 late frames at 1x against about 27 on a quiet one, the window server at 56%), so the inconclusive cells say little. The one clear result is the carousel's way back.
