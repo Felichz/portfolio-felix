@@ -150,3 +150,22 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - projects/live@1x: inconclusive, +1 late frames a step [-1.53, 2.16] (the interval [-1.53, 2.16] is wider than the margin of ±2)
 - **Run:** 2026-11-05T23-20-46-ce0e on darwin-i5-1038ng7-8c-chrome156-95adeb
   - Integrated, after the checks (run with --no-journal): window@1x open 27 to 28 and close 20.5 to 19.5, inconclusive, none worse (run 2026-11-05T23-55-34-5f34); carousel@4x next 64 to 53.5, better (p < 0.001), back inconclusive (run 2026-11-06T13-50-40-0c83). The ghost still answers the pointer at once; the app takes its place 120 ms later behind it, and a click still asks at once.
+
+## 2026-11-06 14:57 · compare · inconclusive
+
+- **Hypothesis:** live.ts: warming a stage waits while the hand is on the rail (bisect: with no warming at all, carousel/next 11 to 8)
+- **Change:** HEAD (b23d609) → worktree
+- **Result:** worktree against HEAD (b23d609), 12 strata in 16.8 min. inconclusive: carousel/next@1x, carousel/back@1x. Not known: never read this as "no difference". mode: frames from [::1] shared the page's process.
+  - carousel/next@1x: inconclusive, -2 late frames a step [-9.14, 2.83] (the interval [-9.14, 2.83] is wider than the margin of ±2)
+  - carousel/back@1x: inconclusive, 0 late frames a step [-6.14, 5.83] (the interval [-6.14, 5.83] is wider than the margin of ±2)
+- **Run:** 2026-11-06T14-39-43-4185 on darwin-i5-1038ng7-8c-chrome156-95adeb
+  - Dropped, a bisection step. Step 1 (no warming at all, run 2026-11-06T14-12-16-410f, --no-journal): carousel/next 11 to 8 (better, p = 0.028) but its episodes 2/24 to 5/24, carousel/back 13 to 10.5 inconclusive: warming moves cost to a product's first showing, it doesn't remove it. Step 2, this run: the rail condition alone moves nothing. Warming stays as it was.
+
+## 2026-11-06 · bisect · carousel/back, and the battery
+
+- **Bisection, carousel/back@1x, all on [::1] against b23d609 (--no-journal):**
+  1. No warming at all (run 2026-11-06T14-12-16-410f): back 13 to 10.5, inconclusive. Not it (see above).
+  2. Warming waits for the hand to leave the rail (run 2026-11-06T14-39-43-4185): nothing moves. Not it.
+  3. The product left behind is paused, not rewound, 500 ms after (run 2026-11-06T20-20-27-3a09): back 2 to 1, better (p < 0.001); counted layout objects on the way back 345 to 152. This is it: the rewind rebuilt the recording's document while its slide skipped rendering, and the whole of it was laid out on the way back. roll() already rewinds a recording as it comes back, before it shows (its plate is idle, the recording at opacity 0, until it plays).
+- 4x check (run 2026-11-06T22-23-59-7bbd): next 67 to 62.5 and back 71.5 to 73, inconclusive, none worse; counted layout objects on the way back 441 to 202.
+- A run between steps 2 and 3 (2026-11-06T19-55-00-fa62) was on battery: the base read 39 late frames a step against 10.5 an hour before, 2 an hour after, plugged in. Thrown away. frameproof now refuses frames on battery (5f5156a), and its drift note is what caught it.

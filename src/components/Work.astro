@@ -552,7 +552,10 @@ const glowCSS = projects
       if (!plate) return;
       if (plate.dataset.state) plate.dataset.state = 'idle';
       const v = plate.querySelectorAll<HTMLVideoElement>('video, tape-player');
-      setTimeout(() => v.forEach((x) => (x.pause(), (x.currentTime = 0))), 500);
+      // Paused, not rewound: roll() rewinds a recording as its product comes back, before it shows. A
+      // rewind here rebuilt the recording's document while its slide skipped rendering, and that whole
+      // document was laid out on the way back, under the click (frameproof, bisected: carousel/back).
+      setTimeout(() => v.forEach((x) => x.pause()), 500);
     };
 
     const roll = () => {
