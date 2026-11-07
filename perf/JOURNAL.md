@@ -169,3 +169,78 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   3. The product left behind is paused, not rewound, 500 ms after (run 2026-11-06T20-20-27-3a09): back 2 to 1, better (p < 0.001); counted layout objects on the way back 345 to 152. This is it: the rewind rebuilt the recording's document while its slide skipped rendering, and the whole of it was laid out on the way back. roll() already rewinds a recording as it comes back, before it shows (its plate is idle, the recording at opacity 0, until it plays).
 - 4x check (run 2026-11-06T22-23-59-7bbd): next 67 to 62.5 and back 71.5 to 73, inconclusive, none worse; counted layout objects on the way back 441 to 202.
 - A run between steps 2 and 3 (2026-11-06T19-55-00-fa62) was on battery: the base read 39 late frames a step against 10.5 an hour before, 2 an hour after, plugged in. Thrown away. frameproof now refuses frames on battery (5f5156a), and its drift note is what caught it.
+
+## 2026-11-06 23:26 · price · better
+
+- **Hypothesis:** bisect GPU freezes on scroll: ambient background, videos and stage frames off together
+- **Change:** inject css:.ambient,video,iframe{display:none!important} on worktree
+- **Result:** worktree with css:.ambient,video,iframe{display:none!important} injected, against without: better (scroll/down@1x -29, scroll/up@1x -11 late frames a step). A price is an upper bound on what the change saves: the injection removes or adds exactly that, the real change may do less. mode: frames from [::1] shared the page's process.
+  - scroll/down@1x: better, -29 late frames a step [-37.2, -10.8] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+  - scroll/up@1x: better, -11 late frames a step [-19.2, -3.3] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+- **Run:** 2026-11-06T23-16-56-c64c on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-07 00:15 · price · partial
+
+- **Hypothesis:** bisect scroll GPU: ambient background off alone
+- **Change:** inject css:.ambient{display:none!important} on worktree
+- **Result:** partial: the browser went away twice: Connection closed.; what follows covers what was measured before. worktree with css:.ambient{display:none!important} injected, against without: partial. A price is an upper bound on what the change saves: the injection removes or adds exactly that, the real change may do less. mode: frames from [::1] shared the page's process.
+  - scroll/down@1x: inconclusive, -1.5 late frames a step [-14.2, 13.2] (the interval [-14.2, 13.2] is wider than the margin of ±2. the base read 20.5 here and 32.5 in 2026-11-06T23-16-56-c64c: numbers from separate runs don't compare, only the two builds within one run do)
+  - scroll/up@1x: inconclusive, 0 late frames a step [-11.2, 7.2] (the interval [-11.2, 7.2] is wider than the margin of ±2)
+- **Run:** 2026-11-07T00-06-33-b405 on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-07 12:32 · bisect · not found
+
+- **Hypothesis:** scroll at 1x: GPU busy outside raster and composite; resumed
+- **Change:** take away hide:.ambient, hide:video, hide:iframe on worktree
+- **Result:** the split candidates looked better on screening, but none held on confirmation: hide:iframe (2 split(s) priced, 1 taken from the resumed run, screened by frames). mode: frames from [::1] shared the page's process.
+  - hide:iframe scroll/down@1x: inconclusive
+  - hide:iframe scroll/up@1x: inconclusive
+- **Run:** 2026-11-07T12-09-55-079c on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-07 17:46 · compare · worse
+
+- **Hypothesis:** Work.astro: the recording starts once the deck stops moving, not as the section is reached (bisect: the stage frames, then roll() on deck:change)
+- **Change:** HEAD (b67a8ee) → worktree
+- **Result:** worktree against HEAD (b67a8ee), 16 strata in 30.3 min. worse: scroll/up@1x; inconclusive: scroll/down@1x, carousel/next@1x, carousel/back@1x. mode: frames from [::1] shared the page's process.
+  - scroll/down@1x: inconclusive, -3 late frames a step [-11.93, 2.18] (the interval [-11.93, 2.18] is wider than the margin of ±2)
+  - scroll/up@1x: worse, +1 late frames a step [-0.18, 1.18] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm). the base read 0 here and 10 in 2026-11-07T16-45-59-8e96: numbers from separate runs don't compare, only the two builds within one run do)
+  - carousel/next@1x: inconclusive, 0 late frames a step [-14.18, 11.18] (the interval [-14.18, 11.18] is wider than the margin of ±2)
+  - carousel/back@1x: inconclusive, 0 late frames a step [-27.55, 16.93] (the interval [-27.55, 16.93] is wider than the margin of ±2)
+- **Run:** 2026-11-07T17-14-41-8393 on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-07 18:17 · compare · better
+
+- **Hypothesis:** arrival at Work: the recording starts once the deck stops, and the automatic boot and warming wait until it has been still 1.2 s (KatArch booting and three stages mounting 0.8 to 1.3 s after the key)
+- **Change:** HEAD (b67a8ee) → worktree
+- **Result:** worktree against HEAD (b67a8ee), 12 strata in 28.4 min. better: scroll/down@1x; inconclusive: scroll/up@1x, carousel/next@1x, carousel/back@1x, projects/live@1x. mode: frames from [::1] shared the page's process.
+  - scroll/down@1x: better, -12 late frames a step [-20.2, -4.8] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+  - scroll/up@1x: inconclusive, +3 late frames a step [-3.2, 13.2] (the interval [-3.2, 13.2] is wider than the margin of ±2. the base read 12.5 here and 0 in 2026-11-07T17-14-41-8393: numbers from separate runs don't compare, only the two builds within one run do)
+  - carousel/next@1x: inconclusive, -9.5 late frames a step [-22.71, 8.2] (the interval [-22.71, 8.2] is wider than the margin of ±2. the base read 46 here and 27 in 2026-11-07T17-14-41-8393: numbers from separate runs don't compare, only the two builds within one run do)
+  - carousel/back@1x: inconclusive, -6 late frames a step [-28.46, 14.96] (the interval [-28.46, 14.96] is wider than the margin of ±2. the base read 37.5 here and 15.5 in 2026-11-07T17-14-41-8393: numbers from separate runs don't compare, only the two builds within one run do)
+  - projects/live@1x: inconclusive, -3 late frames a step [-8.2, 5.2] (the interval [-8.2, 5.2] is wider than the margin of ±2)
+- **Run:** 2026-11-07T17-47-14-cb1c on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-07 19:50 · compare · inconclusive
+
+- **Hypothesis:** bisect: the recording starting once the deck stops, alone (boot and warming as they were)
+- **Change:** HEAD (b67a8ee) → worktree
+- **Result:** worktree against HEAD (b67a8ee), 28 strata in 36.7 min. inconclusive: scroll/down@1x, scroll/down@4x, scroll/up@1x, scroll/up@4x. Not known: never read this as "no difference". mode: frames from [::1] shared the page's process.
+  - scroll/down@1x: inconclusive, -2.5 late frames a step [-9.2, 3.2] (first run p=0.004 did not survive the confirmation run)
+  - scroll/down@4x: inconclusive, -4 late frames a step [-11.2, 2.2] (first run p=0.002 did not survive the confirmation run)
+  - scroll/up@1x: inconclusive, +0.5 late frames a step [-8.18, 7.18] (the interval [-8.18, 7.18] is wider than the margin of ±2)
+  - scroll/up@4x: inconclusive, +0.5 late frames a step [-7.18, 8.18] (the interval [-7.18, 8.18] is wider than the margin of ±2. the base read 18.5 here and 6 in 2026-11-07T18-34-31-5e55: numbers from separate runs don't compare, only the two builds within one run do)
+- **Run:** 2026-11-07T19-13-16-027a on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-07 · bisect · the arrival at Work, on scroll/down
+
+- `frameproof bisect -s scroll 'hide:.ambient' 'hide:video' 'hide:iframe'` (runs 2026-11-07T00-15-16-2d42, 2026-11-07T12-09-55-079c): all three away, scroll/down@1x 8 to 2; ambient and videos away, inconclusive; the stage frames away, 20.5 to 4.5, better. The stage frames hold the scroll's cost (the confirmation run was cut short by a machine at load average 43).
+- One step finer, by hand: roll() left out as Work becomes active (run 2026-11-07T16-45-59-8e96), scroll/down@1x 24.5 to 4, better. But the timeline shows what runs there: the arriving product's app booting (live:katarch:boot about 810 ms after the key) and three neighbours' stages mounting, on the page's main thread.
+- Tried and dropped:
+  - The recording started once the deck stops, alone (run 2026-11-07T19-13-16-027a): inconclusive at 1x and 4x, nothing moves.
+  - The same, with the automatic boot and the warming waiting 1.2 s after the deck stops (runs 2026-11-07T17-47-14-cb1c, 2026-11-07T18-34-31-5e55): scroll/down better (1x 23 to 11.5, episodes 8/24 to 1/24; 4x 29 to 17), but scroll/up@4x episodes 0/32 to 9/32 (p = 0.002): the boot lands in the next interaction. Not integrated.
+- Where it stands: the cost is the stages' work in the page's process. Moving it in time moves it onto another interaction; the fix is the stages out of process (PUBLIC_STAGE_ORIGIN, approved 2026-11-03), whose gate is the window-close stall check below.
+
+## 2026-11-07 · the PUBLIC_STAGE_ORIGIN gate, on the Mac
+
+- `frameproof freezes -s window -n 8 --throttle 4`, served on 127.0.0.1 so the stages run from localhost in their own process (run 2026-11-07T19-51-23-2086): no long stall closing the window in 8 of 8; the longest freeze 283 ms (window close, 6/8 at 50 to 283 ms), against the 1,370 ms seen once on Windows on 2026-11-03.
+- Those closes, and the "GPU busy, in nothing it names" freezes of 2026-11-06 in every scenario, are named now (frameproof d04a731): CALayerTreeCoordinator::ApplyBackpressure::Metal, Chrome's GPU waiting on macOS's window server, behind with everything else on screen (it ran at 45 to 57% CPU those nights). The screen's other drawing, not the page.
