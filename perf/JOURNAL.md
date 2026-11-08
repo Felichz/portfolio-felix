@@ -270,3 +270,29 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - The eighth is the theme switch's raster (RasterDecoderImpl::DoBeginRasterCHROMIUM): the circle, kept by Felix's call.
   - The journey's long tasks are the page's first layout at load (111 objects, 107 to 120 ms): the work the page must do to show itself, the first time.
 - Left in the page's code: nothing found that can be removed without changing what a visitor sees. Left outside it: the stages' work in the page's process, whose fix is PUBLIC_STAGE_ORIGIN (gate passed on the Mac, carousel/back's episodes 15/24 to 0/24 measured with it), waiting on the Vercel domain.
+
+## 2026-11-08 11:55 · compare · worse
+
+- **Hypothesis:** arrival at Work: no app boots on its own (hover asks), the recording starts once the deck stops, warming waits 3 s of a still deck
+- **Change:** HEAD (3c30eb2) → worktree
+- **Result:** worktree against HEAD (3c30eb2), 12 strata in 37 min. worse: scroll/up@1x; better: scroll/down@1x; inconclusive: window/open@1x; same: carousel/next@1x, carousel/back@1x, projects/live@1x, window/close@1x. mode: frames from [::1] shared the page's process.
+  - scroll/down@1x: better, -3 late frames a step [-4.2, -1.3] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+  - scroll/up@1x: worse, +2 late frames a step [0.8, 2.2] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+  - carousel/next@1x: same, 0 late frames a step [-1.2, 0.7] (first run p=0.017 did not survive the confirmation run, and the fresh interval sits inside the margin)
+  - carousel/back@1x: same, 0 late frames a step [-1.25, 1.25] (the interval sits inside the margin of ±2)
+  - projects/live@1x: same, 0 late frames a step [-0.25, 1.25] (the interval sits inside the margin of ±2)
+  - window/open@1x: inconclusive, 0 late frames a step [-2.2, 1.2] (the interval [-2.2, 1.2] is wider than the margin of ±2)
+  - window/close@1x: same, 0 late frames a step [-1.25, 1.25] (the interval sits inside the margin of ±2)
+- **Run:** 2026-11-08T11-16-46-aac5 on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-08 12:22 · compare · better
+
+- **Hypothesis:** bisect: no auto boot and warming after 3 s still, without the recording waiting for the deck
+- **Change:** HEAD (3c30eb2) → worktree
+- **Result:** worktree against HEAD (3c30eb2), 20 strata in 24.4 min. better: scroll/down@1x; inconclusive: scroll/up@1x. mode: frames from [::1] shared the page's process.
+  - scroll/down@1x: better, -5.5 late frames a step [-11.18, -1.81] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm). the base read 18.5 here and 5 in 2026-11-08T11-16-46-aac5: numbers from separate runs don't compare, only the two builds within one run do)
+  - scroll/up@1x: inconclusive, -2 late frames a step [-8.14, 3.83] (the interval [-8.14, 3.83] is wider than the margin of ±2. the base read 7.5 here and 0 in 2026-11-08T11-16-46-aac5: numbers from separate runs don't compare, only the two builds within one run do)
+- **Run:** 2026-11-08T11-56-47-18f5 on darwin-i5-1038ng7-8c-chrome156-95adeb
+  - Bisected (run 2026-11-08T11-56-47-18f5): the recording waiting for the deck was what cost scroll/up; without it, scroll/down@1x 18.5 to 13.5 late frames (better; its layout 965 to 143 objects, its main thread 585 to 154 ms) and scroll/up 7.5 to 5 (inconclusive, no longer worse).
+  - Kept: no app boots on its own, and warming waits for a deck still 3 s. Why it is the smallest change: nothing on screen differs (the ghost still answers the pointer at once, the recording plays as before); the one difference is that a preview's app boots when the pointer rests on it, so its first takeover comes a moment later, behind the ghost. projects/live@1x read same (1 to 1) with it.
+  - 4x check (run 2026-11-08T13-41-54-7804, --no-journal): nothing worse; scroll/up@4x better, 19 to 5.5 late frames, episodes 13/24 to 4/24 (p = 0.015). Integrated.

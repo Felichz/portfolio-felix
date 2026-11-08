@@ -671,7 +671,12 @@ export function initLive() {
   const warmed = new WeakSet<TapePlayer>();
   let warmBusy = false;
   let lastChange = 0;
+  // Warming waits until the deck has been still a while: a stage mounting as the visitor arrives at a
+  // section ran in the arrival's frames.
+  let deckMovedAt = -Infinity;
+  document.querySelector('[data-deck]')?.addEventListener('scroll', () => (deckMovedAt = performance.now()), { passive: true });
   const quiet = () =>
+    performance.now() - deckMovedAt > 3000 &&
     !zooming && !document.hidden && !document.documentElement.classList.contains('deck-fast') && !document.querySelector('.thaw') && !document.documentElement.hasAttribute('data-theme-switching') && performance.now() - lastChange > 900 &&
     // ...and not while the visitor's hand is on a preview: hovering, or the app live under it. An app
     // held off screen doesn't count: its clock is stopped and nothing is rastering, and waiting for
@@ -727,9 +732,13 @@ export function initLive() {
   // own) waits until the hand leaves the rail, instead of running under the click that follows: at 4x
   // CPU, KnowGraph booting there put a 170 to 220 ms freeze in every product change (frameproof).
   const handOnRail = () => !!document.querySelector('.rail-list:hover');
+  // No app boots on its own any more: a preview's app boots when the pointer comes to rest on it (the
+  // ghost answers at once meanwhile). Booted on arrival, KatArch's boot ran in the scroll down to the
+  // showcase, and deferred, in the scroll that followed (frameproof, bisected: perf/JOURNAL.md).
+  const AUTO_BOOT = false;
   const consider = (plate: HTMLElement) => {
     clearTimeout(dwell.get(plate));
-    if (!started || !ok()) return;
+    if (!AUTO_BOOT || !started || !ok()) return;
     dwell.set(
       plate,
       window.setTimeout(
