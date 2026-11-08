@@ -312,6 +312,10 @@ export const projects: Project[] = [
       { x: 32.8, y: 70.8, text: 'Quick start for pinned activities. Everything has a shortcut and a command palette.' },
     ],
     gallery: [
+      moving(
+        themed('lifeui-film', 'LifeUI product film, a day in 39 seconds: the day starts at 8:12, the plan sits in time blocks with the later ones locked, the morning closes land in the log, Write report is closed at 9 out of 10 for 78 tempos, the day passes its tempo reference and ends on the Review. This frame shows the tempo meter at 105, past the daily reference of 100, over the day’s log.', { caption: 'A day in 39 seconds' }),
+        'lifeui-film',
+      ),
       themed('lifeui-closing', 'LifeUI closing ritual: rate the activity from 0 to 10 and see the reward preview of +60 tempos.', { caption: 'Closing ritual' }),
       themed('lifeui-review', 'LifeUI review screen: the day timeline, time by activity type and a table of closed activities.', { caption: 'Review' }),
       themed('lifeui-library', 'LifeUI library of reusable activities with their duration rules and history.', { caption: 'Library' }),
