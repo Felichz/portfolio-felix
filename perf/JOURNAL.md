@@ -296,3 +296,14 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - Bisected (run 2026-11-08T11-56-47-18f5): the recording waiting for the deck was what cost scroll/up; without it, scroll/down@1x 18.5 to 13.5 late frames (better; its layout 965 to 143 objects, its main thread 585 to 154 ms) and scroll/up 7.5 to 5 (inconclusive, no longer worse).
   - Kept: no app boots on its own, and warming waits for a deck still 3 s. Why it is the smallest change: nothing on screen differs (the ghost still answers the pointer at once, the recording plays as before); the one difference is that a preview's app boots when the pointer rests on it, so its first takeover comes a moment later, behind the ghost. projects/live@1x read same (1 to 1) with it.
   - 4x check (run 2026-11-08T13-41-54-7804, --no-journal): nothing worse; scroll/up@4x better, 19 to 5.5 late frames, episodes 13/24 to 4/24 (p = 0.015). Integrated.
+
+## 2026-11-08 14:32 · compare · same
+
+- **Hypothesis:** Work.astro rail: the edges are first set by the ResizeObserver, not as the module runs (a forced first layout, 107 to 120 ms of the arrival)
+- **Change:** HEAD (b10690b) → worktree
+- **Result:** worktree against HEAD (b10690b), 16 strata in 15.4 min. same: load/load@1x, carousel/next@1x, carousel/back@1x. mode: page on [::1]; frames from [::1] shared the page's process.
+  - load/load@1x: same, -0.5 late frames a step [-1.18, 1.18] (first run p=0.022 did not survive the confirmation run, and the fresh interval sits inside the margin)
+  - carousel/next@1x: same, 0 late frames a step [-1.75, 1.25] (the interval sits inside the margin of ±2)
+  - carousel/back@1x: same, 0 late frames a step [-0.25, 0.25] (the interval sits inside the margin of ±2)
+- **Run:** 2026-11-08T14-16-23-2c9b on darwin-i5-1038ng7-8c-chrome156-95adeb
+  - Dropped: same in every cell (load 4 to 3, inside the margin). The first layout only moved. load itself had 0 episodes in 32 repetitions on either build: the journey's first layout at load is not a freeze of the load step.
