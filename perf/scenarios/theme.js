@@ -1,5 +1,5 @@
 // The theme switch: the circle from the toggle, there and back.
-import { arrive, hand } from './_hand.mjs';
+import { arrive, hand, rest } from './_hand.mjs';
 
 const toggle = (page) => page.evaluate(() => document.querySelector('[data-theme-toggle]').click());
 
@@ -8,7 +8,7 @@ export default {
   setup: async ({ page, url, state }) => {
     await arrive(page, url);
     state.h = hand(page);
-    await page.mouse.move(1530, 770, { steps: 3 });
+    await rest(page);
     state.from = await state.h.theme();
   },
   steps: [

@@ -12,6 +12,8 @@ export default {
   path: '/',
   scenarios: './perf/scenarios',
   budgets: './perf/budgets.js',
-  // As scripts/perf: the scenarios park the pointer at (1530, 770), on a wide window.
-  viewport: { width: 1600, height: 960 },
+  // frameproof's default size: at 1600 x 960 on a Retina display the measuring window pushed the Mac's
+  // GPU hard enough to hang the window server, more than once a day (perf/JOURNAL.md, 2026-11-08). The
+  // scenarios park the pointer relative to the viewport (rest() in _hand.mjs).
+  viewport: { width: 1280, height: 800 },
 };

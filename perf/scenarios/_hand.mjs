@@ -58,12 +58,19 @@ export function hand(page) {
 
 /** A fresh page on the showcase at a product, its auto-advance off (which product is on screen would
     otherwise depend on how long each step took), the pointer off the plate, settled. */
+/** A point off the showcase's plate and rail, in the viewport's bottom-right corner, whatever its size. */
+export async function rest(page) {
+  const { w, h } = await page.evaluate(() => ({ w: innerWidth, h: innerHeight }));
+  await page.mouse.move(w - 70, h - 40, { steps: 3 });
+}
+
 export async function arrive(page, url, id = ID) {
   await page.goto(`${url.replace(/\/$/, '')}/#work/${id}`, { waitUntil: 'load' });
   await page.evaluate(() => {
     const auto = document.querySelector('[data-auto]');
     if (auto?.getAttribute('aria-pressed') === 'true') auto.click();
   });
-  await page.mouse.move(40, 900);
+  const h = await page.evaluate(() => innerHeight);
+  await page.mouse.move(40, h - 40);
   await sleep(3000);
 }

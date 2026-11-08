@@ -1,7 +1,7 @@
 // The projects carousel: to the next product and back, as a hand does it. The pointer onto the product's
 // item in the rail (which prepares its slide, see preraster in Work.astro), a moment there, then a real
 // click: a click made from script skips that, and measures a change no pointer makes.
-import { arrive, hand, sleep } from './_hand.mjs';
+import { arrive, hand, rest, sleep } from './_hand.mjs';
 
 const go = async (page, d) => {
   const target = await page.evaluate((d) => {
@@ -28,7 +28,7 @@ export default {
   setup: async ({ page, url, state }) => {
     await arrive(page, url);
     state.h = hand(page);
-    await page.mouse.move(1530, 770, { steps: 3 });
+    await rest(page);
     state.from = await state.h.activeHref();
   },
   steps: [
