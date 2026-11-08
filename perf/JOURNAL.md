@@ -325,3 +325,18 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
 
 - `freezes -n 4`, all scenarios, 1x on [::1] (run 2026-11-08T14-34-37-3694): no cause comes back in every repetition. scroll and carousel show none. Confirmed by light runs (2/8 or more): theme switch (the circle's raster, 50 to 83 ms; a wait on the system's compositor, 50 ms), theme back (incremental GC, 50 ms), window open (field.ts frame callback, 67 ms), window close (a restyle of 56 elements after .thaw-actions' animation, 50 ms), load (GPU raster, 50 ms). projects' two causes are in 1 of 8 light runs only.
 - Control for the compositor waits (run 2026-11-08T14-49-36-36c7, price): with the page's full-screen fixed layers away (.ambient, .cursor-light), window/open@1x 15.5 to 9 late frames, window/close 11.5 to 9, theme/back -2, all better; carousel same. The page aggravates those waits, so they are the page's (the 2026-11-07 reading, "the screen's, not the page", was too quick). Bisecting which layer next.
+
+## 2026-11-08 16:24 · bisect · found
+
+- **Hypothesis:** which of the page's fixed layers aggravates the window's frames (the two together: window/open 15.5 to 9)
+- **Change:** take away css:.ambient::before{display:none!important}, css:.ambient::after{display:none!important}, hide:.ambient-dots, hide:.cursor-light on worktree
+- **Result:** hide:.cursor-light holds window's frames: confirmed on a 15-minute run (5 split(s) priced, screened by frames).
+  - hide:.cursor-light window/open@1x: better
+  - hide:.cursor-light window/close@1x: better
+- **Run:** 2026-11-08T15-18-58-fc21 on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-08 · why the Mac "locked" during runs
+
+- Not the screen lock: macOS's window server stopped answering and was restarted by its watchdog (`WindowServer ... userspace_watchdog_timeout`, "25 induced crashes" in the last report), which drops the session to the login screen and takes the browser and the agent's app with it. Nine reports in two days (2026-11-06 23:28; 11-07 12:32, 17:04, 18:26, 20:55, 23:47, 23:49; 11-08 12:23, 12:54, 16:57), each at a run that stopped short. Its main thread was blocked over 5 s in the kernel, the shape of a wait on the GPU driver.
+- Changed: the measuring viewport 1600 x 960 to 1280 x 800 (a third fewer pixels a frame on the Retina display; 5d65bad), two seconds between blocks on macOS, and no frames for ten minutes after a restart (frameproof 4b66b9f). Measurements before and after this don't compare.
+- Also on the way: frameproof's cache (8.2 GB, 156,219 files) was being indexed by Spotlight as it was written; it now lives in .noindex folders and old builds are pruned (frameproof ae1466b).
