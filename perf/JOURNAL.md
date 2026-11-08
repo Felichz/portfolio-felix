@@ -307,3 +307,21 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - carousel/back@1x: same, 0 late frames a step [-0.25, 0.25] (the interval sits inside the margin of ±2)
 - **Run:** 2026-11-08T14-16-23-2c9b on darwin-i5-1038ng7-8c-chrome156-95adeb
   - Dropped: same in every cell (load 4 to 3, inside the margin). The first layout only moved. load itself had 0 episodes in 32 repetitions on either build: the journey's first layout at load is not a freeze of the load step.
+
+## 2026-11-08 15:16 · price · better
+
+- **Hypothesis:** control: do the page's full-screen fixed layers (ambient background, cursor light) aggravate the GPU's wait on the system compositor?
+- **Change:** inject css:.ambient,.cursor-light{display:none!important} on worktree
+- **Result:** worktree with css:.ambient,.cursor-light{display:none!important} injected, against without: better (window/open@1x -7, window/close@1x -2.5, theme/back@1x -2 late frames a step). A price is an upper bound on what the change saves: the injection removes or adds exactly that, the real change may do less. mode: frames from [::1] shared the page's process.
+  - window/open@1x: better, -7 late frames a step [-10.2, -3.8] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+  - window/close@1x: better, -2.5 late frames a step [-5.2, 0.2] (confirmed on fresh repetitions (typical frames, p=0.003 after Holm))
+  - carousel/next@1x: same, 0 late frames a step [-1.25, 1.25] (the interval sits inside the margin of ±2)
+  - carousel/back@1x: same, 0 late frames a step [-0.75, 0.25] (the interval sits inside the margin of ±2)
+  - theme/switch@1x: inconclusive, -0.5 late frames a step [-4.2, 3.2] (first run p=0.008 did not survive the confirmation run)
+  - theme/back@1x: better, -2 late frames a step [-4.2, -0.8] (confirmed on fresh repetitions (typical frames, p<0.001 after Holm))
+- **Run:** 2026-11-08T14-49-36-36c7 on darwin-i5-1038ng7-8c-chrome156-95adeb
+
+## 2026-11-08 · survey after the arrival fix, and the compositor control
+
+- `freezes -n 4`, all scenarios, 1x on [::1] (run 2026-11-08T14-34-37-3694): no cause comes back in every repetition. scroll and carousel show none. Confirmed by light runs (2/8 or more): theme switch (the circle's raster, 50 to 83 ms; a wait on the system's compositor, 50 ms), theme back (incremental GC, 50 ms), window open (field.ts frame callback, 67 ms), window close (a restyle of 56 elements after .thaw-actions' animation, 50 ms), load (GPU raster, 50 ms). projects' two causes are in 1 of 8 light runs only.
+- Control for the compositor waits (run 2026-11-08T14-49-36-36c7, price): with the page's full-screen fixed layers away (.ambient, .cursor-light), window/open@1x 15.5 to 9 late frames, window/close 11.5 to 9, theme/back -2, all better; carousel same. The page aggravates those waits, so they are the page's (the 2026-11-07 reading, "the screen's, not the page", was too quick). Bisecting which layer next.
