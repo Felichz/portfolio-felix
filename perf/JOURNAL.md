@@ -341,3 +341,17 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
 - Changed: the measuring viewport 1600 x 960 to 1280 x 800 (a third fewer pixels a frame on the Retina display; 5d65bad), two seconds between blocks on macOS, and no frames for ten minutes after a restart (frameproof 4b66b9f). Measurements before and after this don't compare.
 - Also on the way: frameproof's cache (8.2 GB, 156,219 files) was being indexed by Spotlight as it was written; it now lives in .noindex folders and old builds are pruned (frameproof ae1466b).
 - 2026-11-08 17:42: the window server was restarted again a minute into a run, at 1280 x 800 and with pauses between blocks. In all, 15 watchdog reports from 2026-11-04 19:31 (the first frame run on this Mac) to now, none before. Frame measurements on this Mac stop here: frameproof now refuses them after two restarts in 24 hours (frameproof commit "no frame runs on a Mac whose window server keeps being restarted"). The cursor light's change (field.ts, global.css) stays uncommitted, unmeasured.
+
+## 2026-11-08 23:48 · compare · worse
+
+- **Hypothesis:** headless: field.ts, the cursor light goes out at once as a window opens instead of fading through its frames; bisect: window/open 9 to 4 without it
+- **Change:** HEAD (36313f8) → worktree
+- **Result:** worktree against HEAD (36313f8), 16 strata in 43.8 min. worse: window/open@1x, theme/switch@1x; inconclusive: window/close@1x, carousel/next@1x, theme/back@1x; same: carousel/back@1x. mode: frames from [::1] shared the page's process. (measured headless: frames on Chrome's own clock, not the display's; compare only with headless runs)
+  - window/open@1x: worse, +5 late frames a step [-0.2, 9.2] (confirmed on fresh repetitions (typical frames, p=0.016 after Holm))
+  - window/close@1x: inconclusive, 0 late frames a step [-4.16, 3.79] (the interval [-4.16, 3.79] is wider than the margin of ±2)
+  - carousel/next@1x: inconclusive, +2 late frames a step [-0.23, 5.2] (first run p=0.002 did not survive the confirmation run)
+  - carousel/back@1x: same, 0 late frames a step [-1.25, 1.25] (the interval sits inside the margin of ±2)
+  - theme/switch@1x: worse, +2 late frames a step [-3.7, 12.2] (confirmed on fresh repetitions (rare episodes, p=0.004; the typical frames, first run p=0.005, did not hold))
+  - theme/back@1x: inconclusive, +1 late frames a step [-2.2, 3.2] (first run p=0.045 did not survive the confirmation run)
+- **Run:** 2026-11-08T23-02-44-32c8 on darwin-i5-1038ng7-8c-chrome156-95adeb
+- Headless, the way to measure frames without the window server (run 2026-11-08T23-02-44-32c8; watchdog reports stayed at 15 through 44 minutes): the cursor light going out at once was worse, window/open@1x 41 to 48 late frames (p = 0.016), theme/switch worse too. Not integrated, reverted. Headless frames read far higher than windowed ones (window/open 41 against 9 to 16) with more of them in the GPU and display compositor, the likely sign of compositing in software: headless can judge the main thread's work, not the GPU-bound freezes that are left (window, theme, the cursor light).
