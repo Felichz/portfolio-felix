@@ -12,3 +12,6 @@ portfolio-old/
 scripts/perf/out/
 .zcode/
 .frameproof/
+
+# Wrangler local state
+.wrangler/

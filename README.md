@@ -2,7 +2,7 @@
 
 Personal site of Felix Andersson, Senior Fullstack Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, now the whole stack at Clayful (Rails, Node, Firebase, a Capacitor app), plus products of my own, designed and built end to end. Built like a desktop app: one fixed window, full-height sections that move one at a time.
 
-**[portfolio-felix-teal.vercel.app](https://portfolio-felix-teal.vercel.app/)** · [Résumé (PDF)](public/felix-andersson-resume.pdf) · [LinkedIn](https://www.linkedin.com/in/felixandersson/) · [GitHub](https://github.com/Felichz)
+**[felix.medanolabs.com](https://felix.medanolabs.com/)** · [Résumé (PDF)](public/felix-andersson-resume.pdf) · [LinkedIn](https://www.linkedin.com/in/felixandersson/) · [GitHub](https://github.com/Felichz)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/home-dark.webp">
@@ -78,7 +78,7 @@ Astro 7, TypeScript, hand-written CSS with custom properties. Deployed as a stat
 
 ## Tapes and live apps
 
-How it works, in short, is on the [portfolio case study](https://portfolio-felix-teal.vercel.app/work/portfolio/#how).
+How it works, in short, is on the [portfolio case study](https://felix.medanolabs.com/work/portfolio/#how).
 
 ```bash
 node scripts/apps/vendor.mjs <id>        # build a product for /apps/<id>/ (its repo checked out next to this one)
