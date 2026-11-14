@@ -24,6 +24,7 @@
  * Desktop pointers only; on touch screens previews stay tapes and links stay links.
  */
 import type { TapePlayer } from './player';
+import { lite } from './flags';
 
 const FLIGHT = 560; // the window's morph, ms (and 85% of it on the way back; global.css has both)
 /** Its curve: a gentle start and a long settle, shared by the window and the page behind it (and in
@@ -397,7 +398,7 @@ async function zoom(plate: HTMLElement) {
    */
   const morph = async (open: boolean, page: Animation[], land?: DOMRect) => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
-    if (!doc.startViewTransition || reduce.matches) {
+    if (!doc.startViewTransition || reduce.matches || lite) {
       swap(open);
       player.matchTheme(open);
       page.forEach((a) => a.play());
