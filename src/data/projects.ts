@@ -331,7 +331,7 @@ export const projects: Project[] = [
     tagline:
       'A bus companion for Montevideo: it plans the trip, follows the bus you are waiting for, and walks you through each step until you get off.',
     proof: '53 tests, five recorded demo trips, Android and web, Spanish and English',
-    live: 'https://felix.medanolabs.com/apps/bondiuy/',
+    live: 'https://bondiuy.medanolabs.com/',
     liveNote: 'The demo replays five trips recorded from the trip planner, so it needs no GPS and no server. Time can be sped up to 30x.',
     source: 'https://github.com/Felichz/bondi-uy',
     role: 'Solo: product, trip logic, map rendering and app',
