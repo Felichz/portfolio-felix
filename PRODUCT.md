@@ -48,11 +48,11 @@ Visitors come with a job description in mind and compare several candidates in t
 - CV: `C:\Users\felix\Downloads\CV Front.pdf` (1 page; contains the phone number).
 - Career narratives and verified facts: `C:\Users\felix\Downloads\hermes\.hermes\skills\job-search\job-hunt\references\` (story-arsenal.md, cisco-story-key-points.md, cisco-ai-skills.md, voice-rules.md).
 - Public projects (all 2026, single author), local sources in `C:\Users\felix\dev`:
-  - LoLImpact (`LoLImpact`) https://lol-impact.vercel.app, github.com/Felichz/LoL-Impact
+  - LoLImpact (`LoLImpact`) https://lolimpact.medanolabs.com, github.com/Felichz/LoL-Impact
   - KnowGraph (`learning`) https://knowgraph.medanolabs.com, github.com/Felichz/KnowGraph
   - KatArch (`katarch`) https://katarch.medanolabs.com, github.com/Felichz/katarch
   - LifeUI (`life-ui`) https://lifeui.medanolabs.com, github.com/Felichz/life-ui
-  - PlaySync (`rave2`) https://syncplay-avtu.onrender.com, github.com/Felichz/PlaySync
+  - PlaySync (`rave2`) https://playsync.medanolabs.com, github.com/Felichz/PlaySync
 - Portrait photos supplied by the author (2026-09-30), a dark and a white studio shot, in `src/assets/portrait/`: used once, in the intro, printed in the opposite edition like the product captures. No avatars or small crops (author's choice).
 - Career narratives in the author's own words (story-arsenal.md): proactive maintainer of the component library, OKR epics, AI engineering stack, Device Magic ownership and the XML adapter. The 100k-row filtering is one example among many; do not lead with it (author's choice).
 - Device Magic is shown as Dec 2020 to Jul 2021 so the timeline has no gap before Cisco (author's instruction; the résumé PDF says 05/2021).
