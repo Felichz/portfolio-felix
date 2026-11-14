@@ -361,3 +361,9 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
 - `src/scripts/flags.ts`: `lite`, off by default (fd9f53b). On (`?lite` for one visit, or `lite = true` in the file), it brings back the two changes of origin/lite-experiment (05043c8): the window opens and closes without its view transition (the reduced-motion path in `live.ts`), and the deck's sections out of sight keep their style and layout while the window is open or the theme switches (`:not([data-lite])` on the containment rule in `global.css`).
 - Off, the site is unchanged, so nothing was measured. Its frames with it on, from that branch on 2026-11-06 at 1x on the stage origin: no freeze of 50 ms or more in the window or the scroll; the carousel kept three of 50 to 80 ms. Unmeasured since.
 - DESIGN.md and live.ts's header still described a boot after 600 ms on screen; both now say what ships since 2f929fe and 240615c: an app boots when the pointer rests on its preview.
+
+## 2026-11-14 · the page no longer steps back behind a window
+
+- Felix's call: the whole page scaling down (0.94 in the showcase's window, 0.96 on a case study) as a preview's window opens is gone. The page dims as before and stays where it is (`live.ts`, `stepping`): the layers' animation is opacity alone, their `transform-origin` is no longer set, and the way back needs no corrected landing, since the plate never moved (the keyframe override on `::view-transition-group(live-window)` is removed, and with it one `getBoundingClientRect` at the open).
+- Checked headless on the built site: the window opens and lands, every page layer reads `transform: none` mid-flight and open, Escape returns it, the plate is where it was, no errors. `npx astro check` 0 errors.
+- Frames: unmeasured. This Mac can't run frame measurements (the window server, 2026-11-08); the A/B on window/open and window/close is for the Windows laptop.

@@ -146,7 +146,7 @@
   to { clip-path: inset(0 round 0); }
 }
 /* A live preview's window (src/scripts/live.ts): a view transition of the window alone, while the page,
-   live under it, steps back (or forward) on the same curve. The window is the preview, larger, and
+   live under it, dims (or comes back) on the same curve. The window is the preview, larger, and
    the app keeps its layout (live.ts), so its two pictures differ only in their edition (in the window
    the app takes the site's own): they dissolve into each other over the whole flight, on the morph's
    curve, both ways. Two layers' opacity: compositor work only. */

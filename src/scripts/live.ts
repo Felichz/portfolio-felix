@@ -273,7 +273,7 @@ const ICONS = {
 const nameOf = (plate: HTMLElement) =>
   (plate.closest('[data-slide], section')?.querySelector('.slide-name, #cs-name')?.textContent ?? plate.dataset.app ?? '').replace(/\s+/g, ' ').trim();
 
-/** The page layers that step back behind the window: everything in <body> but the overlay. */
+/** The page layers that dim behind the window: everything in <body> but the overlay. */
 const pageLayers = () =>
   [...document.body.children].filter((el): el is HTMLElement => el instanceof HTMLElement && !el.classList.contains('thaw') && el.tagName !== 'SCRIPT');
 
@@ -350,20 +350,15 @@ async function zoom(plate: HTMLElement) {
   const lights = win.querySelector<HTMLElement>('.lights-pair')!;
   placeLights(lights, plateLights?.dataset.side === 'right' ? 'right' : 'left');
 
-  const r = plate.getBoundingClientRect();
   const root = document.documentElement;
   const layers = pageLayers();
-  // The page steps back around the plate: only ever scaled down, so it keeps the raster it has.
-  const sc = full ? 0.94 : 0.96;
-  const back = `scale(${sc})`;
+  // The page dims behind the window and stays where it is: it used to step back too (scaled down
+  // around the plate), which Felix took out on 2026-11-14.
   const dim = full ? 0 : 0.35;
-  const ox = r.left + r.width / 2;
-  const oy = r.top + r.height / 2;
-  layers.forEach((el) => (el.style.transformOrigin = `${ox}px ${oy}px`));
   const stepping = (forward: boolean, duration: number) =>
     layers.map((el) => {
       const a = el.animate(
-        forward ? [{ transform: 'none', opacity: 1 }, { transform: back, opacity: dim }] : [{ transform: back, opacity: dim }, { transform: 'none', opacity: 1 }],
+        forward ? [{ opacity: 1 }, { opacity: dim }] : [{ opacity: dim }, { opacity: 1 }],
         { duration: reduce.matches ? 1 : duration, easing: CURVE, fill: 'both' },
       );
       a.pause(); // (held on its first frame until the morph starts)
@@ -384,19 +379,18 @@ async function zoom(plate: HTMLElement) {
     // and takes the pointer; scrolling and focus are kept to the window below, by listeners.)
   };
   /**
-   * The morph is a view transition of the window alone, while the page, live under it, steps back
-   * (or forward) with its own animation on the same curve. The browser scales a picture of the app at
-   * the size it had while the app, laid out at its new size, takes over within a few frames: never
-   * cropped by the window, never snapping into place, all of it compositor work. On the way back the
-   * window lands where the plate will be once the page is forward again, not where it is when the
-   * transition starts (still stepped back), so nothing moves when it ends.
+   * The morph is a view transition of the window alone, while the page, live under it, dims (or comes
+   * back) with its own animation on the same curve. The browser scales a picture of the app at the
+   * size it had while the app, laid out at its new size, takes over within a few frames: never cropped
+   * by the window, never snapping into place, all of it compositor work. The page doesn't move, so on
+   * the way back the window lands on the plate where it is.
    *
    * The app's edition switches with it, both ways: a preview shows the app in the other edition from
    * the site, but a window takes the screen, so there it shows the site's own, the page behind in the
    * same one; back in its preview it takes the other again. The site's theme stays. The window's two
    * pictures, the preview's and the window's, cross-fade over the morph.
    */
-  const morph = async (open: boolean, page: Animation[], land?: DOMRect) => {
+  const morph = async (open: boolean, page: Animation[]) => {
     const doc = document as Document & { startViewTransition?: (cb: () => void) => ViewTransition };
     if (!doc.startViewTransition || reduce.matches || lite) {
       swap(open);
@@ -414,17 +408,6 @@ async function zoom(plate: HTMLElement) {
     });
     await vt.ready.catch(() => {});
     page.forEach((a) => a.play());
-    if (land) {
-      const group = document
-        .getAnimations()
-        .find((a) => (a.effect as KeyframeEffect | null)?.pseudoElement === '::view-transition-group(live-window)' && /group-anim/.test((a as CSSAnimation).animationName ?? ''));
-      const effect = group?.effect as KeyframeEffect | undefined;
-      if (effect) {
-        const frames = effect.getKeyframes();
-        Object.assign(frames[frames.length - 1]!, { transform: `matrix(1, 0, 0, 1, ${land.left}, ${land.top})`, width: `${land.width}px`, height: `${land.height}px` });
-        effect.setKeyframes(frames);
-      }
-    }
     await vt.finished.catch(() => {});
     root.classList.remove('live-vt', 'live-vt-in', 'live-vt-out');
     plate.classList.remove('live-vt-shape');
@@ -463,17 +446,13 @@ async function zoom(plate: HTMLElement) {
     overlay.classList.remove('landed');
     // The lights land on the side they're on now, in the plate too.
     if (plateLights) placeLights(plateLights, lights.dataset.side === 'right' ? 'right' : 'left');
-    // Where the plate will be with the page forward again: undo the step back around its origin.
-    const p = plate.getBoundingClientRect();
-    const land = new DOMRect(ox + (p.left - ox) / sc, oy + (p.top - oy) / sc, p.width / sc, p.height / sc);
     const returns = stepping(false, FLIGHT * 0.85);
     steps.forEach((a) => a.cancel());
     player.send({ k: 'mode', window: false });
     app.inWindow = false;
-    await morph(false, returns, land);
+    await morph(false, returns);
     await Promise.all(returns.map((a) => a.finished));
     returns.forEach((a) => a.cancel());
-    layers.forEach((el) => (el.style.transformOrigin = ''));
     overlay.remove();
     document.documentElement.removeAttribute('data-thawing');
     removeEventListener('wheel', onWheel, true);

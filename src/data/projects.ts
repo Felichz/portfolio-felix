@@ -512,7 +512,7 @@ export const projects: Project[] = [
     ],
     gallery: [
       themed('portfolio-work', 'The work showcase with LifeUI selected: its preview, a tape of the app’s own DOM, is in the middle of the closing ritual.', { caption: 'A tape in the showcase' }),
-      themed('portfolio-thaw', 'Opening LifeUI: the live preview grows into a window over the portfolio, which steps back behind it.', { caption: 'Opening an app in place' }),
+      themed('portfolio-thaw', 'Opening LifeUI: the live preview grows into a window over the portfolio, which dims behind it.', { caption: 'Opening an app in place' }),
       themed('portfolio-case', 'A case study overview: LifeUI’s name, facts and actions next to its preview.', { caption: 'A case study' }),
       themed('portfolio-mobile', 'This portfolio’s Intro on a phone, with the tab bar at the bottom.', { phone: true, caption: 'On a phone' }),
     ],
