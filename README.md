@@ -2,7 +2,7 @@
 
 Personal site of Felix Andersson, Senior Frontend Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, plus products of my own, designed and built end to end. Built like a desktop app: one fixed window, full-height sections that move one at a time.
 
-**[portfolio-felix-teal.vercel.app](https://portfolio-felix-teal.vercel.app/)** · [Résumé (PDF)](public/felix-andersson-resume.pdf) · [LinkedIn](https://www.linkedin.com/in/felixandersson/) · [GitHub](https://github.com/Felichz)
+**[felix.medanolabs.com](https://felix.medanolabs.com/)** · [Résumé (PDF)](public/felix-andersson-resume.pdf) · [LinkedIn](https://www.linkedin.com/in/felixandersson/) · [GitHub](https://github.com/Felichz)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/home-dark.webp">
@@ -78,7 +78,7 @@ Astro 7, TypeScript, hand-written CSS with custom properties. Deployed as a stat
 
 ## Tapes and live apps
 
-How it works, in short, is on the [portfolio case study](https://portfolio-felix-teal.vercel.app/work/portfolio/#how).
+How it works, in short, is on the [portfolio case study](https://felix.medanolabs.com/work/portfolio/#how).
 
 ```bash
 node scripts/apps/vendor.mjs <id>        # build a product for /apps/<id>/ (its repo checked out next to this one)
@@ -96,7 +96,7 @@ node scripts/tapes/record.mjs portfolio  # this site's Intro, from dist/ (build 
 
 Scenes live in `scripts/tapes/scenes/`. The stage is `src/pages/stage.astro` (`src/scripts/stage.ts`: the tape player `src/scripts/tape.ts` and the live app's session `src/scripts/session.ts`), the page's `<tape-player>` `src/scripts/player.ts`, the live previews and their window `src/scripts/live.ts`, the bridge inlined into vendored apps `scripts/apps/bridge.js` (clock and timers, recorded API answers, the route), and PlaySync's stand-in room `scripts/apps/playsync-room.js`. After a bridge change, `node scripts/apps/vendor.mjs --bridge` puts it into the built apps without rebuilding them.
 
-Stages load from `PUBLIC_STAGE_ORIGIN` when it's set at build time: another registrable domain serving this same deployment (a subdomain is the same site, and gets no process of its own), such as a second `*.vercel.app` domain added to the project. Locally a page on `localhost` loads them from `127.0.0.1` (the dev and preview servers listen there). Without either, stages load from the page's own origin and run in its process.
+Stages load from `PUBLIC_STAGE_ORIGIN` when it's set at build time: another registrable domain serving this same deployment (a subdomain is the same site, and gets no process of its own), such as a second domain pointed at the same Worker. Locally a page on `localhost` loads them from `127.0.0.1` (the dev and preview servers listen there). Without either, stages load from the page's own origin and run in its process.
 
 ```bash
 node scripts/perf/check.mjs              # every preview plays, goes live, and the stage is out of process

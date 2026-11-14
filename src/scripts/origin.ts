@@ -3,7 +3,7 @@
  * than the page gets its own process from the browser (site isolation), so a tape being built or an
  * app booting never holds up this page's main thread, and a stage that's hidden or off screen stops
  * rendering. A subdomain isn't enough (it's the same site); it has to be another registrable domain,
- * like a second *.vercel.app name of this same deployment, set as PUBLIC_STAGE_ORIGIN at build time.
+ * like a second domain pointed at this same deployment, set as PUBLIC_STAGE_ORIGIN at build time.
  *
  * Locally, localhost and 127.0.0.1 are two sites, so the same server under its other name does it.
  * Without either, stages load from this origin and run in this page's process, as before.

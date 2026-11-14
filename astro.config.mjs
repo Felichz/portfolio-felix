@@ -2,7 +2,7 @@
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
-  site: 'https://portfolio-felix-teal.vercel.app',
+  site: 'https://felix.medanolabs.com',
   devToolbar: { enabled: false },
   // On one IPv4 address, so the local server answers as localhost and as 127.0.0.1: two sites, and
   // previews load their stages from the other one, in a process of their own (src/scripts/origin.ts).
