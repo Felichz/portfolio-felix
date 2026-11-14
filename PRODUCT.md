@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Astro + React islands + TypeScript (user's choice, 2026-09-27). Static output. Deploy target assumed Vercel, matching every other public project of the author (inferred, not confirmed).
+Astro + React islands + TypeScript (user's choice, 2026-09-27). Static output. Deployed as a Cloudflare Worker with static assets at felix.medanolabs.com, like the author's other public projects (moved from Vercel on 2026-11-13).
 
 ## Users
 

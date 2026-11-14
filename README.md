@@ -96,7 +96,7 @@ node scripts/tapes/record.mjs portfolio  # this site's Intro, from dist/ (build 
 
 Scenes live in `scripts/tapes/scenes/`. The stage is `src/pages/stage.astro` (`src/scripts/stage.ts`: the tape player `src/scripts/tape.ts` and the live app's session `src/scripts/session.ts`), the page's `<tape-player>` `src/scripts/player.ts`, the live previews and their window `src/scripts/live.ts`, the bridge inlined into vendored apps `scripts/apps/bridge.js` (clock and timers, recorded API answers, the route), and PlaySync's stand-in room `scripts/apps/playsync-room.js`. After a bridge change, `node scripts/apps/vendor.mjs --bridge` puts it into the built apps without rebuilding them.
 
-Stages load from `PUBLIC_STAGE_ORIGIN` when it's set at build time: another registrable domain serving this same deployment (a subdomain is the same site, and gets no process of its own), such as a second `*.vercel.app` domain added to the project. Locally a page on `localhost` loads them from `127.0.0.1` (the dev and preview servers listen there). Without either, stages load from the page's own origin and run in its process.
+Stages load from `PUBLIC_STAGE_ORIGIN` when it's set at build time: another registrable domain serving this same deployment (a subdomain is the same site, and gets no process of its own), such as a second domain pointed at the same Worker. Locally a page on `localhost` loads them from `127.0.0.1` (the dev and preview servers listen there). Without either, stages load from the page's own origin and run in its process.
 
 ```bash
 node scripts/perf/check.mjs              # every preview plays, goes live, and the stage is out of process
@@ -156,7 +156,7 @@ To update a product screenshot, capture 16:10 at 2x in both themes, keep the fil
 
 ## Deploy
 
-Any static host works. On Vercel: import the repo, framework preset Astro, no extra settings.
+Any static host works. Production is a Cloudflare Worker with static assets (`wrangler.jsonc`, plus `worker/index.js` for deep links into the embedded demos): `npm run deploy` builds and publishes it to felix.medanolabs.com, and `npm run deploy:staging` to felix-stg.medanolabs.com.
 
 Design context: [`PRODUCT.md`](PRODUCT.md) (audience, voice, evidence) and [`DESIGN.md`](DESIGN.md) (the visual system).
 
