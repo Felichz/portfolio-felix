@@ -1,7 +1,7 @@
 /**
  * Live previews, the page's side. A product's preview is a <tape-player> (src/scripts/player.ts): its
  * tape plays in a stage (src/scripts/stage.ts), a frame from another site when there is one, in its own
- * process. Once the visitor is using the page, the stage boots the real app under the tape, hidden, and
+ * process. Once the visitor's pointer rests on a preview, the stage boots the real app under the tape, hidden, and
  * keeps it in step with the tape (src/scripts/session.ts). So at any moment the live app is in the
  * state the tape shows.
  *
@@ -15,8 +15,8 @@
  *
  * What runs, and when (each app is expensive, and there are several):
  * - Nothing boots before the visitor's first input, so page-load audits never pay for it.
- * - A preview's app boots once it has been on screen for a moment (not while the showcase is passing
- *   through), one boot at a time, or at once when the pointer comes to it.
+ * - A preview's app boots when the pointer comes to rest on it (120 ms), one boot at a time; none boots
+ *   on its own (AUTO_BOOT), and warming waits for a deck still 3 s.
  * - An app that was only following its tape is dropped when its preview leaves the screen. One the
  *   visitor used is held instead (its clock stopped, its animations paused) and comes back as they
  *   left it; the two used most recently are kept. Everything is held while the tab is hidden.

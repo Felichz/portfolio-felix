@@ -355,3 +355,9 @@ Not yet measured with frameproof. Judged by drops.mjs at the time: no difference
   - theme/back@1x: inconclusive, +1 late frames a step [-2.2, 3.2] (first run p=0.045 did not survive the confirmation run)
 - **Run:** 2026-11-08T23-02-44-32c8 on darwin-i5-1038ng7-8c-chrome156-95adeb
 - Headless, the way to measure frames without the window server (run 2026-11-08T23-02-44-32c8; watchdog reports stayed at 15 through 44 minutes): the cursor light going out at once was worse, window/open@1x 41 to 48 late frames (p = 0.016), theme/switch worse too. Not integrated, reverted. Headless frames read far higher than windowed ones (window/open 41 against 9 to 16) with more of them in the GPU and display compositor, the likely sign of compositing in software: headless can judge the main thread's work, not the GPU-bound freezes that are left (window, theme, the cursor light).
+
+## 2026-11-14 · the lite mode, behind one switch
+
+- `src/scripts/flags.ts`: `lite`, off by default (fd9f53b). On (`?lite` for one visit, or `lite = true` in the file), it brings back the two changes of origin/lite-experiment (05043c8): the window opens and closes without its view transition (the reduced-motion path in `live.ts`), and the deck's sections out of sight keep their style and layout while the window is open or the theme switches (`:not([data-lite])` on the containment rule in `global.css`).
+- Off, the site is unchanged, so nothing was measured. Its frames with it on, from that branch on 2026-11-06 at 1x on the stage origin: no freeze of 50 ms or more in the window or the scroll; the carousel kept three of 50 to 80 ms. Unmeasured since.
+- DESIGN.md and live.ts's header still described a boot after 600 ms on screen; both now say what ships since 2f929fe and 240615c: an app boots when the pointer rests on its preview.

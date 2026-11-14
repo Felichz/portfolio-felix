@@ -145,6 +145,7 @@ npm run preview  # serve dist/
 | `src/layouts/Base.astro` | The app shell: head, pre-paint theme and deep-link scripts, `Bar`, the section rail (`Dock`), the deck, image viewer. |
 | `src/scripts/deck.ts` | The vertical deck: wheel, keys, links, hash, section rail and ambient light. |
 | `src/scripts/fx.ts` | Pointer spotlight and tilt. |
+| `src/scripts/flags.ts` | The lite mode's switch: off by default, `?lite` in the URL for one visit. On, a preview's window opens without its animation. |
 | `src/components/Plate.astro` | Theme-aware screenshot in a browser window, with the recording player. |
 | `src/styles/global.css` | Tokens for both editions, ambient layers, shell, surfaces, buttons, plates, pins. |
 | `src/assets/portrait/` | The portrait, a dark and a white studio shot (the site shows the opposite one). |
