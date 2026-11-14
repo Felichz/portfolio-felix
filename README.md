@@ -5,9 +5,11 @@ Personal site of Felix Andersson, Senior Fullstack Engineer in Montevideo. Five 
 **[felix.medanolabs.com](https://felix.medanolabs.com/)** · [Résumé (PDF)](public/felix-andersson-resume.pdf) · [LinkedIn](https://www.linkedin.com/in/felixandersson/) · [GitHub](https://github.com/Felichz)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/home-dark.webp">
-  <img alt="The intro: the name set large in a variable grotesque, the role with an italic aside, a short summary, actions and four strengths on the left; a portrait on the right; section dots down the left edge." src="docs/screenshots/home-light.webp">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/01-work-dark.webp">
+  <img src="docs/readme/01-work-light.webp" width="100%" alt="Felix Andersson, portfolio, screenshot in a browser window. A portfolio that runs its products. Every preview is a recording of the real app. Under your pointer it becomes the app itself, in the same state, ready to click. Marked: 1, Seven products take turns. The rail fills in each one’s color as its turn runs. 2, The green light opens the running app in a window over the page. 3, Each product has a case study, its live site and its source.">
 </picture>
+
+<sub>The pictures follow your GitHub theme (light or dark).</sub>
 
 ## What's on it
 
@@ -20,40 +22,25 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
 - **One case study per product** (`/work/katarch`, `/work/knowgraph`, ...), as five sections: Overview with the lead screenshot, its recording and numbered callouts; Story; Engineering; Screens; Specs and the next case study.
 - **Two editions.** Warm stone and near-black, chosen before first paint from the saved choice or the system setting, toggled from the bar. Screenshots print in the opposite edition, so each product stands out from the page.
 
-<table>
-  <tr>
-    <td width="50%">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/work-dark.webp">
-        <img alt="The Work section: a rail of five products with LifeUI active and its progress bar filling, and LifeUI's screenshot in a browser window with its highlights and links below." src="docs/screenshots/work-light.webp">
-      </picture>
-      <br><sub>The showcase: auto-advancing, one product at a time.</sub>
-    </td>
-    <td width="50%">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/experience-dark.webp">
-        <img alt="The Experience section: a continuous timeline of roles from 2020 to now with the Magnetic component library selected, its details, and a card of examples." src="docs/screenshots/experience-light.webp">
-      </picture>
-      <br><sub>Experience as a timeline, with the selected role below.</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/case-dark.webp">
-        <img alt="KatArch case study overview: the product name in its own typeface, facts and actions on the left, the lead screenshot with numbered pins on the right." src="docs/screenshots/case-light.webp">
-      </picture>
-      <br><sub>A case study's first section.</sub>
-    </td>
-    <td width="50%" align="center">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/mobile-dark.webp">
-        <img width="260" alt="The intro on a phone, with the tab bar at the bottom." src="docs/screenshots/mobile-light.webp">
-      </picture>
-      <br><sub>On a phone: sections scroll naturally, with a tab bar.</sub>
-    </td>
-  </tr>
-</table>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/02-intro-dark.webp">
+  <img src="docs/readme/02-intro-light.webp" width="100%" alt="Felix Andersson, portfolio, screenshot in a browser window. One window, one section at a time. The site works like a desktop app: a bar on top, section dots down the left edge, and each turn of the wheel moves one full section.">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/03-experience-dark.webp">
+  <img src="docs/readme/03-experience-light.webp" width="100%" alt="Felix Andersson, portfolio, screenshot in a browser window. The CV as a timeline. Roles from 2020 to now on one continuous line, with the detail of the selected role and a few concrete examples.">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/04-case-dark.webp">
+  <img src="docs/readme/04-case-light.webp" width="100%" alt="Felix Andersson, portfolio, screenshot in a browser window. One case study per product. Five sections each: an overview with the product in its window, then the story, the engineering, the screens and the specs.">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/05-phone-dark.webp">
+  <img src="docs/readme/05-phone-light.webp" width="100%" alt="Felix Andersson, portfolio, screenshot on a phone. On a phone, the sections scroll. The section dots become a tab bar at the bottom, and previews stay recordings.">
+</picture>
 
 ## Details that took some care
 
@@ -151,7 +138,7 @@ npm run preview  # serve dist/
 | `src/assets/portrait/` | The portrait, a dark and a white studio shot (the site shows the opposite one). |
 | `src/assets/shots/` | Product screenshots (WebP, 2x), as `name-light` / `name-dark`. |
 | `src/assets/motion/` | Screen recordings (H.264 MP4, 1920 wide), as `name-light` / `name-dark`. |
-| `docs/screenshots/` | The images in this README. |
+| `docs/readme/` | The pictures in this README, and in each product's own: drawn by `scripts/readme/build.mjs` from `panels.mjs` (a screenshot in the site's window, with a headline). `site-shots.mjs` captures this site's own screens from `dist/`. |
 
 To update a product screenshot, capture 16:10 at 2x in both themes, keep the file names, and adjust the callout coordinates (`x`, `y` in percent) in `projects.ts` if the layout changed. A lead shot with a recording should use the recording's last frame as its still, so the hand-off from video to callouts is seamless.
 
