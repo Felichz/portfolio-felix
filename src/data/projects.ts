@@ -313,7 +313,7 @@ export const projects: Project[] = [
     ],
     gallery: [
       moving(
-        themed('lifeui-film', 'LifeUI product film, a day in 39 seconds: the day starts at 8:12, the plan sits in time blocks with the later ones locked, the morning closes land in the log, Write report is closed at 9 out of 10 for 78 tempos, the day passes its tempo reference and ends on the Review. This frame shows the tempo meter at 105, past the daily reference of 100, over the day’s log.', { caption: 'A day in 39 seconds' }),
+        themed('lifeui-film', 'LifeUI product film, from the chat to the calendar in 52 seconds: the person tells the coach their right elbow hurts after long days at the mouse, the coach searches the web and answers from NHS guides with a 10-week plan in three phases, the person says weekdays at 9, and Do it puts 50 sessions on the calendar and a roadmap on Goals. The first session runs at 9:00 and is closed through the chat for 13 tempos, then the ten weeks pass on the roadmap, each phase reached on its date, until Goal reached on January 22. This frame shows the roadmap card: Monday to Friday at 9:00, 50 sessions from November 16 to January 22 in three phases, waiting for Do it.', { caption: 'From the chat to the calendar' }),
         'lifeui-film',
       ),
       themed('lifeui-closing', 'LifeUI closing ritual: rate the activity from 0 to 10 and see the reward preview of +60 tempos.', { caption: 'Closing ritual' }),
