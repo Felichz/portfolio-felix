@@ -1,8 +1,8 @@
-// Writes a tape that is only a video: KnowGraph's preview is its product video, since the app needs the
-// visitor's own LLM and ships as a desktop download. The tape's document is a <video data-tape-clip> per
+// Writes a tape that is only a video: KnowGraph's and LifeUI's previews are their product videos, since
+// each app needs the visitor's own LLM and ships as a desktop download. The tape's document is a <video data-tape-clip> per
 // app edition filling the viewport (its css shows the one the theme attribute names), which the tape
 // player drives on its own clock (src/scripts/tape.ts); the "live app" under it
-// (scripts/apps/knowgraph-video/) plays the same files on the bridge's clock.
+// (scripts/apps/<id>-video/) plays the same files on the bridge's clock.
 //
 // Usage: node scripts/tapes/make-video-tape.mjs <id> <dark.mp4> <light.mp4> [seconds]
 //   Encodes public/tapes/<id>.clip.mp4 and <id>.light.clip.mp4 (30 fps, H.264), cut to the first
@@ -18,7 +18,12 @@ if (!id || !dark || !light) throw new Error('Usage: node scripts/tapes/make-vide
 
 // The app clock at tape time 0; the video page derives its playhead from it, so they must match.
 const CLOCK0 = 1793000000000;
-const BG = { dark: '#0E1117', light: '#F6F7F9' };
+// The page behind the video, per edition: each product's own canvas.
+const BGS = {
+  knowgraph: { dark: '#0E1117', light: '#F6F7F9' },
+  lifeui: { dark: '#0E0F12', light: '#FCFCFD' },
+};
+const BG = BGS[id] ?? BGS.knowgraph;
 
 const encode = (source, name) => {
   const out = resolve(root, 'public/tapes', name);

@@ -14,9 +14,9 @@ const root = resolve(here, '../..');
 
 export const APPS = {
   lifeui: {
-    // A worktree of github.com/Felichz/life-ui on the portfolio-embed branch.
-    repo: resolve(root, '../life-ui-embed'),
-    build: (out) => ['npx', ['vite', 'build', '--base', '/apps/lifeui/', '--outDir', out, '--emptyOutDir']],
+    // Not the app: LifeUI's coach needs a language model of the visitor's own, so its preview is its
+    // product film, played on the bridge's clock like KnowGraph's (scripts/tapes/make-video-tape.mjs).
+    static: resolve(here, 'lifeui-video'),
   },
   katarch: {
     // github.com/Felichz/katarch: the video course (its videos stream from R2).

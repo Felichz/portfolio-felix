@@ -266,11 +266,11 @@ export const projects: Project[] = [
   },
   {
     id: 'lifeui',
-    short: 'A HUD for real life, one activity at a time',
+    short: 'A personal assistant and coach, on your machine',
     name: 'LifeUI',
     face: 'face-inter',
     year: '2026',
-    tagline: 'A HUD for real life: plan the day in time blocks, run one activity at a time, and close each one with a single honest moment.',
+    tagline: 'A local AI harness for your life: a personal assistant and coach that runs on your own machine, puts your plans on the calendar only after your yes, and remembers what you told it.',
     proof: '158 commits, 257 tests, CI on every push, light and dark',
     live: 'https://lifeui.medanolabs.com/',
     source: 'https://github.com/Felichz/life-ui',
@@ -278,7 +278,7 @@ export const projects: Project[] = [
     stack: ['React 18', 'TypeScript (strict)', 'Vite', 'Tailwind with CSS-variable tokens', 'Radix UI', 'Jest', 'Testing Library', 'Cypress', 'GitHub Actions'],
     scale: ['158 commits', '257 tests (Jest and Cypress)', '44 components', 'Light and dark'],
     story: [
-      'Not a todo app, not a habit tracker, not a time tracker. You keep a library of repeatable activities, drop them into the day’s time blocks, and run one at a time. Each one ends in a closing ritual: rate it from 0 to 10 and earn tempos. Tempos only go up. No streaks, no penalties, and free time costs nothing.',
+      'Not a todo app, not a habit tracker, not a chatbot. LifeUI wraps a language model on your own machine with tools that change your day, notes on what you told it, and one rule held in code: nothing changes without your yes. Tell the coach about a goal and it looks things up, builds a roadmap and puts every session on your calendar. Each activity ends by saying how it went, which earns tempos. Tempos only go up: no streaks, no penalties, and free time costs nothing.',
       'This year I rebuilt the whole interface from scratch to the standard of a tool like Linear, on top of a domain core that doesn’t know React exists. CI runs typecheck, lint with zero warnings, Jest, the build and Cypress on every push.',
     ],
     highlights: [
@@ -302,14 +302,14 @@ export const projects: Project[] = [
     main: {
       ...themed(
         'lifeui-main',
-        'LifeUI Today screen: Read has just started from a quick-start chip, 157 tempos today at 157% of the daily reference, the day plan by time blocks, and a log where Write report was just closed at 9 out of 10 for 78 tempos.',
+        'LifeUI, the coach’s roadmap card waiting for a yes: after the person said weekdays at 9, before work, the new roadmap Right elbow without pain, Monday to Friday at 09:00, 50 sessions from Monday November 16 to Friday January 22 in three phases, with No and Do it. Below, the composer with Ask first and Auto.',
       ),
       tape: 'lifeui',
     },
     callouts: [
-      { x: 23.6, y: 31.2, text: 'Only one activity runs at a time, with its progress against its estimate or timebox.' },
-      { x: 22.4, y: 17.4, text: 'Tempos today, shown as a share of your reference: an anchor, never a debt.' },
-      { x: 32.8, y: 70.8, text: 'Quick start for pinned activities. Everything has a shortcut and a command palette.' },
+      { x: 48.6, y: 34.6, text: 'Nothing changes without your yes: the coach’s plan waits on a card until you press Do it.' },
+      { x: 70.4, y: 40.1, text: 'A yes puts every session on the calendar: 50 of them, on your days, at your time.' },
+      { x: 24.4, y: 88.8, text: 'Ask first, or Auto: in Auto each change goes through at once and can be undone.' },
     ],
     gallery: [
       moving(
