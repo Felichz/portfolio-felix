@@ -155,5 +155,10 @@ Design context: [`PRODUCT.md`](PRODUCT.md) (audience, voice, evidence) and [`DES
 | [KatArch](https://github.com/Felichz/katarch) | A narrated video course on software architecture, built from what the twelve winning teams of the Architecture Katas left in writing. |
 | [KnowGraph](https://github.com/Felichz/KnowGraph) | Senior React and Rails interview prep as a map of 142 concepts: you explain each one and an LLM you bring grades it. Desktop app; the preview here is its product video. |
 | [PlaySync](https://github.com/Felichz/PlaySync) | Synced YouTube watch parties with no accounts and a server-owned clock. |
-| [LifeUI](https://github.com/Felichz/life-ui) | A HUD for real life: time blocks, one running activity, and an honest closing ritual. |
+| [LifeUI](https://github.com/Felichz/life-ui) | A personal assistant and coach that runs on a local model: it looks things up, plans with you and puts each session on your calendar once you say yes. |
+| [BondiUY](https://github.com/Felichz/bondi-uy) | Bus trips across Montevideo, step by step: it plans the trip, follows the bus you are waiting for and tells you when to get off. Android and web. |
 | [LoL-Impact](https://github.com/Felichz/LoL-Impact) | League of Legends win probability, minute by minute, with the uncertainty shown. |
+
+## License
+
+The code is under the [MIT license](LICENSE). The writing, the résumé, the photographs and the products' recordings are © Felix Andersson.
