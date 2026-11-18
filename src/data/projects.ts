@@ -271,14 +271,14 @@ export const projects: Project[] = [
     face: 'face-inter',
     year: '2026',
     tagline: 'A local AI harness for your life: a personal assistant and coach that runs on your own machine, puts your plans on the calendar only after your yes, and remembers what you told it.',
-    proof: '158 commits, 257 tests, CI on every push, light and dark',
+    proof: '277 commits, 427 tests, CI on every push, light and dark',
     live: 'https://lifeui.medanolabs.com/',
     source: 'https://github.com/Felichz/life-ui',
     role: 'Solo: product, design system, frontend and tests',
     stack: ['React 18', 'TypeScript (strict)', 'Vite', 'Tailwind with CSS-variable tokens', 'Radix UI', 'Jest', 'Testing Library', 'Cypress', 'GitHub Actions'],
-    scale: ['158 commits', '257 tests (Jest and Cypress)', '44 components', 'Light and dark'],
+    scale: ['277 commits', '427 tests (Jest and Cypress)', '44 components', 'Light and dark'],
     story: [
-      'Not a todo app, not a habit tracker, not a chatbot. LifeUI wraps a language model on your own machine with tools that change your day, notes on what you told it, and one rule held in code: nothing changes without your yes. Tell the coach about a goal and it looks things up, builds a roadmap and puts every session on your calendar. Each activity ends by saying how it went, which earns tempos. Tempos only go up: no streaks, no penalties, and free time costs nothing.',
+      'Not a todo app, not a habit tracker, not a chatbot. LifeUI wraps a language model on your own machine with tools that change your day, notes on what you told it, and one rule held in code: nothing changes without your yes. Tell the coach about a goal and it looks things up, builds a roadmap and puts every session on your calendar. Each task ends with one question, did you complete it, and every yes moves its goal forward. No points, no streaks, no penalties.',
       'This year I rebuilt the whole interface from scratch to the standard of a tool like Linear, on top of a domain core that doesn’t know React exists. CI runs typecheck, lint with zero warnings, Jest, the build and Cypress on every push.',
     ],
     highlights: [
@@ -291,8 +291,8 @@ export const projects: Project[] = [
         body: 'Every load goes parse, validate, migrate through schema v1, v2 and v3, then sanitize. Legacy fields are archived rather than dropped, and JSON import runs through the same path.',
       },
       {
-        title: 'The preview is the result',
-        body: 'The closing dialog calls the same reward function as the core, so the tempos you see are the tempos you get. The typed i18n layer makes English and Spanish keep exactly the same keys.',
+        title: 'One question, counted once',
+        body: 'Closing a task asks only whether it was done. A roadmap counts its progress from those answers in the core, and the close, the bar and the coach read the same number. The typed i18n layer makes English and Spanish keep exactly the same keys.',
       },
     ],
     typefaces: ['Inter'],
@@ -313,13 +313,13 @@ export const projects: Project[] = [
     ],
     gallery: [
       moving(
-        themed('lifeui-film', 'LifeUI product film, from the chat to the calendar in 33 seconds, in the app’s new shell with the conversation in the middle: the person tells the coach their right elbow hurts after long days at the mouse, the coach searches the web and answers from NHS guides with a 10-week plan in three phases, the person says weekdays at 9, and Do it puts 50 sessions on the calendar and a roadmap on Goals, each session with its exercises and links to the guides. The first session runs at 9:00 in the bar above the chat and is closed through the chat for 13 tempos, then the ten weeks pass on the roadmap, each phase reached on its date, until Goal reached on January 22. This frame shows the roadmap card: Monday to Friday at 9:00, 50 sessions from November 16 to January 22 in three phases, waiting for Do it.', { caption: 'From the chat to the calendar' }),
+        themed('lifeui-film', 'LifeUI product film, from the chat to the calendar in 33 seconds, in the app’s new shell with the conversation in the middle: the person tells the coach their right elbow hurts after long days at the mouse, the coach searches the web and answers from NHS guides with a 10-week plan in three phases, the person says weekdays at 9, and Do it puts 50 sessions on the calendar and a roadmap on Goals, each session with its exercises and links to the guides. The first session runs at 9:00 in the bar above the chat and is closed through the chat as done, which moves the goal to 2%, then the ten weeks pass on the roadmap, each phase reached on its date, until Goal reached on January 22. This frame shows the roadmap card: Monday to Friday at 9:00, 50 sessions from November 16 to January 22 in three phases, waiting for Do it.', { caption: 'From the chat to the calendar' }),
         'lifeui-film',
       ),
-      themed('lifeui-closing', 'LifeUI closing ritual: rate the activity from 0 to 10 and see the reward preview of +60 tempos.', { caption: 'Closing ritual' }),
-      themed('lifeui-review', 'LifeUI review screen: the day timeline, time by activity type and a table of closed activities.', { caption: 'Review' }),
-      themed('lifeui-library', 'LifeUI library of reusable activities with their duration rules and history.', { caption: 'Library' }),
-      themed('lifeui-mobile', 'LifeUI closing ritual on a phone.', { phone: true, caption: 'On a phone' }),
+      themed('lifeui-goals', 'LifeUI Goals page: the roadmap Right elbow without pain in three phases, its first phase open with what a session holds and a link to the guide for each exercise.', { caption: 'A goal in phases' }),
+      themed('lifeui-closing', 'LifeUI closing a session through the chat: the running session in the bar above, with its clock and the goal it moves, and the card Close Elbow exercises waiting for a yes.', { caption: 'Did you complete it?' }),
+      themed('lifeui-review', 'LifeUI review screen: 3 of 3 completed, the day hour by hour, time by activity type and every task with Completed or not.', { caption: 'Review' }),
+      themed('lifeui-mobile', 'LifeUI on a phone: the conversation is home, with the bar on top showing what is running.', { phone: true, caption: 'On a phone' }),
     ],
   },
   {
