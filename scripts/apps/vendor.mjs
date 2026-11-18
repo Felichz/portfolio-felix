@@ -23,12 +23,21 @@ export const APPS = {
     repo: resolve(root, '../katarch'),
     build: (out) => ['npx', ['astro', 'build', '--base', '/apps/katarch/', '--outDir', out]],
     // Its links and posters point at the site root (/curso/..., the brand at /, old routes redirect
-    // to /): here they live under /apps/katarch/. In an island's props the quotes are &quot;.
+    // to /): here they live under /apps/katarch/. In an island's props the quotes are &quot;. The site's
+    // root only sends to the course (a 302 in its _redirects, which this site doesn't apply), so here the
+    // brand and the old routes go straight to the course.
     rewrite: [
       [/(["'`(=]|\\"|&quot;)\/curso\//g, '$1/apps/katarch/curso/'],
-      [/href="\/"/g, 'href="/apps/katarch/"'],
-      [/location\.replace\('\/'\)/g, "location.replace('/apps/katarch/')"],
-      [/url=\/"/g, 'url=/apps/katarch/"'],
+      [/href="\/"/g, 'href="/apps/katarch/curso/"'],
+      [/location\.replace\('\/'\)/g, "location.replace('/apps/katarch/curso/')"],
+      [/url=\/"/g, 'url=/apps/katarch/curso/"'],
+      // Astro's redirect pages wait 2 seconds on an unstyled "Redirecting from" link: they leave at once,
+      // on the app's background.
+      [/content="2;url=/g, 'content="0;url='],
+      [
+        /<body>\s*<a href="([^"]+)">Redirecting from [\s\S]*?<\/a><\/body>/g,
+        `<style>html{background:#0b0e13}@media (prefers-color-scheme: light){html{background:#f6f5f1}}</style><body><script>location.replace('$1')</script><noscript><a href="$1">KatArch</a></noscript></body>`,
+      ],
     ],
   },
   knowgraph: {

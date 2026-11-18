@@ -547,9 +547,25 @@ const glowCSS = projects
       return plate ? editions(plate).from : undefined;
     };
 
+    /** Stops whatever a product makes heard once it's left: a live app's own players (KatArch's narrated
+       lessons, PlaySync's YouTube player once unmuted) play inside its frames, out of the slide's reach.
+       Only audible media: the recordings' clips are muted and keep to their tape's clock. */
+    const silence = (root: ParentNode) => {
+      root.querySelectorAll<HTMLMediaElement>('video, audio').forEach((m) => !m.paused && !m.muted && m.volume > 0 && m.pause());
+      root.querySelectorAll('iframe').forEach((f) => {
+        let doc: Document | null = null;
+        try {
+          doc = f.contentDocument; // the stage and the apps are this site's (a YouTube player isn't)
+        } catch {}
+        if (doc) silence(doc);
+        else if (/youtube(-nocookie)?\.com\//.test(f.src)) f.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
+      });
+    };
+
     const rest = (i: number) => {
       const plate = plateOf(i);
       if (!plate) return;
+      silence(plate);
       if (plate.dataset.state) plate.dataset.state = 'idle';
       const v = plate.querySelectorAll<HTMLVideoElement>('video, tape-player');
       // Paused, not rewound: roll() rewinds a recording as its product comes back, before it shows. A
@@ -743,6 +759,8 @@ const glowCSS = projects
         } else sync();
       } else if (!active && was) {
         clipOf(index)?.pause();
+        const plate = plateOf(index);
+        if (plate) silence(plate);
         sync();
       }
     });
