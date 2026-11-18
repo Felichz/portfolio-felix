@@ -1,6 +1,6 @@
 # Felix Andersson, portfolio
 
-Personal site of Felix Andersson, Senior Fullstack Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, now the whole stack at Clayful (Rails, Node, Firebase, a Capacitor app), plus products of my own, designed and built end to end. Built like a desktop app: one fixed window, full-height sections that move one at a time.
+Personal site of Felix Andersson, Senior Fullstack Engineer in Montevideo. Five years on Cisco's Magnetic design system and the Meraki Dashboard, now the whole stack at Clayful (Rails, Node, Firebase, a Capacitor app), plus products of my own, designed and built end to end. The site presents that work: a showcase of the products with live previews, a case study for each, and the CV.
 
 **[felix.medanolabs.com](https://felix.medanolabs.com/)** · [Résumé (PDF)](public/felix-andersson-resume.pdf) · [LinkedIn](https://www.linkedin.com/in/felixandersson/) · [GitHub](https://github.com/Felichz)
 
@@ -15,12 +15,12 @@ Personal site of Felix Andersson, Senior Fullstack Engineer in Montevideo. Five 
 
 The site works like a desktop app in a fixed window: a bar on top, a rail of section dots down the left edge, and full-height sections that move one at a time. A scroll gesture jumps to the next section; a section scrolls inside itself only when the window is too small for it. On phones the sections scroll naturally and the rail becomes a tab bar.
 
-- **Intro.** Name, role, the short version, what I bring, and a portrait.
+- **Intro.** Name, role, a short summary, and a portrait.
 - **Work.** A showcase of six products, this site included. Each product's screen recording plays, holds on its last frame, and the next one slides in; the rail fills in the product's color as its turn runs. Pause it with the button, or by reading the product copy.
 - **Experience.** The CV: roles from 2020 to now on a continuous timeline, with the detail of the selected role below and a few concrete examples in prose.
 - **About.** How I got here, the toolset, and contact.
 - **One case study per product** (`/work/katarch`, `/work/knowgraph`, ...), as five sections: Overview with the lead screenshot, its recording and numbered callouts; Story; Engineering; Screens; Specs and the next case study.
-- **Two editions.** Warm stone and near-black, chosen before first paint from the saved choice or the system setting, toggled from the bar. Screenshots print in the opposite edition, so each product stands out from the page.
+- **Two themes.** Light (warm stone) and dark (near-black), chosen before first paint from the saved choice or the system setting, toggled from the bar. Screenshots use the opposite theme to the page.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/02-intro-dark.webp">
@@ -42,20 +42,20 @@ The site works like a desktop app in a fixed window: a bar on top, a rail of sec
   <img src="docs/readme/05-phone-light.webp" width="100%" alt="Felix Andersson, portfolio, screenshot on a phone. On a phone, the sections scroll. The section dots become a tab bar at the bottom, and previews stay recordings.">
 </picture>
 
-## Details that took some care
+## Implementation notes
 
-- **Tapes instead of videos.** Every product's preview, and this site's own, is a tape: the app's DOM recorded while a scripted scene drives it in headless Chrome, then replayed in a script-less iframe with the app's real stylesheet. The five products' tapes weigh 230 KB gzipped, in place of 17.7 MB of video (two files per product, one per theme); they play in either theme and stay sharp at any size.
-- **Live previews.** After the visitor's first input (never during page load, so Lighthouse stays at 100), the app's own build, vendored under `/apps/<id>/`, boots under the preview and keeps up with the tape by replaying its recorded clicks, with its clock and timers following the recording. Hover a preview and it becomes the live app on the same frame: you can use it right there. Its window lights keep to your side of it; the green one moves the app (with `moveBefore`, state intact) into a window, the preview larger with the same layout (every tape is recorded at 1152×720, and the app runs at that size, scaled), in the site's own edition, with the case study, the website and the source under it. On this site's own slide, the preview is the site, live, inside itself.
-- **Previews in a process of their own.** Each preview (its tape and its live app) runs in a stage, a small document the page embeds and drives with messages. Served from another site than the page, the browser gives it its own process, so building a tape or booting an app never costs the page a frame. The page does no work per frame while a preview plays: the showcase countdown and the tape's cursor run on the compositor, and tapes apply recorded changes only when they fall due. Apps boot one at a time once a preview has been on screen for a moment; one the visitor used is held, clock stopped, when it leaves the screen. Measured with `scripts/perf/` (traces of the old and new builds, alternating): the page's main thread while a preview plays went from 63–74% busy to under 15%.
+- **Tapes instead of videos.** Every product's preview, and this site's own, is a tape: the app's DOM recorded while a scripted scene drives it in headless Chrome, then replayed in a script-less iframe with the app's real stylesheet. The five products' tapes weigh 230 KB gzipped, in place of 17.7 MB of video (two files per product, one per theme); they play in either theme and scale without loss.
+- **Live previews.** After the visitor's first input (never during page load, so Lighthouse stays at 100), the app's own build, vendored under `/apps/<id>/`, boots under the preview and follows the tape by replaying its recorded clicks, with its clock and timers following the recording. Hovering a preview swaps in the live app on the same frame, ready to use. The green window light moves the app (with `moveBefore`, state intact) into a larger window with the same layout (every tape is recorded at 1152×720 and the app runs at that size, scaled), in the site's theme, with links to the case study, website and source. On this site's own slide, the preview is the site itself.
+- **Previews in their own process.** Each preview (its tape and its live app) runs in a stage, a small document the page embeds and drives with messages. Served from a different site than the page, it gets its own browser process, so building a tape or booting an app does not block the page. The page does no per-frame work while a preview plays: the showcase countdown and the tape's cursor run on the compositor, and tapes apply recorded changes only when they fall due. Apps boot one at a time once a preview has been on screen briefly; an app the visitor used is paused (clock stopped) when it leaves the screen. Measured with `scripts/perf/` (alternating traces of the old and new builds): main-thread busy time while a preview plays went from 63–74% to under 15%.
 
 - One navigation model for wheel, trackpad, touch, keys, tabs and links. A wheel gesture moves one section, unless it started by scrolling something inside the section.
 - Deep links (`/#experience`, `/#work/lifeui`) open on their section and product before the first paint.
-- The name is set one glyph at a time along Archivo's width axis: letters rise into place on arrival and swell toward the pointer.
-- A cursor light: a soft pool of color follows the pointer and brings up the dot grid under it, with a lens bulge. Buttons are magnetic, the portrait and the showcase window tilt toward the pointer, and a scrubber on the Experience timeline names the month and role under the cursor.
-- The room light follows the content: each section, and each product in the showcase, sets the colors of the ambient glow.
+- The name is animated per glyph along Archivo's width axis: letters rise into place on load and widen toward the pointer.
+- Pointer effects: a soft color spotlight follows the pointer over the dot grid, buttons are magnetic, the portrait and the showcase window tilt toward the pointer, and a scrubber on the Experience timeline shows the month and role under the cursor.
+- The ambient glow takes its colors from the current section, and from the current product in the showcase.
 - The showcase screenshot and product name morph into the case study header (cross-document view transitions).
-- Kept cheap to render: no backdrop blur, static ambient layers. The theme toggle reveals the other edition in a circle from the button, from a single snapshot with transitions suspended.
-- Everything sizes against the window with container units, and tightens on short screens.
+- Rendering cost kept low: no backdrop blur, static ambient layers. The theme toggle reveals the other theme in a circle from the button, from a single snapshot with transitions suspended.
+- Layout sizes against the window with container units and tightens on short screens.
 - Reduced motion: no autoplay, no tilt, instant section moves.
 - Static output, responsive AVIF/WebP images, recordings that load only when they play, self-hosted font subsets, no client framework.
 
@@ -95,22 +95,17 @@ node scripts/perf/trace.mjs <label>      # traces of the showcase's moments, sum
 node scripts/perf/ab.mjs base,noshadow   # one thing switched off at a time, alternating runs
 ```
 
-**The frame budget.** Every interaction is measured (`--gate`), the page keeps a flight recorder
-(`src/scripts/blackbox.ts`: frame gaps over 250 ms dump what was mounting, whether the window was
-open, whether the page was flinging), and the heavy work obeys the page's quiet: stages mount one at
-a time, never under the visitor; a product change is three modest frames (the rail answers first,
-the slide lands next, the recording and the address last), with the incoming slide's textures
-pre-rastered off its countdown; the panel's room light is resolved at build time (a `data-p` flip,
-not four variables through the subtree); a boot starts where the tape ended (every tape records a
-final checkpoint) with its bytes already warm (`warm-bytes`, fired when the slide turns active —
-never during the boot itself: a fetch in flight would deduplicate against the frame's own load);
-under the pointer the tape answers as a ghost until the real app takes it; the bridge owns the app's
-frames as it owns its clock — an app nobody sees fires none, and one that is seen runs at the
-highest steady cadence the stage measures the machine to hold (`setPace`), with its endless
-animations resting at reduced pace; while one preview has the machine, every other tape lets its
-document go. Measured results along the way: a 800 ms three-stage mount burst -> 84 ms; the window
-morphs 60-71% hitched -> 0-22%; a heavy app in its window 58 fps/71% hitched -> 240/0 (playsync,
-whose YouTube player is beyond the bridge: 42 -> 95).
+**The frame budget.** Every interaction is measured (`--gate`). The page keeps a flight recorder (`src/scripts/blackbox.ts`): frame gaps over 250 ms dump what was mounting, whether the window was open, and whether the page was flinging. Heavy work is scheduled around the visitor:
+
+- Stages mount one at a time, never while the visitor is interacting.
+- A product change is spread over three frames (the rail first, the slide next, the recording and the address last), with the incoming slide's textures pre-rastered during its countdown.
+- The panel's ambient light is resolved at build time (a `data-p` flip, not four variables through the subtree).
+- A boot starts where the tape ended (every tape records a final checkpoint), with its bytes already fetched (`warm-bytes`, fired when the slide turns active, never during the boot itself: a fetch in flight would deduplicate against the frame's own load).
+- Under the pointer the tape responds as a ghost until the real app takes over.
+- The bridge controls the app's frames as it controls its clock: an app nobody sees renders no frames, and a visible one runs at the highest steady rate the stage measures the machine can hold (`setPace`), with endless animations at reduced pace.
+- While one preview is active, every other tape releases its document.
+
+Measured results: a three-stage mount burst went from 800 ms to 84 ms; window morphs from 60–71% hitched frames to 0–22%; a heavy app in its window from 58 fps / 71% hitched to 240 fps / 0% (PlaySync, whose YouTube player is outside the bridge's control: 42 to 95 fps).
 
 ## Running it
 
@@ -140,7 +135,7 @@ npm run preview  # serve dist/
 | `src/assets/motion/` | Screen recordings (H.264 MP4, 1920 wide), as `name-light` / `name-dark`. |
 | `docs/readme/` | The pictures in this README, and in each product's own: drawn by `scripts/readme/build.mjs` from `panels.mjs` (a screenshot in the site's window, with a headline). `site-shots.mjs` captures this site's own screens from `dist/`. |
 
-To update a product screenshot, capture 16:10 at 2x in both themes, keep the file names, and adjust the callout coordinates (`x`, `y` in percent) in `projects.ts` if the layout changed. A lead shot with a recording should use the recording's last frame as its still, so the hand-off from video to callouts is seamless.
+To update a product screenshot, capture 16:10 at 2x in both themes, keep the file names, and adjust the callout coordinates (`x`, `y` in percent) in `projects.ts` if the layout changed. A lead shot with a recording should use the recording's last frame as its still, so the hand-off from video to callouts matches.
 
 ## Deploy
 
