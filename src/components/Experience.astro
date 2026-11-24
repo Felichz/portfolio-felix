@@ -465,18 +465,31 @@ const current = roles.findIndex((r) => r.id === 'clayful');
     .role[data-state='active'] { animation: none; }
   }
 
+  /* Narrower windows: the shortest bars keep their names whole a little longer. */
+  @container panel (max-width: 1200px) {
+    .bar { padding-inline: 9px; }
+    .bar-name { font-stretch: 80%; }
+  }
+
+  /* One column that scrolls. Its rows take their content's height: with `min-height: 0` on both
+     and a fixed height above, automatic rows would shrink under their text and print one over the other. */
   @container panel (max-width: 1000px) {
-    .role { grid-template-columns: minmax(0, 1fr); overflow-y: auto; align-content: start; }
+    .role { grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; overflow-y: auto; align-content: start; }
     .role-main { overflow: visible; }
+    .bar { padding-inline: 7px; }
+    .bar-name { font-size: 0.75rem; font-stretch: 76%; }
   }
 
   /* Short windows: title and lede share a row, and the timeline tightens. */
-  @container panel (max-height: 680px) and (min-width: 761px) {
+  @container panel (max-height: 720px) and (min-width: 761px) {
     .exp-title { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 28px; }
     .exp-title p { font-size: 0.9375rem; }
     .gantt { padding-top: 30px; gap: 6px; }
-    .role-main { gap: 7px; }
+    .role-main { gap: 5px; }
+    .role-summary { font-size: 0.9375rem; }
+    .role-points { gap: 5px; margin-top: 0; }
     .role-points li { font-size: 0.875rem; }
+    .role-tags { margin-top: 2px; }
   }
 
   /* Phones: no Gantt; every role in order, scrolling inside the panel. */

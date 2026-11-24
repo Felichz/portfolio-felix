@@ -38,8 +38,11 @@ const strengths = [
       <div class="intro-actions" data-reveal style="--d:5">
         <a class="btn btn--solid" href="#work">See the work <Icon name="arrow-right" class="icon-right" /></a>
         <a class="btn" href="mailto:andersson.fx@gmail.com"><Icon name="mail" />Email me</a>
-        <a class="icon-btn" href="https://github.com/Felichz" target="_blank" rel="noopener" aria-label="GitHub profile"><Icon name="github" /></a>
-        <a class="icon-btn" href="https://www.linkedin.com/in/felixandersson/" target="_blank" rel="noopener" aria-label="LinkedIn profile"><Icon name="linkedin" /></a>
+        {/* Round icons beside the buttons; on a phone, where the four don't share a row, two worded buttons under them. */}
+        <span class="intro-social">
+          <a class="icon-btn" href="https://github.com/Felichz" target="_blank" rel="noopener" aria-label="GitHub profile"><Icon name="github" /><span class="social-word" aria-hidden="true">GitHub</span></a>
+          <a class="icon-btn" href="https://www.linkedin.com/in/felixandersson/" target="_blank" rel="noopener" aria-label="LinkedIn profile"><Icon name="linkedin" /><span class="social-word" aria-hidden="true">LinkedIn</span></a>
+        </span>
       </div>
 
       <ul class="strengths" aria-label="What I bring" data-reveal style="--d:6">
@@ -144,6 +147,8 @@ const strengths = [
   .intro-role .t-serif { font-weight: 400; font-size: 1.08em; color: var(--ink-2); }
   .intro-lede { max-width: 54ch; font-size: clamp(0.9375rem, min(1.35cqw, 2.5cqh), 1.25rem); }
   .intro-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .intro-social { display: flex; gap: 10px; }
+  .social-word { display: none; }
 
   .strengths {
     display: grid;
@@ -232,9 +237,27 @@ const strengths = [
   /* Phones and narrow windows: one column that scrolls inside the panel. */
   @container panel (max-width: 760px) {
     .intro { grid-template-columns: minmax(0, 1fr); align-content: start; height: auto; min-height: 100%; gap: 28px; }
-    .intro-name { font-size: clamp(3rem, 17cqw, 5.5rem); }
+    /* (22cqh: on a phone held sideways the panel is short, and the name leaves room for what follows.) */
+    .intro-name { font-size: clamp(3rem, min(17cqw, 22cqh), 5.5rem); }
     .portrait { width: min(100%, 420px); justify-self: start; }
     .strengths { grid-template-columns: minmax(0, 1fr); }
+  }
+  /* Phones too narrow for the four in a row: a grid of four equal buttons, two by two. */
+  @container panel (max-width: 380px) {
+    .intro-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+    .intro-social { display: contents; }
+    .intro-social .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+      width: auto;
+      font-weight: 620;
+      font-stretch: 92%;
+      font-size: 0.9375rem;
+      text-decoration: none;
+    }
+    .social-word { display: inline; }
   }
 </style>
 
